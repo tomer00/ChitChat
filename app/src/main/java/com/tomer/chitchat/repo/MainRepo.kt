@@ -1,4 +1,4 @@
-package com.example.mvvm.repo
+package com.tomer.chitchat.repo
 
 interface MainRepo {
     fun getData()

@@ -1,6 +1,6 @@
-package com.example.mvvm.repo
+package com.tomer.chitchat.repo
 
-import com.example.mvvm.retro.Api
+import com.tomer.chitchat.retro.Api
 import javax.inject.Inject
 
 class RepoImpl @Inject constructor( private val ret: Api) : MainRepo {

@@ -1,17 +1,19 @@
-package com.example.mvvm.ui.frags
+package com.tomer.chitchat.ui.frags
 
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import com.example.mvvm.R
-import com.example.mvvm.databinding.FragmentSampleBinding
+import com.tomer.chitchat.R
+import com.tomer.chitchat.databinding.FragmentSendOtpBinding
+import dagger.hilt.android.AndroidEntryPoint
 
 
-class SampleFragment : Fragment() {
+@AndroidEntryPoint
+class FragSendOtp : Fragment() {
 
-    private var _binding: FragmentSampleBinding? = null
+    private var _binding: FragmentSendOtpBinding? = null
     private val b get() = requireNotNull(_binding)
 
 
@@ -22,7 +24,7 @@ class SampleFragment : Fragment() {
         savedInstanceState: Bundle?
     ): View {
         // Inflate the layout for this fragment
-        _binding = FragmentSampleBinding.inflate(inflater)
+        _binding = FragmentSendOtpBinding.inflate(inflater)
         return b.root
     }
 

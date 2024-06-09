@@ -1,4 +1,4 @@
-package com.example.mvvm.modals
+package com.tomer.chitchat.modals
 
 data class SamModal(
     val name:String,

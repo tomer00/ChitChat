@@ -1,11 +1,11 @@
-package com.example.mvvm.di
+package com.tomer.chitchat.di
 
 import android.content.Context
 import androidx.room.Room
-import com.example.mvvm.room.Dao
-import com.example.mvvm.room.Database
-import com.example.mvvm.retro.Api
-import com.example.mvvm.utils.Utils
+import com.tomer.chitchat.room.Dao
+import com.tomer.chitchat.room.Database
+import com.tomer.chitchat.retro.Api
+import com.tomer.chitchat.utils.Utils
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import dagger.Module

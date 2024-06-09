@@ -1,4 +1,4 @@
-package com.example.mvvm.room
+package com.tomer.chitchat.room
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey

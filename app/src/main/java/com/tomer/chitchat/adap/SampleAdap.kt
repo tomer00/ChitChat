@@ -1,13 +1,13 @@
-package com.example.mvvm.adap
+package com.tomer.chitchat.adap
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import com.example.mvvm.R
-import com.example.mvvm.databinding.SamRowBinding
-import com.example.mvvm.modals.SamModal
+import com.tomer.chitchat.modals.SamModal
+import com.tomer.chitchat.R
+import com.tomer.chitchat.databinding.SamRowBinding
 
 class SampleAdap(private val clickLis: CallbackClick) : ListAdapter<SamModal, SampleAdap.SamHolder>(SamUtil()) {
 

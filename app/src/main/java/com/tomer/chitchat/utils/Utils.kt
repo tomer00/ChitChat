@@ -1,4 +1,4 @@
-package com.example.mvvm.utils
+package com.tomer.chitchat.utils
 
 class Utils {
     companion object {

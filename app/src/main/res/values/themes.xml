@@ -1,6 +1,6 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
-    <style name="Theme.MVVM" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+    <style name="Theme.ChitChat" parent="Theme.MaterialComponents.DayNight.NoActionBar">
         <!-- Primary brand color. -->
         <item name="colorPrimary">@color/primary</item>
         <item name="colorPrimaryVariant">@color/primary_dark</item>
@@ -14,19 +14,13 @@
         <item name="android:statusBarColor">?attr/colorPrimaryVariant</item>
         <!-- Customize your theme here. -->
         <item name="android:windowContentTransitions">true</item>
-        <item name="android:windowLayoutInDisplayCutoutMode" tools:targetApi="o_mr1">shortEdges
+        <item name="android:windowLayoutInDisplayCutoutMode" >shortEdges
         </item>
-        <item name="android:forceDarkAllowed" tools:targetApi="q">false</item>
+        <item name="android:forceDarkAllowed" >false</item>
     </style>
 
 
-    <style name="Rating" parent="android:style/Widget.Material.RatingBar.Small">
-        <item name="colorControlNormal">@color/trans</item>
-        <item name="backgroundColor">@color/trans</item>n
-        <item name="colorControlActivated">@color/green</item>
-    </style>
-
-    <style name="EditText" parent="Theme.MVVM">
+    <style name="EditText" parent="Theme.ChitChat">
         <item name="android:inputType">textPersonName</item>
         <item name="android:fontFamily">sans-serif-black</item>
         <item name="android:background">@drawable/et_bg</item>

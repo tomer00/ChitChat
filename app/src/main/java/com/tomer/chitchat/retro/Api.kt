@@ -1,4 +1,4 @@
-package com.example.mvvm.retro
+package com.tomer.chitchat.retro
 
 interface Api {
 

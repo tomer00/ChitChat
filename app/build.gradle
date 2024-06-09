@@ -4,12 +4,12 @@ plugins {
     id 'com.google.dagger.hilt.android'
     id 'kotlin-kapt'
 
-//    id 'com.google.gms.google-services'
+    id 'com.google.gms.google-services'
 //    id 'com.google.firebase.crashlytics'
 }
 android {
     namespace 'com.tomer.chitchat'
-    compileSdk 33
+    compileSdk 34
 
     defaultConfig {
         applicationId "com.tomer.chitchat"
@@ -55,8 +55,9 @@ dependencies {
     implementation 'com.airbnb.android:lottie:6.0.0'
     //noinspection GradleDependency
     implementation 'com.google.firebase:firebase-messaging:23.1.1'
+    implementation 'com.google.firebase:firebase-auth:23.0.0'
     implementation 'com.karumi:dexter:6.2.3'
-
+    implementation 'androidx.activity:activity:1.9.0'
 
 
     //Hilt
