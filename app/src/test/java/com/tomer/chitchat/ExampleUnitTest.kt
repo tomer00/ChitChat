@@ -1,5 +1,6 @@
 package com.tomer.chitchat
 
+import com.tomer.chitchat.modals.msgs.UserList
 import org.junit.Test
 
 import org.junit.Assert.*
@@ -12,6 +13,8 @@ import org.junit.Assert.*
 class ExampleUnitTest {
     @Test
     fun addition_isCorrect() {
-        assertEquals(4, 2 + 2)
+        println(UserList(arrayListOf(
+            15161L,54181L,68411L
+        ),9999999999L))
     }
 }

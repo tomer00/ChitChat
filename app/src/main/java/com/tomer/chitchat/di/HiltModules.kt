@@ -8,6 +8,10 @@ import com.tomer.chitchat.retro.Api
 import com.tomer.chitchat.utils.Utils
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.tomer.chitchat.repo.RepoMessages
+import com.tomer.chitchat.repo.RepoMessagesImpl
+import com.tomer.chitchat.repo.RepoUtilImpl
+import com.tomer.chitchat.repo.RepoUtils
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -24,7 +28,7 @@ class HiltModules {
     @Provides
     @Singleton
     fun provideRetroApiCompiler(): Api {
-        return Retrofit.Builder().baseUrl(Utils.COMPILER_LINK)
+        return Retrofit.Builder().baseUrl(Utils.SERVER_LINK)
             .addConverterFactory(GsonConverterFactory.create(GsonBuilder().serializeNulls().create()))
             .build()
             .create(Api::class.java)
@@ -33,6 +37,14 @@ class HiltModules {
     @Provides
     @Singleton
     fun provideGson(): Gson = Gson()
+
+    @Provides
+    @Singleton
+    fun provideRepoMsgs(): RepoMessages = RepoMessagesImpl()
+
+    @Provides
+    @Singleton
+    fun provideRepoUtils(@ApplicationContext appContext: Context): RepoUtils = RepoUtilImpl(appContext)
 
 
     @Provides

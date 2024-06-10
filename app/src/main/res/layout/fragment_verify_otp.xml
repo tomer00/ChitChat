@@ -169,6 +169,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="@string/resend_otp"
+                android:enabled="false"
                 android:textColor="@color/accent"
                 android:textStyle="bold"
                 android:textSize="15sp"/>
@@ -183,6 +184,7 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_margin="30dp"
+                android:enabled="false"
                 android:background="@drawable/background_button"
                 android:text="@string/verify"
                 android:textColor="@color/white"
