@@ -40,7 +40,7 @@ class HiltModules {
 
     @Provides
     @Singleton
-    fun provideRepoMsgs(): RepoMessages = RepoMessagesImpl()
+    fun provideRepoMsgs(dao: Dao): RepoMessages = RepoMessagesImpl(dao)
 
     @Provides
     @Singleton
@@ -49,7 +49,7 @@ class HiltModules {
 
     @Provides
     @Singleton
-    fun provideChannelDao(appDatabase: Database): Dao = appDatabase.channelDao()
+    fun provideMessageDao(appDatabase: Database): Dao = appDatabase.messageDao()
 
 
     @Provides
@@ -58,8 +58,8 @@ class HiltModules {
         return Room.databaseBuilder(
             appContext,
             Database::class.java,
-            "DB"
-        ).allowMainThreadQueries().build()
+            "MSG_DB"
+        ).build()
     }
 
 }
