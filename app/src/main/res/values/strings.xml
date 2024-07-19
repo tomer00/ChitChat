@@ -10,4 +10,10 @@
     <string name="didn_t_receive_the_otp">Didn\'t receive the OTP?</string>
     <string name="verify">Verify</string>
     <string name="resend_otp">RESEND OTP</string>
+    <string name="message">Write Message...</string>
+    <string name="profile_info">Profile Information</string>
+    <string name="provide_name_photo">Provide your name and Profile Photo</string>
+    <string name="type_your_name">Type your name</string>
+    <string name="enter_your_name">Enter your Name</string>
+    <string name="type_mobile_no">Type Mobile No...</string>
 </resources>

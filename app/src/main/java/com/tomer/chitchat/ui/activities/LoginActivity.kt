@@ -2,26 +2,22 @@ package com.tomer.chitchat.ui.activities
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.viewModelScope
-import com.google.android.gms.tasks.Task
-import com.google.firebase.FirebaseException
-import com.google.firebase.auth.AuthResult
+import androidx.core.content.ContextCompat
 import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthOptions
 import com.google.firebase.auth.PhoneAuthProvider
-import com.google.firebase.auth.PhoneAuthProvider.ForceResendingToken
 import com.tomer.chitchat.R
 import com.tomer.chitchat.databinding.ActivityLoginBinding
 import com.tomer.chitchat.ui.frags.FragSendOtp
+import com.tomer.chitchat.ui.frags.FragUpdateProfile
 import com.tomer.chitchat.ui.frags.FragVerifyOtp
 import com.tomer.chitchat.viewmodals.LoginViewModel
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.launch
 import java.util.concurrent.TimeUnit
 
 @AndroidEntryPoint
@@ -31,13 +27,22 @@ class LoginActivity : AppCompatActivity() {
     private val b by lazy { ActivityLoginBinding.inflate(layoutInflater) }
     private val viewModal: LoginViewModel by viewModels()
 
+    private val launcher: ActivityResultLauncher<PickVisualMediaRequest> =
+        registerForActivityResult(
+            ActivityResultContracts.PickVisualMedia()
+        ) {
+            if (it!=null)
+                viewModal.imgPicked(it)
+        }
+
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_login)
+        window.statusBarColor = ContextCompat.getColor(this, R.color.softBg)
+        setContentView(b.root)
 
         supportFragmentManager.beginTransaction().replace(b.fragCont.id, FragSendOtp()).commit()
-
 
         viewModal.phone.observe(this) { phone ->
             if (phone.length == 10) {
@@ -52,7 +57,22 @@ class LoginActivity : AppCompatActivity() {
         }
 
         viewModal.loggedIn.observe(this) {
-            if (it){
+            if (it)
+                supportFragmentManager.beginTransaction().replace(b.fragCont.id, FragUpdateProfile()).commit()
+        }
+
+        viewModal.showSelGallery.observe(this) {
+            if (it) {
+                launcher.launch(
+                    PickVisualMediaRequest.Builder()
+                        .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        .build()
+                )
+            }
+        }
+
+        viewModal.done.observe(this) {
+            if (it) {
                 startActivity(Intent(this, MainActivity::class.java))
                 finish()
             }

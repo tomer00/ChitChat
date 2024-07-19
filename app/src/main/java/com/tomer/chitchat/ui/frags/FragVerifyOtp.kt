@@ -31,9 +31,9 @@ class FragVerifyOtp : Fragment() {
         // Inflate the layout for this fragment
         _binding = FragmentVerifyOtpBinding.inflate(inflater)
         viewModel = ViewModelProvider(requireActivity())[LoginViewModel::class.java]
-        setTextMobile();
-        setupOTPInputs();
-        setListener();
+        setTextMobile()
+        setupOTPInputs()
+        setListener()
         return b.root
     }
 

@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
+
+        <ImageView
+            android:id="@+id/imgProfile"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_margin="12dp"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            android:contentDescription="@string/app_name" />
+
+
+    <ImageView
+        android:id="@+id/checkSelection"
+        android:layout_width="18dp"
+        android:contentDescription="@string/app_name"
+        app:layout_constraintEnd_toEndOf="@id/imgProfile"
+        android:background="@drawable/bg_circle"
+        app:layout_constraintBottom_toBottomOf="@id/imgProfile"
+        android:layout_height="18dp"/>
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="12dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/imgProfile"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:id="@+id/tvName"
+            android:textColor="@color/fore"
+            android:textSize="18sp"
+            android:text="@string/app_name"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_height="wrap_content" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:id="@+id/tvTime"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:text="06/09/2024"
+            app:layout_constraintTop_toTopOf="@id/tvName"
+            app:layout_constraintBottom_toBottomOf="@id/tvName"
+            android:layout_height="wrap_content" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            app:layout_constraintStart_toStartOf="parent"
+            android:orientation="horizontal"
+            android:layout_marginTop="4dp"
+            app:layout_constraintTop_toBottomOf="@id/tvName"
+            android:layout_height="wrap_content">
+
+            <ImageView
+                android:layout_width="26dp"
+                android:contentDescription="@string/app_name"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                android:id="@+id/btProfile"
+                app:tint="@color/secondary_text"
+                app:layout_constraintBottom_toBottomOf="parent"
+                android:layout_marginEnd="8dp"
+                android:layout_height="26dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:id="@+id/tvLastMsg"
+                android:text="Hiiiii"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tvName"
+                android:layout_height="wrap_content" />
+        </LinearLayout>
+
+
+
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+</androidx.constraintlayout.widget.ConstraintLayout>

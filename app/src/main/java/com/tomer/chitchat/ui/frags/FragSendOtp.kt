@@ -43,7 +43,8 @@ class FragSendOtp : Fragment() {
     
     private fun init(){
         b.buttonGetOTP.setOnClickListener {
-            if (b.inputMobile.text.length!=10) Toast.makeText(requireActivity(), "Please enter Valid Phone NO...", Toast.LENGTH_SHORT).show()
+            if (b.inputMobile.text.length!=10) Toast.makeText(requireActivity(),
+                "Please enter Valid Phone NO...", Toast.LENGTH_SHORT).show()
             else viewModel.setPhone(b.inputMobile.text.toString())
         }
     }
