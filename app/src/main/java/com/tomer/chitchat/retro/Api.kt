@@ -14,7 +14,8 @@ interface Api {
     @FormUrlEncoded
     @POST("/login")
     suspend fun getLoginToken(
-        @Field("token") token: String
+        @Field("token") authToken: String,
+        @Field("notiToken") notiToken: String
     ): Response<LoginResponse>
 
     @FormUrlEncoded
@@ -33,6 +34,13 @@ interface Api {
     @POST("/update/about")
     suspend fun updateAbout(
         @Field("about") name: String
+    ): Response<String>
+
+    @FormUrlEncoded
+    @POST("/chat")
+    suspend fun sendAck(
+        @Field("messageId") msgId: String,
+        @Field("toPhone") partnerNo: String,
     ): Response<String>
 
     @Multipart
