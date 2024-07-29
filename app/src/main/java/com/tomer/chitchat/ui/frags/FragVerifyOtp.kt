@@ -1,12 +1,14 @@
 package com.tomer.chitchat.ui.frags
 
 import android.os.Bundle
-import android.text.Editable
-import android.text.TextWatcher
+import android.util.Log
+import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.Toast
+import androidx.core.view.allViews
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import com.tomer.chitchat.databinding.FragmentVerifyOtpBinding
@@ -32,7 +34,6 @@ class FragVerifyOtp : Fragment() {
         _binding = FragmentVerifyOtpBinding.inflate(inflater)
         viewModel = ViewModelProvider(requireActivity())[LoginViewModel::class.java]
         setTextMobile()
-        setupOTPInputs()
         setListener()
         return b.root
     }
@@ -50,42 +51,74 @@ class FragVerifyOtp : Fragment() {
         }
 
 
-        b.buttonVerify.setOnClickListener { v ->
-            if (b.inputCode1.getText().toString().trim().isEmpty()
-                || b.inputCode2.getText().toString().trim().isEmpty()
-                || b.inputCode3.getText().toString().trim().isEmpty()
-                || b.inputCode4.getText().toString().trim().isEmpty()
-                || b.inputCode5.getText().toString().trim().isEmpty()
-                || b.inputCode6.getText().toString().trim().isEmpty()) {
+        b.buttonVerify.setOnClickListener {
+            var isAnyEmpty = false
+            for (i in 0..5){
+                val child =  b.contOtp.getChildAt(i) as EditText
+                if (child.text.isEmpty()) isAnyEmpty = true
+            }
+            if (isAnyEmpty) {
                 Toast.makeText(requireActivity(), "Please enter valid code", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-            val code: String =
-                b.inputCode1.getText().toString() +
-                        b.inputCode2.getText().toString() +
-                        b.inputCode3.getText().toString() +
-                        b.inputCode4.getText().toString() +
-                        b.inputCode5.getText().toString() +
-                        b.inputCode6.getText().toString()
-            viewModel.setOtp(code)
+            val code = StringBuilder()
+            for (i in 0..5){
+                val child =  b.contOtp.getChildAt(i) as EditText
+                code.append(child.text)
+            }
+            viewModel.setOtp(code.toString())
+
         }
 
 
         viewModel.codeSend.observe(viewLifecycleOwner) {
-            if (it){
+            if (it) {
                 b.buttonVerify.isEnabled = true
                 b.textResendOTP.isEnabled = true
-            }else{
+            } else {
                 b.buttonVerify.isEnabled = true
                 b.textResendOTP.isEnabled = true
             }
         }
 
+        val keyLis = View.OnKeyListener { v, keyCode, event ->
+            val et = v as EditText
+            if (event.action == KeyEvent.ACTION_UP && keyCode == KeyEvent.KEYCODE_DEL) {
+                if (et.text.toString().isEmpty()) {
+                    val childIndex = b.contOtp.indexOfChild(v)
+                    if (childIndex != 0) {
+                        val prevChild = b.contOtp.getChildAt(childIndex - 1) as EditText
+                        prevChild.requestFocus()
+                        prevChild.setSelection(prevChild.text.length)
+                    }
+
+                } else et.setText("")
+                return@OnKeyListener true
+            }
+            if (event.action == KeyEvent.ACTION_UP && arrayOf(7, 8, 9, 10, 11, 12, 13, 14, 15, 16).contains(keyCode)) {
+                if (et.text.toString().isEmpty()) {
+                    val childIndex = b.contOtp.indexOfChild(v)
+                    et.setText(('0' + keyCode - 7).toString())
+                    if (childIndex != 5) {
+                        val nextChild = b.contOtp.getChildAt(childIndex + 1) as EditText
+                        nextChild.requestFocus()
+                        nextChild.setSelection(nextChild.text.length)
+                    } else et.setSelection(et.text.length)
+                }
+            }
+            true
+        }
+
+        b.apply {
+            b.contOtp.allViews.forEach { it.setOnKeyListener(keyLis) }
+            b.contOtp.getChildAt(0).requestFocus()
+        }
+
         viewModel.loginProg.observe(viewLifecycleOwner) {
-            if (it){
+            if (it) {
                 b.buttonVerify.visibility = View.GONE
                 b.progressBar.visibility = View.VISIBLE
-            }else{
+            } else {
                 b.buttonVerify.visibility = View.VISIBLE
                 b.progressBar.visibility = View.GONE
             }
@@ -98,75 +131,5 @@ class FragVerifyOtp : Fragment() {
      * (TextView) textMobile will be received value "user mobile number" */
     private fun setTextMobile() {
         b.textMobile.text = String.format("+91-%s", viewModel.phone.value.toString())
-    }
-
-    /** When the edittext1 (b.b.inputCode1) was inserted, the cursor will be jump to the
-     * next edittext (in this case it would be "b.inputCode2") */
-    private fun setupOTPInputs() {
-        b.inputCode1.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
-            }
-
-            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                if (s.toString().trim { it <= ' ' }.isNotEmpty()) {
-                    b.inputCode2.requestFocus()
-                }
-            }
-
-            override fun afterTextChanged(s: Editable) {
-            }
-        })
-        b.inputCode2.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
-            }
-
-            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                if (s.toString().trim { it <= ' ' }.isNotEmpty()) {
-                    b.inputCode3.requestFocus()
-                }
-            }
-
-            override fun afterTextChanged(s: Editable) {
-            }
-        })
-        b.inputCode3.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
-            }
-
-            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                if (s.toString().trim { it <= ' ' }.isNotEmpty()) {
-                    b.inputCode4.requestFocus()
-                }
-            }
-
-            override fun afterTextChanged(s: Editable) {
-            }
-        })
-        b.inputCode4.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
-            }
-
-            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                if (s.toString().trim { it <= ' ' }.isNotEmpty()) {
-                    b.inputCode5.requestFocus()
-                }
-            }
-
-            override fun afterTextChanged(s: Editable) {
-            }
-        })
-        b.inputCode5.addTextChangedListener(object : TextWatcher {
-            override fun beforeTextChanged(s: CharSequence, start: Int, count: Int, after: Int) {
-            }
-
-            override fun onTextChanged(s: CharSequence, start: Int, before: Int, count: Int) {
-                if (s.toString().trim { it <= ' ' }.isNotEmpty()) {
-                    b.inputCode6.requestFocus()
-                }
-            }
-
-            override fun afterTextChanged(s: Editable) {
-            }
-        })
     }
 }

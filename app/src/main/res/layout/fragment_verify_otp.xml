@@ -52,6 +52,7 @@
             android:textStyle="bold" />
 
         <LinearLayout
+            android:id="@+id/contOtp"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="30dp"
@@ -59,8 +60,6 @@
             android:orientation="horizontal">
 
             <EditText
-                android:text="1"
-                android:id="@+id/inputCode1"
                 android:layout_width="40dp"
                 android:layout_height="45dp"
                 android:gravity="center"
@@ -74,8 +73,6 @@
                 tools:ignore="LabelFor"/>
 
             <EditText
-                android:text="1"
-                android:id="@+id/inputCode2"
                 android:layout_width="40dp"
                 android:layout_height="45dp"
                 android:gravity="center"
@@ -90,8 +87,6 @@
                 tools:ignore="LabelFor"/>
 
             <EditText
-                android:text="1"
-                android:id="@+id/inputCode3"
                 android:layout_width="40dp"
                 android:layout_height="45dp"
                 android:gravity="center"
@@ -106,8 +101,6 @@
                 tools:ignore="LabelFor"/>
 
             <EditText
-                android:text="1"
-                android:id="@+id/inputCode4"
                 android:layout_width="40dp"
                 android:layout_height="45dp"
                 android:gravity="center"
@@ -122,8 +115,6 @@
                 tools:ignore="LabelFor"/>
 
             <EditText
-                android:text="1"
-                android:id="@+id/inputCode5"
                 android:layout_width="40dp"
                 android:layout_height="45dp"
                 android:gravity="center"
@@ -138,8 +129,6 @@
                 tools:ignore="LabelFor"/>
 
             <EditText
-                android:text="1"
-                android:id="@+id/inputCode6"
                 android:layout_width="40dp"
                 android:layout_height="45dp"
                 android:gravity="center"

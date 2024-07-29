@@ -12,21 +12,23 @@ import androidx.lifecycle.ViewModelProvider
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
+import com.google.firebase.auth.FirebaseAuth
 import com.tomer.chitchat.databinding.FragmentLoginProfileBinding
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.Utils
+import com.tomer.chitchat.utils.Utils.Companion.getDpLink
 import com.tomer.chitchat.viewmodals.LoginViewModel
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
-class FragUpdateProfile :Fragment() {
+class FragUpdateProfile : Fragment() {
 
     private var _binding: FragmentLoginProfileBinding? = null
     private val b get() = requireNotNull(_binding)
 
 
     private lateinit var viewModel: LoginViewModel
-    private var uploadBmp : Bitmap? =null
+    private var uploadBmp: Bitmap? = null
     //region ------lifecycle----->>>
 
     override fun onCreateView(
@@ -40,16 +42,37 @@ class FragUpdateProfile :Fragment() {
         return b.root.apply {
             b.etName.setText(viewModel.name)
             b.etName.requestFocus()
-            b.btNext.setOnClickListener{
-                if (b.etName.text.toString() . isEmpty()){
+            b.btNext.setOnClickListener {
+                if (b.etName.text.toString().isEmpty()) {
                     b.etName.error = "Please enter your name"
                     return@setOnClickListener
                 }
-                viewModel.login(b.etName.text.toString(),uploadBmp)
+                viewModel.login(b.etName.text.toString(), uploadBmp)
             }
-            b.imgSelectDp.setOnClickListener{
+            b.imgSelectDp.setOnClickListener {
                 viewModel.showGallery()
             }
+            Glide.with(requireActivity())
+                .asBitmap()
+                .load(viewModel.phone.value!!.getDpLink())
+                .centerCrop()
+                .circleCrop()
+                .into(b.imgSelectDp)
+            Glide.with(requireActivity())
+                .asBitmap()
+                .load(viewModel.phone.value!!.getDpLink())
+                .centerCrop()
+                .circleCrop()
+                .into(
+                    object : CustomTarget<Bitmap>() {
+                        override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                            b.imgSelectDp.setPadding(0, 0, 0, 0)
+                            b.imgSelectDp.setImageBitmap(resource)
+                        }
+                        override fun onLoadCleared(placeholder: Drawable?) {
+                        }
+                    }
+                )
         }
     }
 
@@ -60,39 +83,40 @@ class FragUpdateProfile :Fragment() {
 
     //endregion ------lifecycle----->>>
 
-    private fun addObservers(){
-        viewModel.selectedImg.observe(requireActivity()){
+    private fun addObservers() {
+        viewModel.selectedImg.observe(requireActivity()) {
             b.apply {
-                this.imgSelectDp.setPadding(0,0,0,0)
+                this.imgSelectDp.setPadding(0, 0, 0, 0)
                 Glide.with(this@FragUpdateProfile)
                     .asBitmap()
                     .load(it)
                     .override(600)
                     .into(
-                       object :CustomTarget<Bitmap>(){
-                           override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                               uploadBmp = resource
-                               Glide.with(this@FragUpdateProfile)
-                                   .asBitmap()
-                                   .load(resource)
-                                   .override(400)
-                                   .centerCrop()
-                                   .circleCrop()
-                                   .into(b.imgSelectDp)
-                           }
-                           override fun onLoadCleared(placeholder: Drawable?) {
-                           }
-                       }
+                        object : CustomTarget<Bitmap>() {
+                            override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                                uploadBmp = resource
+                                Glide.with(this@FragUpdateProfile)
+                                    .asBitmap()
+                                    .load(resource)
+                                    .override(400)
+                                    .centerCrop()
+                                    .circleCrop()
+                                    .into(b.imgSelectDp)
+                            }
+
+                            override fun onLoadCleared(placeholder: Drawable?) {
+                            }
+                        }
                     )
             }
         }
-        viewModel.loginProg.observe(requireActivity()){
-            if (it){
+        viewModel.loginProg.observe(requireActivity()) {
+            if (it) {
                 b.apply {
                     b.prog.visibility = View.VISIBLE
                     b.btNext.visibility = View.GONE
                 }
-            }else b.apply {
+            } else b.apply {
                 b.prog.visibility = View.GONE
                 b.btNext.visibility = View.VISIBLE
             }
