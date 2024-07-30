@@ -1,21 +1,30 @@
 package com.tomer.chitchat.di
 
 import android.content.Context
-import android.util.Log
 import androidx.room.Room
 import com.google.gson.Gson
-import com.google.gson.GsonBuilder
 import com.tomer.chitchat.assets.RepoAssets
 import com.tomer.chitchat.assets.WebAssetsRepo
 import com.tomer.chitchat.repo.RepoMessages
-import com.tomer.chitchat.repo.RepoMessagesImpl
-import com.tomer.chitchat.repo.RepoUtilImpl
+import com.tomer.chitchat.repo.RepoPersons
+import com.tomer.chitchat.repo.impl.RepoMessagesImpl
+import com.tomer.chitchat.repo.impl.RepoUtilImpl
 import com.tomer.chitchat.repo.RepoUtils
+import com.tomer.chitchat.repo.impl.RepoPersonRoom
 import com.tomer.chitchat.retro.Api
 import com.tomer.chitchat.retro.SyncCallAdapterFactory
 import com.tomer.chitchat.room.Dao
 import com.tomer.chitchat.room.Database
-import com.tomer.chitchat.utils.CipherUtils
+import com.tomer.chitchat.crypto.CryptoCipher
+import com.tomer.chitchat.crypto.CryptoService
+import com.tomer.chitchat.crypto.RepoCipher
+import com.tomer.chitchat.crypto.RoomCipherRepo
+import com.tomer.chitchat.notifications.AndroidNotificationService
+import com.tomer.chitchat.notifications.NotificationService
+import com.tomer.chitchat.repo.RepoRelations
+import com.tomer.chitchat.repo.RepoStorage
+import com.tomer.chitchat.repo.impl.RepoFileStorage
+import com.tomer.chitchat.repo.impl.RepoRelationImpl
 import com.tomer.chitchat.utils.Utils
 import dagger.Module
 import dagger.Provides
@@ -36,7 +45,7 @@ class HiltModules {
     fun provideRetroApiCompiler(repoUtils: RepoUtils): Api {
         return Retrofit.Builder().baseUrl(Utils.SERVER_LINK)
             .addConverterFactory(GsonConverterFactory.create())
-            .addCallAdapterFactory(SyncCallAdapterFactory())
+            .addCallAdapterFactory(SyncCallAdapterFactory.create())
             .client(OkHttpClient.Builder()
                 .addInterceptor { chain ->
                     val originalRequest = chain.request()
@@ -57,7 +66,13 @@ class HiltModules {
 
     @Provides
     @Singleton
-    fun provideCipher(): CipherUtils = CipherUtils()
+    fun provideCryptoService(repo:RepoCipher): CryptoService = CryptoCipher(repo)
+
+    @Provides
+    @Singleton
+    fun provideNotificationService(@ApplicationContext appContext: Context): NotificationService = AndroidNotificationService(appContext)
+
+    //region REPOS
 
     @Provides
     @Singleton
@@ -70,6 +85,26 @@ class HiltModules {
     @Provides
     @Singleton
     fun provideRepoAssets(@ApplicationContext appContext: Context): RepoAssets = WebAssetsRepo(appContext)
+
+    @Provides
+    @Singleton
+    fun provideRepoStorage(@ApplicationContext appContext: Context): RepoStorage = RepoFileStorage()
+
+    @Provides
+    @Singleton
+    fun provideRepoRelation(dao: Dao): RepoRelations = RepoRelationImpl(dao)
+
+    @Provides
+    @Singleton
+    fun provideRepoPersons(dao: Dao): RepoPersons = RepoPersonRoom(dao)
+
+    @Provides
+    @Singleton
+    fun provideRepoCrypto(dao: Dao): RepoCipher = RoomCipherRepo(dao)
+
+    //endregion REPOS
+
+    //region ROOM
 
 
     @Provides
@@ -84,7 +119,10 @@ class HiltModules {
             appContext,
             Database::class.java,
             "MSG_DB"
-        ).build()
+        )
+            .allowMainThreadQueries()
+            .build()
     }
 
+    //endregion ROOM
 }
