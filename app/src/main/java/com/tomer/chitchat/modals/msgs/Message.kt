@@ -1,26 +1,27 @@
 package com.tomer.chitchat.modals.msgs
 
+import android.util.Log
+import com.tomer.chitchat.utils.Utils
+
 abstract class Message(
-    private val msg:String
+    private val msg: String
 ) {
     override fun toString() = msg
 }
 
-data class Acknowledge(
-    val msgId:String
-):Message(
-    "*-ACK-*$msgId"
-)
+class Typing : Message("*-TYP-*")
 
-class Typing:Message("*-TYP-*")
+class NoTyping : Message("*N-TYP*")
 
-class NoTyping:Message("*N-TYP*")
+class NewConnection(publicSecretHEX: String) : Message("*-NEW-*$publicSecretHEX,-,${Utils.myName}")
+class AcceptConnection(publicSecretHEX: String) : Message("*F-ACC*$publicSecretHEX,-,${Utils.myName}")
+class RejectConnection() : Message("*F-REJ*")
 
 // <(10)toPhone>  <(7)MSG_TYPE>
 // <DATA>  { <(12) TEMPID><ENC DATA> }
-data class ChatMessage(
-    val msgId:String,
-    val msg:String
-):Message(
+class ChatMessage(
+    msgId: String,
+    msg: String
+) : Message(
     "*-MSG-*$msgId$msg"
 )
