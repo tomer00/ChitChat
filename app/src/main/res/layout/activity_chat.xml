@@ -12,9 +12,9 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layTop"
         android:layout_width="match_parent"
+        android:layout_height="wrap_content"
         android:background="@color/softBg"
         android:padding="4dp"
-        android:layout_height="wrap_content"
         app:layout_constraintTop_toTopOf="parent">
 
         <ImageView
@@ -23,18 +23,18 @@
             android:layout_height="28dp"
             android:contentDescription="@string/app_name"
             android:src="@drawable/round_arrow_back_24"
-            app:tint="@color/fore"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent" />
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="@color/fore" />
 
         <ImageView
             android:id="@+id/imgDp"
             android:layout_width="44dp"
             android:layout_height="44dp"
+            android:layout_marginHorizontal="4dp"
             android:contentDescription="@string/app_name"
             android:src="@drawable/ic_avatar"
-            android:layout_marginHorizontal="4dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintStart_toEndOf="@id/btBack"
             app:layout_constraintTop_toTopOf="parent" />
@@ -43,20 +43,19 @@
             android:id="@+id/tvPartnerName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            app:layout_constraintStart_toEndOf="@id/imgDp"
-            android:text="HIMANSHU TOMER"
-            android:textColor="@color/fore"
             android:layout_marginStart="8dp"
+            android:textColor="@color/fore"
             android:textSize="20sp"
+            app:layout_constraintStart_toEndOf="@id/imgDp"
             app:layout_constraintTop_toTopOf="parent" />
+
         <TextView
             android:id="@+id/tvDetails"
             android:layout_width="0dp"
-            android:textColor="@color/fore"
             android:layout_height="wrap_content"
-            app:layout_constraintStart_toEndOf="@id/imgDp"
-            android:text="Online"
             android:layout_marginStart="8dp"
+            android:textColor="@color/fore"
+            app:layout_constraintStart_toEndOf="@id/imgDp"
             app:layout_constraintTop_toBottomOf="@id/tvPartnerName" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
@@ -69,18 +68,6 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/layTop" />
-
-
-    <ImageView
-        android:id="@+id/gifOnlineIndicator"
-        android:layout_width="64dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="-6dp"
-        android:contentDescription="@string/app_name"
-        android:rotation="180"
-        app:layout_constraintDimensionRatio="1"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
 
     <com.airbnb.lottie.LottieAnimationView
@@ -101,20 +88,6 @@
         app:lottie_rawRes="@raw/send"
         app:lottie_renderMode="automatic" />
 
-    <com.airbnb.lottie.LottieAnimationView
-        android:id="@+id/noNet"
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_margin="60dp"
-        android:visibility="gone"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintDimensionRatio="1"
-        app:layout_constraintTop_toTopOf="parent"
-        app:lottie_autoPlay="false"
-        app:lottie_loop="true"
-        app:lottie_rawRes="@raw/nowifi"
-        app:lottie_renderMode="automatic"
-        app:lottie_repeatMode="reverse" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/rvEmojiContainer"
@@ -171,17 +144,29 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent">
 
-            <ImageView
-                android:id="@+id/btImg"
+            <androidx.cardview.widget.CardView
                 android:layout_width="0dp"
                 android:layout_height="44dp"
-                android:contentDescription="@string/app_name"
-                android:padding="4dp"
-                android:src="@drawable/round_image_24"
+                app:cardCornerRadius="100dp"
+                android:id="@+id/tCard"
+                app:cardElevation="0dp"
+                app:cardBackgroundColor="@color/black"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintDimensionRatio="1"
-                app:layout_constraintStart_toStartOf="parent"
-                app:tint="@color/green" />
+                app:layout_constraintStart_toStartOf="parent">
+
+                <com.airbnb.lottie.LottieAnimationView
+                    android:id="@+id/btImg"
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:src="@drawable/ic_gifs"
+                    android:contentDescription="@string/app_name"
+                    app:lottie_autoPlay="true"
+                    app:lottie_loop="true"
+                    app:lottie_renderMode="automatic"
+                    app:lottie_repeatMode="restart" />
+            </androidx.cardview.widget.CardView>
+
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/replyLayout"
@@ -198,7 +183,7 @@
 
                 <TextView
                     android:id="@+id/tvRep"
-                    android:layout_width="match_parent"
+                    android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:maxLines="4"
                     android:paddingHorizontal="12dp"
@@ -207,6 +192,8 @@
                     android:textSize="18sp"
                     android:visibility="visible"
                     app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toEndOf="@id/imgReplyMedia"
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <ImageView
@@ -220,7 +207,7 @@
                     android:visibility="gone"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintDimensionRatio="1"
-                    app:layout_constraintStart_toStartOf="@id/tvRep"
+                    app:layout_constraintStart_toStartOf="parent"
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <ImageView
@@ -257,7 +244,7 @@
                 android:textColorHint="@color/hintCol"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toEndOf="@id/btImg" />
+                app:layout_constraintStart_toEndOf="@id/tCard" />
 
             <ImageView
                 android:id="@+id/btGallery"
@@ -334,22 +321,87 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintDimensionRatio="1"
         app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.26"
         app:lottie_autoPlay="false"
         app:lottie_loop="true"
         app:lottie_renderMode="automatic"
         app:lottie_repeatCount="1"
         app:lottie_repeatMode="restart" />
 
-    <ImageView
-        android:id="@+id/typIndi"
-        android:layout_width="64dp"
-        android:layout_height="0dp"
-        android:contentDescription="@string/app_name"
-        android:scaleX="0"
-        android:scaleY="0"
-        app:layout_constraintDimensionRatio="1"
+
+    <androidx.cardview.widget.CardView
+        android:id="@+id/contRelation"
+        android:layout_width="340dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="24dp"
+        android:visibility="gone"
+        app:cardBackgroundColor="@color/primary_light"
+        app:cardCornerRadius="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.12">
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="36dp">
+
+            <ImageView
+                android:id="@+id/imgDpCard"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:contentDescription="@string/app_name"
+                app:layout_constraintDimensionRatio="1"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintWidth_percent=".34" />
+
+            <TextView
+                android:id="@+id/tvPartnerNameCard"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:textColor="@color/black"
+                android:textSize="20sp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/imgDpCard" />
+
+            <TextView
+                android:id="@+id/tvStatusCard"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tvPartnerNameCard" />
+
+            <ImageView
+                android:id="@+id/btNeg"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_circle"
+                android:backgroundTint="@color/red_update"
+                android:contentDescription="@string/app_name"
+                app:layout_constraintEnd_toStartOf="@+id/btPositive"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@+id/tvStatusCard" />
+
+            <ImageView
+                android:id="@+id/btPositive"
+                android:layout_width="56dp"
+                android:layout_height="56dp"
+                android:background="@drawable/bg_circle"
+                android:backgroundTint="@color/green"
+                android:contentDescription="@string/app_name"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.5"
+                app:layout_constraintStart_toEndOf="@+id/btNeg"
+                app:layout_constraintTop_toBottomOf="@+id/tvStatusCard" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </androidx.cardview.widget.CardView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

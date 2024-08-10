@@ -3,23 +3,28 @@ package com.tomer.chitchat.room
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.tomer.chitchat.modals.states.MsgStatus
+import com.tomer.chitchat.modals.states.UiMsgModal
+import com.tomer.chitchat.modals.states.UiMsgModalBuilder
+import com.tomer.chitchat.utils.ConversionUtils
 
 @Entity(tableName = "messages")
 data class ModelRoomMessage(
     @PrimaryKey
     val id: Long,
     val replyId: Long,
-    val toUser: Long,
-    val fromUser: Long,
-    val msgText: String,
-    val repText : String,
+    val partnerId: String,
+    var msgText: String,
+    val repText: String,
 
     var msgStatus: MsgStatus,
     val msgType: MsgMediaType,
     val replyType: MsgMediaType,
 
-    val isSent:Boolean,
-    val isRep:Boolean,
-){
+    var mediaFileName: String?,
+    val replyMediaFileName: String?,
 
-}
+    val isSent: Boolean,
+    val isRep: Boolean,
+
+    val timeMillis: Long
+)

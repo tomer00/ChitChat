@@ -2,12 +2,12 @@ package com.tomer.chitchat.room
 
 import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.modals.states.UiMsgModal
+import com.tomer.chitchat.utils.EmojisHashingUtils
 
 class ModelRoomMessageBuilder {
     private var id: Long = 0
     private var replyId: Long = 0
-    private var toUser: Long = 0
-    private var fromUser: Long = 0
+    private var partnerId: String = ""
     private var msgText: String = ""
     private var repText: String = ""
     private var msgStatus: MsgStatus = MsgStatus.SENDING
@@ -17,12 +17,17 @@ class ModelRoomMessageBuilder {
     private var isRep: Boolean = false
 
     private var bytes: ByteArray? = null
-    private var repBytes: ByteArray?=null
+    private var repBytes: ByteArray? = null
+
+    private var mediaName: String? = null
+    private var replyMediaName: String? = null
+
+    private var timeText: String = ""
+    private var timeMillis: Long = System.currentTimeMillis()
 
     fun id(id: Long) = apply { this.id = id }
     fun replyId(id: Long) = apply { this.replyId = id }
-    fun toUser(toUser: Long) = apply { this.toUser = toUser }
-    fun fromUser(fromUser: Long) = apply { this.fromUser = fromUser }
+    fun setPartner(fromUser: String) = apply { this.partnerId = fromUser }
     fun msgText(msgText: String) = apply { this.msgText = msgText }
     fun repText(repText: String) = apply { this.repText = repText }
     fun msgStatus(msgStatus: MsgStatus) = apply { this.msgStatus = msgStatus }
@@ -30,22 +35,29 @@ class ModelRoomMessageBuilder {
     fun replyType(replyType: MsgMediaType) = apply { this.replyType = replyType }
     fun isSent(isSent: Boolean) = apply { this.isSent = isSent }
     fun isRep(isRep: Boolean) = apply { this.isRep = isRep }
-    fun setBytes(bytes: ByteArray) = apply { this.bytes = bytes }
-    fun setRepBytes(repBytes: ByteArray) = apply { this.repBytes = repBytes }
+    fun mediaFileName(fileName: String?) = apply { this.mediaName = fileName }
+    fun replyMediaFileName(fileName: String?) = apply { this.replyMediaName = fileName }
+    fun setBytes(bytes: ByteArray?) = apply { this.bytes = bytes }
+    fun setRepBytes(repBytes: ByteArray?) = apply { this.repBytes = repBytes }
+    fun setTimeText(time: String) = apply { this.timeText = time }
+    fun setTimeMillis(time: Long) = apply { this.timeMillis = time }
 
     fun build() = ModelRoomMessage(
         id = id,
-        replyId=replyId,
-        toUser = toUser,
-        fromUser = fromUser,
+        replyId = replyId,
+        partnerId = partnerId,
         msgText = msgText,
         repText = repText,
         msgStatus = msgStatus,
         msgType = msgType,
         replyType = replyType,
+        mediaFileName = mediaName,
+        replyMediaFileName = replyMediaName,
         isSent = isSent,
-        isRep = isRep
+        isRep = isRep,
+        timeMillis = timeMillis,
     )
+
     fun buildUI() = UiMsgModal(
         id = id,
         replyId = replyId,
@@ -54,12 +66,16 @@ class ModelRoomMessageBuilder {
         rep = repText,
         isSent = isSent,
         isReply = isRep,
+        timeText = timeText,
         msgType = msgType,
+        mediaFileName = mediaName,
+        replyMediaFileName = replyMediaName,
         replyType = replyType,
-        isDone = false,
-        isDDone = false,
-        isRetry = false,
+        isUploaded = !isSent,
+        isDownloaded = true,
+        isProg = true,
         bytes = bytes,
-        repBytes = repBytes
+        repBytes = repBytes,
+        isEmojiOnly = EmojisHashingUtils.isOnlyEmojis(msgText)
     )
 }

@@ -21,10 +21,12 @@ import com.tomer.chitchat.crypto.RepoCipher
 import com.tomer.chitchat.crypto.RoomCipherRepo
 import com.tomer.chitchat.notifications.AndroidNotificationService
 import com.tomer.chitchat.notifications.NotificationService
+import com.tomer.chitchat.repo.RepoMedia
 import com.tomer.chitchat.repo.RepoRelations
 import com.tomer.chitchat.repo.RepoStorage
 import com.tomer.chitchat.repo.impl.RepoFileStorage
 import com.tomer.chitchat.repo.impl.RepoRelationImpl
+import com.tomer.chitchat.repo.impl.RepoSavedMedia
 import com.tomer.chitchat.utils.Utils
 import dagger.Module
 import dagger.Provides
@@ -88,7 +90,7 @@ class HiltModules {
 
     @Provides
     @Singleton
-    fun provideRepoStorage(@ApplicationContext appContext: Context): RepoStorage = RepoFileStorage()
+    fun provideRepoStorage(@ApplicationContext appContext: Context): RepoStorage = RepoFileStorage(appContext)
 
     @Provides
     @Singleton
@@ -101,6 +103,10 @@ class HiltModules {
     @Provides
     @Singleton
     fun provideRepoCrypto(dao: Dao): RepoCipher = RoomCipherRepo(dao)
+
+    @Provides
+    @Singleton
+    fun provideRepoMedia(dao: Dao): RepoMedia = RepoSavedMedia(dao)
 
     //endregion REPOS
 

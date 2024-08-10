@@ -20,4 +20,4 @@
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
 
--keepclasseswithmembers class com.tomer.chitchat.retro.** { *; }
+-keepclasseswithmembers class retrofit2.**

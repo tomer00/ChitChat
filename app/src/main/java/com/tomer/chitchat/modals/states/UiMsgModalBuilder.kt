@@ -1,6 +1,8 @@
 package com.tomer.chitchat.modals.states
 
 import com.tomer.chitchat.room.MsgMediaType
+import com.tomer.chitchat.utils.ConversionUtils
+import com.tomer.chitchat.utils.EmojisHashingUtils
 
 class UiMsgModalBuilder {
     private var id: Long = 0
@@ -12,40 +14,56 @@ class UiMsgModalBuilder {
     private var isReply: Boolean = false
     private var msgType: MsgMediaType = MsgMediaType.TEXT
     private var replyType: MsgMediaType = MsgMediaType.TEXT
+    private var mediaName: String? = null
+    private var replyMediaName: String? = null
     private var isDone: Boolean = false
     private var isDDone: Boolean = false
-    private var isRetry: Boolean = false
+    private var isProg: Boolean = false
     private var bytes: ByteArray? = null
     private var repBytes: ByteArray? = null
+    private var timeText: String = ""
 
     fun id(id: Long) = apply { this.id = id }
-    fun replyId(replyId: Long) = apply { this.replyId = replyId }fun status(status: MsgStatus) = apply { this.status = status }
+    fun replyId(replyId: Long) = apply { this.replyId = replyId }
+    fun status(status: MsgStatus) = apply { this.status = status }
     fun setMsg(msg: String) = apply { this.msg = msg }
     fun setRep(rep: String) = apply { this.rep = rep }
-    fun isSent(isSent: Boolean) = apply { this.isSent = isSent }
+    fun isSent(isSent: Boolean) = apply {
+        this.isSent = isSent
+        isDone = !isSent
+        isDDone = isSent
+    }
+
     fun isReply(isReply: Boolean) = apply { this.isReply = isReply }
     fun msgType(msgType: MsgMediaType) = apply { this.msgType = msgType }
     fun replyType(replyType: MsgMediaType) = apply { this.replyType = replyType }
-    fun isDone(isDone: Boolean) = apply { this.isDone = isDone }
-    fun isDDone(isDDone: Boolean) = apply { this.isDDone = isDDone }
-    fun isRetry(isRetry: Boolean) = apply { this.isRetry = isRetry }
+    fun mediaFileName(fileName: String?) = apply { this.mediaName = fileName }
+    fun replyMediaFileName(fileName: String?) = apply { this.replyMediaName = fileName }
+    fun isUploaded(isDone: Boolean) = apply { this.isDone = isDone }
+    fun isDownloaded(isDDone: Boolean) = apply { this.isDDone = isDDone }
+    fun isProg(isRetry: Boolean) = apply { this.isProg = isRetry }
     fun bytes(bytes: ByteArray?) = apply { this.bytes = bytes }
     fun repBytes(repBytes: ByteArray?) = apply { this.repBytes = repBytes }
+    fun setTimeText(time: String) = apply { this.timeText = time }
 
-    fun build()= UiMsgModal(
+    fun build() = UiMsgModal(
         id = id,
         replyId = replyId,
         status = status,
         msg = msg,
         rep = rep,
+        timeText = timeText,
         isSent = isSent,
         isReply = isReply,
         msgType = msgType,
         replyType = replyType,
-        isDone = isDone,
-        isDDone = isDDone,
-        isRetry = isRetry,
+        isUploaded = isDone,
+        isDownloaded = isDDone,
+        isProg = isProg,
         bytes = bytes,
-        repBytes = repBytes
+        mediaFileName = mediaName,
+        replyMediaFileName = replyMediaName,
+        repBytes = repBytes,
+        isEmojiOnly = EmojisHashingUtils.isOnlyEmojis(msg)
     )
 }
