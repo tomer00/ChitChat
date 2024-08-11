@@ -1,7 +1,6 @@
 package com.tomer.chitchat.modals.states
 
 import com.tomer.chitchat.room.MsgMediaType
-import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.EmojisHashingUtils
 
 class UiMsgModalBuilder {

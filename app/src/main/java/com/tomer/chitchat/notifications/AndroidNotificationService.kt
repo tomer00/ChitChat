@@ -19,7 +19,6 @@ import com.bumptech.glide.request.transition.Transition
 import com.tomer.chitchat.R
 import com.tomer.chitchat.modals.states.UiMsgModal
 import com.tomer.chitchat.ui.activities.ChatActivity
-import com.tomer.chitchat.utils.Utils
 import com.tomer.chitchat.utils.Utils.Companion.getDpLink
 
 class AndroidNotificationService(

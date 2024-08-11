@@ -5,9 +5,9 @@ import android.view.ViewGroup
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
-import com.tomer.chitchat.modals.SamModal
 import com.tomer.chitchat.R
 import com.tomer.chitchat.databinding.SamRowBinding
+import com.tomer.chitchat.modals.SamModal
 
 class SampleAdap(private val clickLis: CallbackClick) : ListAdapter<SamModal, SampleAdap.SamHolder>(SamUtil()) {
 

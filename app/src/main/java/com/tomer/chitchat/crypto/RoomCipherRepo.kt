@@ -1,6 +1,5 @@
 package com.tomer.chitchat.crypto
 
-import android.util.Log
 import com.tomer.chitchat.room.Dao
 
 class RoomCipherRepo(

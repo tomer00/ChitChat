@@ -1,7 +1,6 @@
 package com.tomer.chitchat.notifications
 
 import android.util.Log
-import android.widget.Toast
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.google.gson.Gson
@@ -10,6 +9,7 @@ import com.tomer.chitchat.modals.states.FlowType
 import com.tomer.chitchat.repo.RepoMessages
 import com.tomer.chitchat.repo.RepoPersons
 import com.tomer.chitchat.repo.RepoRelations
+import com.tomer.chitchat.repo.RepoStorage
 import com.tomer.chitchat.retro.Api
 import com.tomer.chitchat.utils.MessageHandler
 import dagger.hilt.android.AndroidEntryPoint
@@ -42,6 +42,10 @@ class FirebaseNotificationReceiver : FirebaseMessagingService() {
     @Inject
     lateinit var cryptoService: CryptoService
 
+    @Inject
+    lateinit var repoStorage: RepoStorage
+
+
     override fun onNewToken(token: String) {
         super.onNewToken(token)
         CoroutineScope(Dispatchers.IO).launch {
@@ -55,9 +59,8 @@ class FirebaseNotificationReceiver : FirebaseMessagingService() {
 
     override fun onMessageReceived(message: RemoteMessage) {
         super.onMessageReceived(message)
-        Log.d("TAG--", "onMessageReceived: ${message.data}")
         CoroutineScope(Dispatchers.IO).launch {
-            MessageHandler(gson, repoMsgs, repoPersons, cryptoService, notificationService, repoRelations) { msg ->
+            MessageHandler(gson, repoMsgs, repoPersons, cryptoService, notificationService, repoRelations, repoStorage) { msg ->
                 Log.d("TAG--", "dfdfg: dfd$msg")
                 if (msg.type == FlowType.MSG) {
                     val msgmod = msg.data ?: return@MessageHandler
@@ -71,7 +74,11 @@ class FirebaseNotificationReceiver : FirebaseMessagingService() {
                     }
                 }
             }.apply {
-                handelMsg(message.data["data"] ?: "")
+                try {
+                    handelMsg(message.data["data"] ?: "")
+                } catch (e: Exception) {
+                    Log.e("TAG--", "onMessageReceived: ", e)
+                }
             }
         }
 

@@ -10,16 +10,12 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileFilter
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 import java.nio.charset.Charset
-import java.nio.charset.StandardCharsets
-import java.util.Arrays
-import java.util.stream.Collectors
 import javax.inject.Inject
 import kotlin.random.Random
 

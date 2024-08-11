@@ -4,8 +4,6 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
-import android.util.Log
-import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -110,7 +108,7 @@ class ChatAdapter(
             }
         } else {
             holder.b.mediaCont.visibility = View.VISIBLE
-            if (mod.msgType == MsgMediaType.GIF) Glide.with(context).asGif().load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true).into(holder.b.mediaImg)
+            if (mod.msgType == MsgMediaType.GIF) Glide.with(context).load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true).into(holder.b.mediaImg)
             else Glide.with(context).asBitmap().load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true).into(holder.b.mediaImg)
 
             holder.b.msgTv.visibility = View.GONE
@@ -146,7 +144,7 @@ class ChatAdapter(
 
     override fun getItemCount(): Int = chatItems.size
 
-    inner class ChatViewHolder(val b: MsgItemBinding, val callBack: ChatViewEvents) : RecyclerView.ViewHolder(b.root) {
+    inner class ChatViewHolder(val b: MsgItemBinding, private val callBack: ChatViewEvents) : RecyclerView.ViewHolder(b.root) {
         private val onCli = View.OnClickListener {
             when (it.id) {
                 b.btRet.id -> callBack.onChatItemUploadClicked(absoluteAdapterPosition)

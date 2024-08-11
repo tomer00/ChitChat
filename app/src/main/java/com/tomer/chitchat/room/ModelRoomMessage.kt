@@ -3,9 +3,6 @@ package com.tomer.chitchat.room
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.tomer.chitchat.modals.states.MsgStatus
-import com.tomer.chitchat.modals.states.UiMsgModal
-import com.tomer.chitchat.modals.states.UiMsgModalBuilder
-import com.tomer.chitchat.utils.ConversionUtils
 
 @Entity(tableName = "messages")
 data class ModelRoomMessage(

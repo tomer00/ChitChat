@@ -43,12 +43,26 @@ interface Api {
         @Field("toPhone") partnerNo: String,
     ): Response<String>
 
+    @FormUrlEncoded
+    @POST("/chat/check")
+    suspend fun checkForUpload(
+        @Field("uri") uri: String
+    ): Response<String>
+
     @Multipart
     @POST("/update/uploadImage")
     suspend fun uploadProfileImage(
         @Part file: MultipartBody.Part
     ): Response<String>
 
+
+    @Multipart
+    @POST("/upload")
+    suspend fun uploadMedia(
+        @Part file: MultipartBody.Part,
+        @Part("type") type: String,
+        @Part("uri") uri: String
+    ): Response<String>
 
 
 }

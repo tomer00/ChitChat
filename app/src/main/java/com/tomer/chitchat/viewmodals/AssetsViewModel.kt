@@ -9,14 +9,14 @@ import android.graphics.drawable.Drawable
 import android.media.ThumbnailUtils
 import android.net.Uri
 import android.provider.MediaStore
+import android.provider.OpenableColumns
 import android.util.Log
-import androidx.core.content.ContextCompat
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.bumptech.glide.Glide
+import com.bumptech.glide.request.RequestOptions
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import com.tomer.chitchat.R
 import com.tomer.chitchat.assets.RepoAssets
 import com.tomer.chitchat.modals.msgs.ModelMsgSocket
 import com.tomer.chitchat.modals.states.FlowType
@@ -33,7 +33,6 @@ import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.Utils
 import dagger.hilt.android.lifecycle.HiltViewModel
-import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -44,10 +43,9 @@ import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.toRequestBody
 import java.io.ByteArrayOutputStream
-import java.util.concurrent.locks.ReentrantLock
 import javax.inject.Inject
 import kotlin.coroutines.suspendCoroutine
-import kotlin.random.Random
+
 
 @HiltViewModel
 class AssetsViewModel @Inject constructor(
@@ -171,6 +169,20 @@ class AssetsViewModel @Inject constructor(
         }
     }
 
+    private fun Uri.getName(context: Context): String {
+        try {
+            val returnCursor = context.contentResolver.query(this, null, null, null, null)
+            val nameIndex = returnCursor!!.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+            returnCursor.moveToFirst()
+            val fileName = returnCursor.getString(nameIndex)
+            returnCursor.close()
+            return fileName
+        } catch (e: Exception) {
+            return ""
+        }
+    }
+
+
     fun uploadFile(
         toUser: String,
         mediaType: MsgMediaType,
@@ -182,6 +194,62 @@ class AssetsViewModel @Inject constructor(
     ) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
+
+                suspend fun handleUploaing(fileBytes: ByteArray, thumbBytes: ByteArray, fileNa: String? = null) {
+                    val builder = ModelRoomMessageBuilder()
+                    builder.id(tempId)
+                    builder.replyId(msg.replyId)
+                    builder.setPartner(toUser)
+                    builder.repText(msg.replyData)
+                    builder.msgType(msg.msgType)
+                    builder.replyType(msg.replyMsgType)
+                    builder.isSent(true)
+                    builder.setBytes(fileBytes)
+                    builder.isRep(msg.isReply)
+                    builder.setTimeMillis(msg.timeMillis)
+                    builder.setTimeText(ConversionUtils.millisToTimeText(msg.timeMillis))
+                    builder.replyMediaFileName(msg.replyMediaFileName)
+                    builder.setRepBytes(repBytes)
+
+                    val roomMsg = builder.build()
+                    builder.msgText("Uploading,-,${ConversionUtils.byteArrToBase64(thumbBytes)}")
+
+                    val fileName = fileNa ?: when (mediaType) {
+                        MsgMediaType.TEXT -> ""
+                        MsgMediaType.IMAGE -> getImageName(msg.timeMillis)
+                        MsgMediaType.GIF -> getGifName(msg.timeMillis)
+                        MsgMediaType.FILE -> {
+                            getDocumentName(msg.timeMillis)
+                        }
+
+                        MsgMediaType.VIDEO -> {
+                            getVideoName(msg.timeMillis)
+                        }
+                    }
+                    builder.mediaFileName(fileName)
+                    //sending Callback to activity to display img and loading
+                    created(MsgsFlowState.ChatMessageFlowState(builder.buildUI(), roomMsg.partnerId))
+
+                    repoStorage.saveBytesToFolder(msg.msgType, fileName, fileBytes)
+                    repoMsgs.addMsg(builder.build())
+
+                    Log.d("TAG--", "uploadFile: ${file.encodedPath}")
+                    repoMedia.saveMedia(ModalMediaUpload(file.encodedPath.toString(), fileName))
+
+                    var link = retro.checkForUpload(Utils.myPhone + file.encodedPath).body()
+                    if (link.isNullOrEmpty() || link == "false")
+                        link = uploadToServer(fileBytes, mediaType.name, Utils.myPhone + file.encodedPath, fileName)
+
+                    if (link == null) {
+                        flowEvents.emit(MsgsFlowState.IOFlowState(tempId, FlowType.UPLOAD_FAILS, toUser))
+                        return
+                    }
+
+                    builder.msgText("$link,-,${ConversionUtils.byteArrToBase64(thumbBytes)}")
+                    flowEvents.emit(MsgsFlowState.IOFlowState(msg.timeMillis, FlowType.UPLOAD_SUCCESS, toUser, builder.buildUI()))
+                    repoMsgs.addMsg(builder.build())
+                }
+
                 when (mediaType) {
                     MsgMediaType.TEXT -> {}
                     MsgMediaType.IMAGE -> {
@@ -189,71 +257,63 @@ class AssetsViewModel @Inject constructor(
                         val baos = ByteArrayOutputStream()
                         val baosT = ByteArrayOutputStream()
 
-                        val entry = repoMedia.getFileNameFromUri(uri = file.encodedPath.toString())
+                        val previousFile = repoMedia.getFileNameFromUri(uri = file.encodedPath.toString())
 
-                        val isFilePresent = repoStorage.isPresent(entry.toString(), mediaType)
-                        if (entry == null || !isFilePresent) {
+                        val isFilePresent = repoStorage.isPresent(previousFile.toString(), mediaType)
+                        if (previousFile == null || !isFilePresent) {
                             val bmp = getBmpUsingGlide(file, con) ?: return@withContext
                             val bmpThumb = getThumbBmpUsingGlide(file, con) ?: return@withContext
 
                             bmp.compress(Bitmap.CompressFormat.WEBP, 80, baos)
                             bmpThumb.compress(Bitmap.CompressFormat.WEBP, 20, baosT)
+                            handleUploaing(baos.toByteArray(), baosT.toByteArray())
                         } else {
-                            baos.write(repoStorage.getBytesFromFolder(mediaType, entry))
-
+                            baos.write(repoStorage.getBytesFromFolder(mediaType, previousFile))
                             try {
-                                val oldMsg = repoMsgs.getMsgFromFileName(entry)
+                                val oldMsg = repoMsgs.getMsgFromFileName(previousFile)
                                 baosT.write(ConversionUtils.base64ToByteArr(oldMsg!!.msgText.split(",-,")[1]))
+                                handleUploaing(baos.toByteArray(), baosT.toByteArray(), oldMsg.mediaFileName)
                             } catch (e: Exception) {
                                 val bmpThumb = getThumbBmpUsingGlide(file, con) ?: defBmp
                                 bmpThumb.compress(Bitmap.CompressFormat.WEBP, 20, baosT)
+                                handleUploaing(baos.toByteArray(), baosT.toByteArray())
                             }
                         }
 
-
-                        val builder = ModelRoomMessageBuilder()
-                        builder.id(tempId)
-                        builder.replyId(msg.replyId)
-                        builder.setPartner(toUser)
-                        builder.repText(msg.replyData)
-                        builder.msgType(msg.msgType)
-                        builder.replyType(msg.replyMsgType)
-                        builder.isSent(true)
-                        builder.setBytes(baos.toByteArray())
-                        builder.isRep(msg.isReply)
-                        builder.setTimeMillis(msg.timeMillis)
-                        builder.setTimeText(ConversionUtils.millisToTimeText(msg.timeMillis))
-                        builder.replyMediaFileName(msg.replyMediaFileName)
-                        builder.setRepBytes(repBytes)
-
-                        val roomMsg = builder.build()
-                        builder.msgText("Uploading,-,${ConversionUtils.byteArrToBase64(baosT.toByteArray())}")
-
-                        val fileName = getImageName(msg.timeMillis)
-                        builder.mediaFileName(fileName)
-                        created(MsgsFlowState.ChatMessageFlowState(builder.buildUI(), roomMsg.partnerId))
-
-                        repoStorage.saveBytesToFolder(msg.msgType, fileName, baos.toByteArray())
-                        repoMsgs.addMsg(builder.build())
-
-                        Log.d("TAG--", "uploadFile: ${file.encodedPath}")
-                        repoMedia.saveMedia(ModalMediaUpload(file.encodedPath.toString(), fileName))
-
-                        var link = retro.checkForUpload(Utils.myPhone + file.encodedPath).body()
-                        if (link.isNullOrEmpty() || link == "false")
-                            link = uploadToServer(baos.toByteArray(), mediaType.name, Utils.myPhone + file.encodedPath, fileName)
-
-                        if (link == null) {
-                            flowEvents.emit(MsgsFlowState.IOFlowState(tempId, FlowType.UPLOAD_FAILS, toUser))
-                            return@withContext
-                        }
-
-                        builder.msgText("$link,-,${ConversionUtils.byteArrToBase64(baosT.toByteArray())}")
-                        flowEvents.emit(MsgsFlowState.IOFlowState(msg.timeMillis, FlowType.UPLOAD_SUCCESS, toUser, builder.buildUI()))
-                        repoMsgs.addMsg(builder.build())
                     }
 
-                    MsgMediaType.GIF -> {}
+                    MsgMediaType.GIF -> {
+
+                        val baos = ByteArrayOutputStream()
+                        val baosT = ByteArrayOutputStream()
+
+                        val previousFile = repoMedia.getFileNameFromUri(uri = file.encodedPath.toString())
+                        if (repoStorage.isPresent(previousFile.toString(), mediaType)) {
+                            try {
+                                baos.write(repoStorage.getBytesFromFolder(mediaType, previousFile!!))
+                                val oldMsg = repoMsgs.getMsgFromFileName(previousFile)
+                                baosT.write(ConversionUtils.base64ToByteArr(oldMsg!!.msgText.split(",-,")[1]))
+                                handleUploaing(baos.toByteArray(), baosT.toByteArray(), oldMsg.mediaFileName)
+                            } catch (e: Exception) {
+                                val bmpThumb = getGifThumbBmpUsingGlide(file, con) ?: defBmp
+                                bmpThumb.compress(Bitmap.CompressFormat.WEBP, 20, baosT)
+                                handleUploaing(baos.toByteArray(), baosT.toByteArray())
+                            }
+                        } else {
+                            try {
+                                con.contentResolver.openInputStream(file).use {
+                                    it?.copyTo(baos)
+                                }
+                            } catch (_: Exception) {
+
+                            }
+                            val bmpThumb = getGifThumbBmpUsingGlide(file, con) ?: defBmp
+                            bmpThumb.compress(Bitmap.CompressFormat.WEBP, 20, baosT)
+                            handleUploaing(baos.toByteArray(), baosT.toByteArray())
+                        }
+
+                    }
+
                     MsgMediaType.FILE -> {}
                     MsgMediaType.VIDEO -> {}
                 }
@@ -261,14 +321,15 @@ class AssetsViewModel @Inject constructor(
         }
     }
 
-    fun downLoadFile(url: String, fileName: String, type: MsgMediaType, id: Long, fromUser: String) {
+    fun downLoadFile(url: String, fileName: String, type: MsgMediaType, id: Long, fromUser: String, onLoadBytes: (ByteArray) -> Unit) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
 
                 if (repoStorage.isPresent(fileName, type)) {
-                    val build = UiMsgModalBuilder()
-                    build.bytes(repoStorage.getBytesFromFolder(type, fileName))
-                    flowEvents.emit(MsgsFlowState.IOFlowState(id, FlowType.DOWNLOAD_SUCCESS, fromUser, build.build()))
+                    val byes = repoStorage.getBytesFromFolder(type, fileName)
+                    if (byes == null)
+                        flowEvents.emit(MsgsFlowState.IOFlowState(id, FlowType.DOWNLOAD_FAILS, fromUser))
+                    else onLoadBytes(byes)
                     return@withContext
                 }
 
@@ -296,7 +357,7 @@ class AssetsViewModel @Inject constructor(
     private fun getImageName(millis: Long) = "IMG_${ConversionUtils.millisToFullDateText(millis)}.webp"
     private fun getVideoName(millis: Long) = "VID_${ConversionUtils.millisToFullDateText(millis)}"
     private fun getDocumentName(millis: Long) = "DOC_${ConversionUtils.millisToFullDateText(millis)}"
-    private fun getGifName(millis: Long) = "GIF_${ConversionUtils.millisToFullDateText(millis)}"
+    private fun getGifName(millis: Long) = "GIF_${ConversionUtils.millisToFullDateText(millis)}.gif"
     //endregion UTILS
 
     private suspend fun uploadToServer(baos: ByteArray, type: String, uri: String, fileName: String): String? {
@@ -350,6 +411,33 @@ class AssetsViewModel @Inject constructor(
             Glide.with(con)
                 .asBitmap()
                 .load(uri)
+                .override(12)
+                .into(
+                    object : CustomTarget<Bitmap>() {
+                        override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                            continuation.resumeWith(Result.success(resource))
+                        }
+
+                        override fun onLoadFailed(errorDrawable: Drawable?) {
+                            super.onLoadFailed(errorDrawable)
+                            continuation.resumeWith(Result.success(null))
+                        }
+
+                        override fun onLoadCleared(placeholder: Drawable?) {
+                        }
+                    }
+                )
+        }
+    }
+
+    suspend fun getGifThumbBmpUsingGlide(uri: Uri, con: Context): Bitmap? {
+        return suspendCoroutine { continuation ->
+            Glide.with(con)
+                .asBitmap()
+                .load(uri)
+                .apply(
+                    RequestOptions().frame(0)
+                )
                 .override(12)
                 .into(
                     object : CustomTarget<Bitmap>() {

@@ -1,13 +1,9 @@
 package com.tomer.chitchat.crypto
 
 import android.util.Base64
-import android.util.Log
-import com.tomer.chitchat.utils.Utils
-import okio.ByteString.Companion.toByteString
 import java.io.InputStream
 import java.io.OutputStream
 import java.math.BigInteger
-import java.nio.charset.StandardCharsets
 import java.security.MessageDigest
 import javax.crypto.Cipher
 import javax.crypto.CipherInputStream

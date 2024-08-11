@@ -33,7 +33,6 @@ import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.MessageHandler
 import com.tomer.chitchat.utils.Utils
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -48,12 +47,8 @@ import okhttp3.Response
 import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 import java.math.BigInteger
-import java.time.Duration
 import java.util.LinkedList
-import java.util.concurrent.CopyOnWriteArrayList
 import javax.inject.Inject
-import kotlin.math.log
-import kotlin.random.Random
 
 @HiltViewModel
 class ChatViewModal @Inject constructor(
@@ -163,7 +158,6 @@ class ChatViewModal @Inject constructor(
     var isChatActivityVisible = false
 
     private val msgHandler = MessageHandler(gson, repoMsgs, repoPersons, cryptoService, notificationService, repoRelations, repoStorage) { msg ->
-        Log.d("TAG--", "dfdfg: dfd$msg")
 
         if (Utils.currentPartner?.partnerId.toString() == msg.fromUser) {
             if (!isChatActivityVisible)
@@ -290,6 +284,27 @@ class ChatViewModal @Inject constructor(
     }
 
     //region ACTIVITY COMM
+
+    fun updatePersonModel(mod: ModelMsgSocket) {
+        viewModelScope.launch {
+            val per = repoPersons.getPersonByPhone(Utils.currentPartner!!.partnerId) ?: return@launch
+            val lastMsg: String = when (mod.msgType) {
+                MsgMediaType.TEXT, MsgMediaType.FILE -> mod.msgData
+                MsgMediaType.IMAGE -> "IMAGE"
+                MsgMediaType.GIF -> "GIF"
+                MsgMediaType.VIDEO -> "VIDEO"
+
+            }
+            ModelRoomPersons(
+                phoneNo = per.phoneNo,
+                name = per.name,
+                mediaType = mod.msgType,
+                lastMsg = lastMsg,
+                timeMillis = mod.timeMillis,
+                unReadCount = per.unReadCount
+            ).also { repoPersons.insertPerson(it) }
+        }
+    }
 
     private fun ModelRoomMessage.toUI(): UiMsgModal {
         val builder = UiMsgModalBuilder()

@@ -2,7 +2,6 @@ package com.tomer.chitchat.ui.activities
 
 import com.tomer.chitchat.utils.ConversionUtils.assetsVM as vmAssets
 import com.tomer.chitchat.utils.ConversionUtils.chatVM as vm
-import android.R.attr.name
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.annotation.SuppressLint
@@ -29,9 +28,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
-import com.bumptech.glide.load.resource.gif.GifDrawable
 import com.bumptech.glide.request.RequestOptions
-import com.bumptech.glide.request.target.Target
 import com.tomer.chitchat.R
 import com.tomer.chitchat.adap.ChatAdapter
 import com.tomer.chitchat.adap.EmojiAdapter
@@ -47,7 +44,6 @@ import com.tomer.chitchat.modals.states.UiMsgModal
 import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.ui.views.MsgSwipeCon
 import com.tomer.chitchat.ui.views.MsgSwipeCon.SwipeCA
-import com.tomer.chitchat.ui.views.RichET
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.EmojisHashingUtils
 import com.tomer.chitchat.utils.Utils
@@ -75,10 +71,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                 .setDuration(220)
                 .start()
         }
-    }
-
-    private val call = RichET.keyCallBack { info->
-
     }
 
     private lateinit var ll: LinearLayoutManager
@@ -182,7 +174,10 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             return
         }
 
-
+        b.etMsg.setKeyboardInputCall { info ->
+            pickingMediaType = if (info.description.getMimeType(0).equals("image/gif")) MsgMediaType.GIF else MsgMediaType.IMAGE
+            sendMediaMsg(info.contentUri)
+        }
 
         adap = ChatAdapter(this, this, vm.chatMsgs)
         b.rvMsg.adapter = adap
@@ -392,10 +387,14 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         when (msg.type) {
             FlowType.MSG -> {
                 val msgL = msg.data ?: return
-                adap.addItem(msgL)
                 addedItemsSinceLast2Sec++
                 if (msgL.msgType != MsgMediaType.TEXT)
-                    vmAssets.downLoadFile(msgL.msg.split(",-,")[0], msgL.mediaFileName!!, msgL.msgType, msgL.id, Utils.currentPartner!!.partnerId)
+                    vmAssets.downLoadFile(msgL.msg.split(",-,")[0], msgL.mediaFileName!!, msgL.msgType, msgL.id, Utils.currentPartner!!.partnerId) {
+                        msgL.isDownloaded = true
+                        msgL.isProg = false
+                        msgL.bytes = it
+                    }
+                adap.addItem(msgL)
 
                 if (msg.data.isSent) return
 
@@ -478,9 +477,10 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                             vm.chatMsgs[i].bytes = msg.data!!.bytes
                             val b = getRvViewIfVisible(i) ?: return@runOnUiThread
                             animateTo0(b.rvProg)
-                            Glide.with(this).load(msg.data.bytes).transition(
-                                DrawableTransitionOptions.withCrossFade()
-                            ).into(b.mediaImg)
+                            Glide.with(this).load(msg.data.bytes)
+                                .transition(DrawableTransitionOptions.withCrossFade())
+                                .transform(RoundedCorners(12))
+                                .into(b.mediaImg)
                             break
                         }
                     }
@@ -634,7 +634,19 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
     override fun onChatItemDownloadClicked(pos: Int) {
         val mod = vm.chatMsgs[pos]
-        vmAssets.downLoadFile(mod.msg.split(",-,")[0], mod.mediaFileName!!, mod.msgType, mod.id, Utils.currentPartner!!.partnerId)
+        vmAssets.downLoadFile(mod.msg.split(",-,")[0], mod.mediaFileName!!, mod.msgType, mod.id, Utils.currentPartner!!.partnerId) {
+            runOnUiThread {
+                vm.chatMsgs[pos].isDownloaded = true
+                vm.chatMsgs[pos].isProg = false
+                vm.chatMsgs[pos].bytes = it
+                val b = getRvViewIfVisible(pos) ?: return@runOnUiThread
+                animateTo0(b.rvProg)
+                Glide.with(this).load(it)
+                    .transition(DrawableTransitionOptions.withCrossFade())
+                    .transform(RoundedCorners(12))
+                    .into(b.mediaImg)
+            }
+        }
         val b = getRvViewIfVisible(pos) ?: return
 
         animateTo0(b.btDRet)

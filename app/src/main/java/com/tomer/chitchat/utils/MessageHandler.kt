@@ -16,7 +16,6 @@ import com.tomer.chitchat.room.ModelRoomMessageBuilder
 import com.tomer.chitchat.room.ModelRoomPersonRelation
 import com.tomer.chitchat.room.ModelRoomPersons
 import com.tomer.chitchat.room.MsgMediaType
-import kotlin.jvm.Throws
 
 class MessageHandler(
     private val gson: Gson,
