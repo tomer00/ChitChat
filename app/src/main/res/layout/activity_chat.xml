@@ -345,6 +345,7 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
+            android:animateLayoutChanges="true"
             android:layout_height="wrap_content"
             android:padding="36dp">
 
@@ -364,6 +365,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:textColor="@color/black"
+                android:fontFamily="@font/galindo"
                 android:textSize="20sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -379,22 +381,31 @@
 
             <ImageView
                 android:id="@+id/btNeg"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
                 android:background="@drawable/bg_circle"
                 android:backgroundTint="@color/red_update"
                 android:contentDescription="@string/app_name"
+                android:padding="16dp"
+                android:layout_marginTop="20dp"
+                android:src="@drawable/cross"
+                app:layout_constraintBottom_toBottomOf="@+id/btPositive"
                 app:layout_constraintEnd_toStartOf="@+id/btPositive"
                 app:layout_constraintHorizontal_bias="0.5"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/tvStatusCard" />
 
-            <ImageView
+            <com.airbnb.lottie.LottieAnimationView
                 android:id="@+id/btPositive"
                 android:layout_width="56dp"
                 android:layout_height="56dp"
+                app:lottie_rawRes="@raw/tick"
                 android:background="@drawable/bg_circle"
                 android:backgroundTint="@color/green"
+                android:layout_marginTop="16dp"
+                app:lottie_autoPlay="true"
+                app:lottie_repeatCount="-1"
+                app:lottie_repeatMode="reverse"
                 android:contentDescription="@string/app_name"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.5"

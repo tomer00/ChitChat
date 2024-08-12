@@ -4,7 +4,6 @@ import com.tomer.chitchat.modals.rv.PersonModel
 import com.tomer.chitchat.repo.RepoPersons
 import com.tomer.chitchat.room.Dao
 import com.tomer.chitchat.room.ModelRoomPersons
-import java.util.Optional
 
 class RepoPersonRoom(
     private val room: Dao

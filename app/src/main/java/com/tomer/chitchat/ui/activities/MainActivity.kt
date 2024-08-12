@@ -4,8 +4,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
-import android.os.SystemClock
-import android.util.Log
 import android.view.View
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -20,15 +18,16 @@ import com.tomer.chitchat.R
 import com.tomer.chitchat.adap.AdapPerson
 import com.tomer.chitchat.databinding.ActivityMainBinding
 import com.tomer.chitchat.databinding.BarcodeDiaBinding
+import com.tomer.chitchat.databinding.MsgItemBinding
+import com.tomer.chitchat.modals.states.FlowType
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.Utils
 import com.tomer.chitchat.viewmodals.AssetsViewModel
 import com.tomer.chitchat.viewmodals.ChatViewModal
 import com.tomer.chitchat.viewmodals.MainViewModal
 import dagger.hilt.android.AndroidEntryPoint
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlin.concurrent.thread
 
 
 @AndroidEntryPoint
@@ -55,7 +54,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             finish()
             return
         }
-        Utils.myPhone = FirebaseAuth.getInstance().currentUser?.phoneNumber ?: ""
+        Utils.myPhone = FirebaseAuth.getInstance().currentUser?.phoneNumber?.substring(3) ?: ""
 
         ConversionUtils.chatVM = chatVm
         ConversionUtils.assetsVM = assetsVM
@@ -70,6 +69,32 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         viewModal.persons.observe(this) {
             adapter.submitList(it)
         }
+        lifecycleScope.launch {
+            chatVm.flowMsgs.collectLatest {
+                runOnUiThread {
+                    when (it.type) {
+                        FlowType.MSG -> {}
+                        FlowType.SERVER_REC -> {}
+                        FlowType.PARTNER_REC -> {}
+                        FlowType.TYPING -> {}
+                        FlowType.NO_TYPING -> {}
+                        FlowType.ONLINE -> {}
+                        FlowType.OFFLINE -> {}
+                        FlowType.ACCEPT_REQ -> {}
+                        FlowType.REJECT_REQ -> {}
+                        FlowType.INCOMING_NEW_CONNECTION_REQUEST -> viewModal.loadPersons()
+                        FlowType.OPEN_NEW_CONNECTION_ACTIVITY -> startActivity(
+                            Intent(this@MainActivity, ChatActivity::class.java)
+                                .apply {
+                                    putExtra("phone", it.fromUser)
+                                }
+                        )
+
+                        else -> {}
+                    }
+                }
+            }
+        }
     }
 
     override fun onResume() {
@@ -80,6 +105,11 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     override fun onDestroy() {
         super.onDestroy()
         chatVm.closeWebSocket()
+    }
+
+    override fun onBackPressed() {
+        super.onBackPressed()
+        finishAffinity()
     }
 
     override fun onClick(v: View) {

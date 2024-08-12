@@ -1,9 +1,7 @@
 package com.tomer.chitchat.repo
 
 import com.tomer.chitchat.modals.rv.PersonModel
-import com.tomer.chitchat.repo.impl.RepoPersonRoom
 import com.tomer.chitchat.room.ModelRoomPersons
-import java.util.Optional
 
 interface RepoPersons {
 

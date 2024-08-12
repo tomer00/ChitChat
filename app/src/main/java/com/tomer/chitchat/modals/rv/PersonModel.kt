@@ -9,5 +9,6 @@ data class PersonModel(
     val lastDate:String,
     val lastMsg:String,
     var isSelected : Boolean,
-    val unreadCount : Int = 0
+    val unreadCount : Int = 0,
+    val isOnline : Boolean
 )

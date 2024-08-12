@@ -1,7 +1,7 @@
 package com.tomer.chitchat.modals.states
 
+import com.tomer.chitchat.utils.Utils
 import java.io.File
-import kotlin.reflect.typeOf
 
 sealed class MsgsFlowState(
     val fromUser: String,
@@ -25,7 +25,7 @@ sealed class MsgsFlowState(
         MsgsFlowState(type = ioType, fromUser = fromUserC, msgId = millis)
 
     data class ChangeGif(val file: File? = null, val modelMessage: UiMsgModal? = null, val typeF: FlowType = FlowType.CHANGE_GIF) :
-        MsgsFlowState(fromUser = "", type = typeF, fileGif = file, data = modelMessage)
+        MsgsFlowState(fromUser = Utils.currentPartner?.partnerId.toString(), type = typeF, fileGif = file, data = modelMessage)
 
 }
 

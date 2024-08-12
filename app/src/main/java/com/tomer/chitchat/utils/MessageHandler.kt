@@ -111,10 +111,7 @@ class MessageHandler(
                     val per = repoPersons.getPersonByPhone(fromUser) ?: return
                     val lastMsg: String = when (mod.msgType) {
                         MsgMediaType.TEXT, MsgMediaType.FILE -> mod.msgData
-                        MsgMediaType.IMAGE -> "IMAGE"
-                        MsgMediaType.GIF -> "GIF"
-                        MsgMediaType.VIDEO -> "VIDEO"
-
+                        MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO -> mod.mediaFileName ?: mod.msgType.name
                     }
                     ModelRoomPersons(
                         phoneNo = per.phoneNo,
@@ -122,7 +119,8 @@ class MessageHandler(
                         mediaType = mod.msgType,
                         lastMsg = lastMsg,
                         timeMillis = mod.timeMillis,
-                        unReadCount = per.unReadCount + 1
+                        unReadCount = per.unReadCount + 1,
+                        lastSeenMillis = per.lastSeenMillis
                     ).also { repoPersons.insertPerson(it) }
 
                 } catch (e: Exception) {
@@ -150,13 +148,21 @@ class MessageHandler(
             "*-TYP-*" -> callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.TYPING, fromUser))
             "*N-TYP*" -> callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.NO_TYPING, fromUser))
 
-            "*-ONL-*" -> callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.ONLINE, fromUser))
+            "*-ONL-*" -> {
+                callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.ONLINE, fromUser))
+                val per = repoPersons.getPersonByPhone(fromUser) ?: throw Exception()
+                per.lastSeenMillis = -1L
+                repoPersons.insertPerson(per)
+            }
+
             "*OFF-L*" -> {
                 try {
-                    val per = repoPersons.getPersonByPhone(fromUser)
-                    per!!.timeMillis = text.substring(17).toLong()
-                    callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.OFFLINE, fromUser, per.timeMillis))
-                } catch (_: Exception) {
+                    val per = repoPersons.getPersonByPhone(fromUser) ?: throw Exception()
+                    per.lastSeenMillis = text.substring(17).toLong()
+                    callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.OFFLINE, fromUser, per.lastSeenMillis))
+                    repoPersons.insertPerson(per)
+                } catch (e: Exception) {
+                    Log.e("TAG--", "handelMsg: ", e)
                     callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.OFFLINE, fromUser, System.currentTimeMillis()))
                 }
             }
@@ -175,12 +181,19 @@ class MessageHandler(
                     ModelRoomPersons(
                         fromUser, sts[1],
                         MsgMediaType.TEXT, "",
-                        System.currentTimeMillis()
+                        System.currentTimeMillis(),
+                        lastSeenMillis = System.currentTimeMillis()
                     )
                 )
+                callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.INCOMING_NEW_CONNECTION_REQUEST, fromUser, System.currentTimeMillis()))
             }
 
             "*F-ACC*" -> {
+                if (repoPersons.getPersonByPhone(fromUser) == null) {
+                    callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.SEND_NEW_CONNECTION_REQUEST, fromUser))
+                    return
+                }
+
                 val sts = text.substring(17).split(",-,".toRegex(), 2)
                 crypto.updateKeyAndGenerateFullKey(sts[0], fromUser)
                 repoRelation.saveRelation(
@@ -192,7 +205,8 @@ class MessageHandler(
                     ModelRoomPersons(
                         fromUser, sts[1],
                         MsgMediaType.TEXT, "",
-                        System.currentTimeMillis()
+                        System.currentTimeMillis(),
+                        lastSeenMillis = System.currentTimeMillis()
                     )
                 )
                 callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.ACCEPT_REQ, fromUser))

@@ -64,5 +64,9 @@ interface Api {
         @Part("uri") uri: String
     ): Response<String>
 
+    @FormUrlEncoded
+    @POST("/chat/name")
+    suspend fun getName(phone: String): Response<String>
+
 
 }

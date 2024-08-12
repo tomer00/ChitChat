@@ -1,6 +1,5 @@
 package com.tomer.chitchat.modals.msgs
 
-import android.util.Log
 import com.tomer.chitchat.utils.Utils
 
 abstract class Message(
