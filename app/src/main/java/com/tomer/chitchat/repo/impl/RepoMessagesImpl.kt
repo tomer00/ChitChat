@@ -1,6 +1,5 @@
 package com.tomer.chitchat.repo.impl
 
-import android.util.Log
 import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.repo.RepoMessages
 import com.tomer.chitchat.room.Dao

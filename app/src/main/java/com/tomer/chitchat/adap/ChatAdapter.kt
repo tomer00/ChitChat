@@ -169,7 +169,7 @@ class ChatAdapter(
     //region COMMU
 
     fun addItem(msg: UiMsgModal) {
-        chatItems.add(0, msg)
+        chatItems.addFirst(msg)
         notifyItemInserted(0)
     }
 

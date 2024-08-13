@@ -47,6 +47,12 @@ class RepoFileStorage @Inject constructor(
         }
     }
 
+    override fun getFileFromFolder(type: MsgMediaType, fileName: String): File? {
+        val file = File(folder, "/$type/$fileName")
+        return if (!file.exists()) null
+        else file
+    }
+
     override fun getBytesOfVideoThumb(mediaFileName: String): ByteArray? {
         val file = File(folder, "/VideoThumbs/$mediaFileName")
         if (!file.exists()) return null

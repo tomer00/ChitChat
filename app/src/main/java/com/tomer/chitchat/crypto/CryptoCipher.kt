@@ -81,7 +81,11 @@ class CryptoCipher(
         val localSecKey = getKeySpecForPhone(phone) ?: return null
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
         cipher.init(Cipher.DECRYPT_MODE, localSecKey, CipherUtils.ivSpecProvider)
-        return String(cipher.doFinal(Base64.decode(data, Base64.DEFAULT)))
+        return try {
+            String(cipher.doFinal(Base64.decode(data, Base64.DEFAULT)))
+        } catch (_: Exception) {
+            null
+        }
     }
 
 

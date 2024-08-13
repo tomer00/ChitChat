@@ -47,8 +47,9 @@ class MessageHandler(
                 try {
                     val mod = gson.fromJson(actualDecData, ModelMsgSocket::class.java)
                     Log.d("TAG--", "handelMsg: $mod")
+                    val currentId = ConversionUtils.fromBase64(text.substring(17, 29))
                     builderRoom
-                        .id(ConversionUtils.fromBase64(text.substring(17, 29)))
+                        .id(currentId)
                         .isRep(mod.isReply)
                         .msgType(mod.msgType)
                         .setPartner(fromUser)
@@ -110,14 +111,15 @@ class MessageHandler(
 
                     val per = repoPersons.getPersonByPhone(fromUser) ?: return
                     val lastMsg: String = when (mod.msgType) {
-                        MsgMediaType.TEXT, MsgMediaType.FILE -> mod.msgData
-                        MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO -> mod.mediaFileName ?: mod.msgType.name
+                        MsgMediaType.TEXT, MsgMediaType.EMOJI -> mod.msgData
+                        MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> mod.mediaFileName ?: mod.msgType.name
                     }
                     ModelRoomPersons(
                         phoneNo = per.phoneNo,
                         name = per.name,
                         mediaType = mod.msgType,
                         lastMsg = lastMsg,
+                        lastMsgId = currentId,
                         timeMillis = mod.timeMillis,
                         unReadCount = per.unReadCount + 1,
                         lastSeenMillis = per.lastSeenMillis
@@ -135,6 +137,20 @@ class MessageHandler(
                 repoMsg.updateMsg(tempId, newId)
                 repoMsg.updateMsgReceived(newId, MsgStatus.SENT_TO_SERVER)
                 callBack(MsgsFlowState.MsgStatusFlowState(newId, tempId, FlowType.SERVER_REC, fromUser))
+
+
+                val per = repoPersons.getPersonByPhone(fromUser) ?: return
+                if (per.lastMsgId == tempId)
+                    ModelRoomPersons(
+                        phoneNo = per.phoneNo,
+                        name = per.name,
+                        mediaType = per.mediaType,
+                        lastMsg = per.lastMsg,
+                        lastMsgId = newId,
+                        timeMillis = per.timeMillis,
+                        unReadCount = per.unReadCount,
+                        lastSeenMillis = per.lastSeenMillis
+                    ).also { repoPersons.insertPerson(it) }
             }
 
             "*ACK-PR" -> {
@@ -149,8 +165,8 @@ class MessageHandler(
             "*N-TYP*" -> callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.NO_TYPING, fromUser))
 
             "*-ONL-*" -> {
+                val per = repoPersons.getPersonByPhone(fromUser) ?: return
                 callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.ONLINE, fromUser))
-                val per = repoPersons.getPersonByPhone(fromUser) ?: throw Exception()
                 per.lastSeenMillis = -1L
                 repoPersons.insertPerson(per)
             }
@@ -180,7 +196,7 @@ class MessageHandler(
                 repoPersons.insertPerson(
                     ModelRoomPersons(
                         fromUser, sts[1],
-                        MsgMediaType.TEXT, "",
+                        MsgMediaType.TEXT, "", -1L,
                         System.currentTimeMillis(),
                         lastSeenMillis = System.currentTimeMillis()
                     )
@@ -204,12 +220,12 @@ class MessageHandler(
                 repoPersons.insertPerson(
                     ModelRoomPersons(
                         fromUser, sts[1],
-                        MsgMediaType.TEXT, "",
+                        MsgMediaType.TEXT, "", -1L,
                         System.currentTimeMillis(),
                         lastSeenMillis = System.currentTimeMillis()
                     )
                 )
-                callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.ACCEPT_REQ, fromUser))
+                callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.REQ_ACCEPTED, fromUser))
             }
 
             "*F-REJ*" -> {
@@ -218,7 +234,7 @@ class MessageHandler(
                         fromUser, fromUser, isConnSent = true, isAccepted = false, isRejected = true
                     )
                 )
-                callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.REJECT_REQ, fromUser))
+                callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.REQ_REJECTED, fromUser))
             }
         }
     }

@@ -130,16 +130,16 @@
                     app:layout_constraintTop_toTopOf="parent"
                     app:tint="@color/white" />
 
-                <ImageView
+                <com.airbnb.lottie.LottieAnimationView
                     android:id="@+id/imgBarcode"
                     android:layout_width="40dp"
                     android:layout_height="40dp"
                     android:background="@drawable/bg_circle"
-                    android:backgroundTint="@color/primary"
+                    android:backgroundTint="@color/white"
                     android:contentDescription="@string/app_name"
-                    android:padding="8dp"
-                    android:src="@drawable/ic_barcode"
-                    app:tint="@color/white"
+                    app:lottie_rawRes="@raw/qr"
+                    app:lottie_repeatCount="-1"
+                    app:lottie_repeatMode="reverse"
                     app:layout_constraintBottom_toBottomOf="@+id/btConnect"
                     app:layout_constraintEnd_toStartOf="@+id/btConnect"
                     app:layout_constraintStart_toStartOf="parent"
@@ -168,7 +168,6 @@
         android:id="@+id/rvPersons"
         android:layout_width="match_parent"
         android:layout_height="0dp"
-        app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/topBar"
         tools:listitem="@layout/row_person" />

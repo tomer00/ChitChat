@@ -150,7 +150,7 @@
                 app:cardCornerRadius="100dp"
                 android:id="@+id/tCard"
                 app:cardElevation="0dp"
-                app:cardBackgroundColor="@color/black"
+                app:cardBackgroundColor="@color/softBg"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintDimensionRatio="1"
                 app:layout_constraintStart_toStartOf="parent">
@@ -159,7 +159,6 @@
                     android:id="@+id/btImg"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
-                    android:src="@drawable/ic_gifs"
                     android:contentDescription="@string/app_name"
                     app:lottie_autoPlay="true"
                     app:lottie_loop="true"

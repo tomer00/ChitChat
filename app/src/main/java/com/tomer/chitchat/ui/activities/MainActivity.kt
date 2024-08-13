@@ -1,26 +1,44 @@
 package com.tomer.chitchat.ui.activities
 
+import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.graphics.Bitmap
 import android.graphics.drawable.ColorDrawable
+import android.graphics.drawable.Drawable
 import android.os.Bundle
+import android.util.Log
 import android.view.View
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.lifecycleScope
+import androidx.recyclerview.widget.LinearLayoutManager
+import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
+import com.bumptech.glide.request.target.CustomTarget
+import com.bumptech.glide.request.transition.Transition
 import com.google.firebase.auth.FirebaseAuth
 import com.journeyapps.barcodescanner.BarcodeCallback
 import com.journeyapps.barcodescanner.CompoundBarcodeView
+import com.karumi.dexter.Dexter
+import com.karumi.dexter.PermissionToken
+import com.karumi.dexter.listener.PermissionDeniedResponse
+import com.karumi.dexter.listener.PermissionGrantedResponse
+import com.karumi.dexter.listener.PermissionRequest
+import com.karumi.dexter.listener.single.PermissionListener
 import com.tomer.chitchat.R
 import com.tomer.chitchat.adap.AdapPerson
 import com.tomer.chitchat.databinding.ActivityMainBinding
 import com.tomer.chitchat.databinding.BarcodeDiaBinding
-import com.tomer.chitchat.databinding.MsgItemBinding
+import com.tomer.chitchat.databinding.RowPersonBinding
 import com.tomer.chitchat.modals.states.FlowType
+import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
+import com.tomer.chitchat.utils.EmojisHashingUtils
 import com.tomer.chitchat.utils.Utils
 import com.tomer.chitchat.viewmodals.AssetsViewModel
 import com.tomer.chitchat.viewmodals.ChatViewModal
@@ -39,10 +57,13 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     private val assetsVM: AssetsViewModel by viewModels()
 
     private val adapter by lazy { AdapPerson(this, this) }
+    private lateinit var ll: LinearLayoutManager
 
     private val qrDia by lazy { crQr() }
     private lateinit var barcodeView: CompoundBarcodeView
     private val callback by lazy { callBack() }
+
+    private var activityLife = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,27 +84,170 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             imgBarcode.setOnClickListener(this@MainActivity)
             imgFab.setOnClickListener(this@MainActivity)
             btCross.setOnClickListener(this@MainActivity)
-            rvPersons.adapter = adapter
         }
+
+        ll = LinearLayoutManager(this@MainActivity)
+        b.rvPersons.layoutManager = ll
+        b.rvPersons.adapter = adapter
 
         viewModal.persons.observe(this) {
             adapter.submitList(it)
         }
         lifecycleScope.launch {
-            chatVm.flowMsgs.collectLatest {
+            assetsVM.flowEvents.collectLatest {
                 runOnUiThread {
                     when (it.type) {
-                        FlowType.MSG -> {}
-                        FlowType.SERVER_REC -> {}
-                        FlowType.PARTNER_REC -> {}
-                        FlowType.TYPING -> {}
-                        FlowType.NO_TYPING -> {}
-                        FlowType.ONLINE -> {}
-                        FlowType.OFFLINE -> {}
-                        FlowType.ACCEPT_REQ -> {}
-                        FlowType.REJECT_REQ -> {}
-                        FlowType.INCOMING_NEW_CONNECTION_REQUEST -> viewModal.loadPersons()
-                        FlowType.OPEN_NEW_CONNECTION_ACTIVITY -> startActivity(
+                        FlowType.SHOW_BIG_GIF -> if (activityLife) {
+                            val b = getRvViewIfVisible(it.fromUser) ?: return@runOnUiThread
+                            b.imgLottie.visibility = View.VISIBLE
+                            Glide.with(this@MainActivity)
+                                .asGif()
+                                .load(it.fileGif!!)
+                                .skipMemoryCache(true)
+                                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                                .into(b.imgLottie)
+                        }
+
+                        FlowType.SHOW_BIG_JSON -> if (activityLife) {
+                            val b = getRvViewIfVisible(it.fromUser) ?: return@runOnUiThread
+                            try {
+                                b.imgLottie.visibility = View.VISIBLE
+                                b.imgLottie.setAnimationFromJson(it.data!!.msg, it.data.mediaFileName)
+                                b.imgLottie.playAnimation()
+                            } catch (_: Exception) {
+                            }
+                        }
+
+                        else -> {}
+                    }
+                }
+            }
+        }
+        lifecycleScope.launch {
+            chatVm.flowMsgs.collectLatest {
+                runOnUiThread {
+                    Log.d("TAG--", "Main Activity Handle msg : $it")
+                    when (it.type) {
+                        FlowType.MSG -> if (activityLife && it.data != null) {
+
+                            val lastMsg: String = when (it.data.msgType) {
+                                MsgMediaType.TEXT, MsgMediaType.EMOJI -> it.data.msg
+                                MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> it.data.mediaFileName ?: it.data.msgType.name
+                            }
+                            val b = getRvViewIfVisible(it.fromUser) ?: return@runOnUiThread
+                            b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.fore))
+                            b.tvLastMsg.text = lastMsg.also { b.tvLastMsg.tag = it }
+                            b.tvUnreadMsgCount.text = b.tvUnreadMsgCount.text.toString().toInt().plus(1).toString()
+
+                            when (it.data.msgType) { //more work to be done
+                                MsgMediaType.TEXT, MsgMediaType.EMOJI -> b.msgType.visibility = View.GONE
+                                MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> b.msgType.visibility = View.VISIBLE
+                            }
+
+                            when (it.data.msgType) {
+                                MsgMediaType.IMAGE, MsgMediaType.GIF -> {
+                                    val byes = assetsVM.getBytesOfFile(it.data.msgType, it.data.mediaFileName.toString())
+                                    Glide.with(this@MainActivity)
+                                        .load(byes ?: AdapPerson.getByteArr(it.data.msg.split(",-,")[1]))
+                                        .skipMemoryCache(true)
+                                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                                        .into(b.imgLottie)
+                                }
+
+                                MsgMediaType.FILE -> {
+                                    b.imgLottie.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, AdapPerson.getDrawableId(lastMsg)))
+                                }
+
+                                MsgMediaType.VIDEO -> {
+                                    Glide.with(this@MainActivity)
+                                        .asBitmap()
+                                        .load(AdapPerson.getByteArr(it.data.msg.split(",-,")[1]))
+                                        .skipMemoryCache(true)
+                                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                                        .into(
+                                            object : CustomTarget<Bitmap>() {
+                                                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                                                    val b1 = getRvViewIfVisible(it.fromUser) ?: return
+                                                    b1.imgLottie.setImageBitmap(resource)
+                                                }
+
+                                                override fun onLoadCleared(placeholder: Drawable?) {
+                                                }
+
+                                                override fun onLoadFailed(errorDrawable: Drawable?) {
+                                                    val b1 = getRvViewIfVisible(it.fromUser) ?: return
+                                                    b1.imgLottie.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_video))
+                                                }
+                                            }
+                                        )
+                                }
+
+                                MsgMediaType.EMOJI -> {
+                                    val nameGoogleJson = EmojisHashingUtils.googleJHash[ConversionUtils.encode(it.data.msg)]
+                                    if (!nameGoogleJson.isNullOrEmpty()) {
+                                        assetsVM.showGoogleJsonViaFlow(nameGoogleJson, it.fromUser)
+                                        return@runOnUiThread
+                                    }
+
+                                    val nameJson = EmojisHashingUtils.jHash[ConversionUtils.encode(it.data.msg)]
+                                    if (!nameJson.isNullOrEmpty()) {
+                                        assetsVM.showJsonViaFlow(nameJson, it.fromUser)
+                                        return@runOnUiThread
+                                    }
+
+                                    val nameGif = EmojisHashingUtils.gHash[ConversionUtils.encode(it.data.msg)]
+                                    if (!nameGif.isNullOrEmpty()) {
+                                        assetsVM.showGifViaFlow(nameGif, it.fromUser)
+                                        return@runOnUiThread
+                                    }
+
+                                    val nameTeleGif = EmojisHashingUtils.teleHash[ConversionUtils.encode(it.data.msg)]
+                                    if (!nameTeleGif.isNullOrEmpty()) {
+                                        assetsVM.showTeleGifViaFlow(nameTeleGif, it.fromUser)
+                                        return@runOnUiThread
+                                    }
+                                }
+
+                                else -> {}
+                            }
+
+                        }
+
+                        FlowType.SERVER_REC -> {
+                            val old = adapter.currentList.find { t -> t.lastMsgId == (it.oldId ?: -2L) } ?: return@runOnUiThread
+                            old.lastMsgId = it.msgId ?: old.lastMsgId
+                        }
+
+                        FlowType.TYPING -> {
+                            val b = getRvViewIfVisible(it.fromUser) ?: return@runOnUiThread
+                            b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.primary))
+                            "Typing...".also { b.tvLastMsg.text = it }
+                        }
+
+                        FlowType.NO_TYPING -> {
+                            val b = getRvViewIfVisible(it.fromUser) ?: return@runOnUiThread
+                            if (b.tvLastMsg.text == "Typing...") {
+                                b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.fore))
+                                b.tvLastMsg.text = b.tvLastMsg.tag.toString()
+                            }
+                        }
+
+                        FlowType.SEND_NEW_CONNECTION_REQUEST -> {
+                            chatVm.connectNew(it.fromUser, false)
+                        }
+
+
+                        FlowType.INCOMING_NEW_CONNECTION_REQUEST -> if (activityLife) viewModal.loadPersons(adapter.currentList)
+                        FlowType.ONLINE,
+                        FlowType.OFFLINE -> if (activityLife) {
+                            val b = getRvViewIfVisible(it.fromUser) ?: return@runOnUiThread
+                            b.onlineIndi.visibility =
+                                if (it.type == FlowType.OFFLINE) View.GONE
+                                else View.VISIBLE
+                        }
+
+
+                        FlowType.OPEN_NEW_CONNECTION_ACTIVITY -> if (activityLife) startActivity(
                             Intent(this@MainActivity, ChatActivity::class.java)
                                 .apply {
                                     putExtra("phone", it.fromUser)
@@ -97,14 +261,31 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         }
     }
 
+    private fun getRvViewIfVisible(phone: String): RowPersonBinding? {
+        val list = adapter.currentList
+        for (i in list.indices) {
+            if (list[i].phoneNo == phone) {
+                val view = ll.findViewByPosition(i) ?: return null
+                return RowPersonBinding.bind(view)
+            }
+        }
+        return null
+    }
+
     override fun onResume() {
         super.onResume()
-        viewModal.loadPersons()
+        activityLife = true
+        viewModal.loadPersons(adapter.currentList)
     }
 
     override fun onDestroy() {
         super.onDestroy()
         chatVm.closeWebSocket()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        activityLife = false
     }
 
     override fun onBackPressed() {
@@ -119,11 +300,32 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                     qrDia.show()
                     barcodeView.resume()
                     barcodeView.decodeSingle(callback)
-                } else requestPermissions(arrayOf("CAMERA"), 100)
+                } else {
+                    Dexter.withContext(this)
+                        .withPermission(
+                            Manifest.permission.CAMERA
+                        )
+                        .withListener(object : PermissionListener {
+                            override fun onPermissionGranted(p0: PermissionGrantedResponse?) {
+                                qrDia.show()
+                                barcodeView.resume()
+                                barcodeView.decodeSingle(callback)
+                            }
+
+                            override fun onPermissionDenied(p0: PermissionDeniedResponse?) {
+                                Toast.makeText(this@MainActivity, "Please Provide with Camera Permission...", Toast.LENGTH_SHORT).show()
+                            }
+
+                            override fun onPermissionRationaleShouldBeShown(p0: PermissionRequest?, p1: PermissionToken?) {
+                            }
+
+                        }).check()
+                }
             }
 
             b.imgFab.id -> {
                 b.layNewNumber.visibility = View.VISIBLE
+                b.imgBarcode.playAnimation()
                 b.imgFab.visibility = View.GONE
             }
 
@@ -135,13 +337,15 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                     b.etNewNumber.error = "Enter Valid Number"
                     return
                 }
-                chatVm.connectNew(b.etNewNumber.text.toString())
+                chatVm.connectNew(b.etNewNumber.text.toString(), true)
                 b.layNewNumber.visibility = View.GONE
+                b.imgBarcode.pauseAnimation()
                 b.imgFab.visibility = View.VISIBLE
             }
 
             b.btCross.id -> {
                 b.layNewNumber.visibility = View.GONE
+                b.imgBarcode.pauseAnimation()
                 b.imgFab.visibility = View.VISIBLE
             }
         }
@@ -191,13 +395,14 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         barcodeView.pause()
         qrDia.dismiss()
         if (!result.text.isDigitsOnly()) return@BarcodeCallback
-        chatVm.connectNew(result.text)
+        chatVm.connectNew(result.text, true)
         b.layNewNumber.visibility = View.GONE
+        b.imgBarcode.pauseAnimation()
         b.imgFab.visibility = View.VISIBLE
     }
 
     private fun checkPermission(): Boolean {
-        val result = ContextCompat.checkSelfPermission(this, "CAMERA")
+        val result = ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA)
         return result == PackageManager.PERMISSION_GRANTED
     }
 

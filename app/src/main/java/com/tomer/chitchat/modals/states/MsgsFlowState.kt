@@ -24,8 +24,8 @@ sealed class MsgsFlowState(
     data class PartnerEventsFlowState(val ioType: FlowType, val fromUserC: String, val millis: Long? = null) :
         MsgsFlowState(type = ioType, fromUser = fromUserC, msgId = millis)
 
-    data class ChangeGif(val file: File? = null, val modelMessage: UiMsgModal? = null, val typeF: FlowType = FlowType.CHANGE_GIF) :
-        MsgsFlowState(fromUser = Utils.currentPartner?.partnerId.toString(), type = typeF, fileGif = file, data = modelMessage)
+    data class ChangeGif(val file: File? = null, val modelMessage: UiMsgModal? = null, val typeF: FlowType = FlowType.CHANGE_GIF,val phone:String) :
+        MsgsFlowState(fromUser = phone, type = typeF, fileGif = file, data = modelMessage)
 
 }
 

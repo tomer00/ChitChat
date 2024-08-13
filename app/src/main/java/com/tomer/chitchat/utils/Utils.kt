@@ -1,7 +1,10 @@
 package com.tomer.chitchat.utils
 
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.graphics.Bitmap
+import android.view.View
+import android.view.inputmethod.InputMethodManager
 import com.tomer.chitchat.room.ModelRoomPersonRelation
 import kotlin.math.min
 import kotlin.math.pow
@@ -42,6 +45,12 @@ class Utils {
 
             // Create a new Bitmap by cropping the original Bitmap
             return Bitmap.createBitmap(this, x, y, width, width)
+        }
+
+        fun Activity.hideKeyBoard() {
+            val imm = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+            val v = currentFocus ?: View(this)
+            imm.hideSoftInputFromWindow(v.windowToken, 0)
         }
     }
 

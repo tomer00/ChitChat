@@ -1,7 +1,6 @@
 package com.tomer.chitchat.repo.impl
 
 import android.content.Context
-import android.util.Log
 import com.tomer.chitchat.repo.RepoUtils
 
 class RepoUtilImpl(

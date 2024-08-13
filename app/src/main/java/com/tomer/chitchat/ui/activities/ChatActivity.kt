@@ -64,7 +64,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
     private lateinit var adap: ChatAdapter
     private val emojiAdap by lazy {
         EmojiAdapter {
-            sendTextMessage(EmojisHashingUtils.emojiList[it])
+            sendTextMessage(EmojisHashingUtils.emojiList[it], true)
             b.replyLayout.visibility = View.GONE
             b.rvEmojiContainer.animate()
                 .x(b.rvEmojiContainer.width.toFloat())
@@ -79,14 +79,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
     private val options by lazy {
         RequestOptions().apply {
-            placeholder(R.drawable.round_image_24)
             transform(RoundedCorners(12))
             override(60)
         }
     }
     private val roundOptions by lazy {
         RequestOptions().apply {
-            placeholder(R.drawable.ic_received)
             transform(RoundedCorners(60))
             override(60)
         }
@@ -143,9 +141,15 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        if (!intent.hasExtra("phone")) {
+            finish()
+            return
+        }
         window.statusBarColor = ContextCompat.getColor(this, R.color.softBg)
         setContentView(b.root)
 
+        vm.openChat(intent.getStringExtra("phone")!!)
         //QUEUE SERVICE EXECUTOR
         lifecycleScope.launch {
             while (true) {
@@ -167,14 +171,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             }
         }
 
-        if (intent.hasExtra("phone")) {
-            vm.openChat(intent.getStringExtra("phone")!!)
-        } else {
-            finish()
-            return
-        }
-
         b.etMsg.setKeyboardInputCall { info ->
+            if (b.contRelation.visibility == View.VISIBLE) return@setKeyboardInputCall
             pickingMediaType = if (info.description.getMimeType(0).equals("image/gif")) MsgMediaType.GIF else MsgMediaType.IMAGE
             sendMediaMsg(info.contentUri)
         }
@@ -209,6 +207,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             }
         })
         b.btImg.setOnClickListener {
+            if (b.contRelation.visibility == View.VISIBLE) return@setOnClickListener
             if (emojiAdap.currentList.isEmpty()) {
                 b.rvEmojiContainer.x = b.rvEmojiContainer.width.toFloat()
                 b.rvEmoji.adapter = emojiAdap
@@ -231,9 +230,11 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                 .start()
         }
         b.btSend.setOnClickListener {
+            if (b.contRelation.visibility == View.VISIBLE) return@setOnClickListener
             b.btSend.playAnimation()
             val msgText = b.etMsg.text.toString().trim().ifEmpty { return@setOnClickListener }
-            sendTextMessage(msgText)
+
+            sendTextMessage(msgText, isOnlyEmoji(msgText))
             b.etMsg.setText("")
             b.replyLayout.visibility = View.GONE
         }
@@ -241,7 +242,9 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             b.replyLayout.visibility = View.GONE
         }
         b.btGallery.setOnClickListener {
+            if (b.contRelation.visibility == View.VISIBLE) return@setOnClickListener
             b.btGallery.isClickable = false
+            pickingMediaType = MsgMediaType.IMAGE
             mediaPicker.launch(
                 PickVisualMediaRequest.Builder()
                     .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly)
@@ -253,7 +256,11 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             btBack.setOnClickListener {
                 super.onBackPressed()
             }
-            tvPartnerName.text = Utils.currentPartner!!.partnerName
+            tvPartnerName.text = Utils.currentPartner!!.partnerName.ifEmpty { Utils.currentPartner!!.partnerId }
+            if (Utils.currentPartner!!.isAccepted)
+                vm.showLastSeen()
+
+
 
             Glide.with(this@ChatActivity)
                 .asBitmap()
@@ -269,7 +276,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                 .circleCrop()
                 .load(Utils.currentPartner!!.partnerId.getDpLink())
                 .into(imgDpCard)
-            tvPartnerNameCard.text = Utils.currentPartner!!.partnerName
+            tvPartnerNameCard.text = Utils.currentPartner!!.partnerName.ifEmpty { Utils.currentPartner!!.partnerId }
 
             if (Utils.currentPartner!!.isConnSent) {
 
@@ -286,8 +293,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                 return@apply
             }
 
-            if (Utils.currentPartner!!.isRejected) {
-
+            if (Utils.currentPartner!!.isRejected && Utils.currentPartner!!.isConnSent) {
                 return@apply
             }
             "sending you connection request\nDo you also want to connect?"
@@ -299,10 +305,9 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             btNeg.setOnClickListener {
                 vm.acceptConnection(false)
                 contRelation.visibility = View.GONE
+                finish()
             }
         }
-
-
 
         lifecycleScope.launch {
             vmAssets.flowEvents.collectLatest {
@@ -325,7 +330,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
     }
 
-    private fun sendTextMessage(text: String) {
+    private fun sendTextMessage(text: String, isOnlyEmoji: Boolean) {
         val msgB = ModelMsgSocket.Builder()
         msgB.isReply(b.replyLayout.visibility == View.VISIBLE)
         msgB.setTimeMillis(System.currentTimeMillis())
@@ -335,6 +340,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             msgB.replyData(currentReplyMsgData!!.msg)
             msgB.replyMediaFileName(currentReplyMsgData!!.mediaFileName.toString())
         }
+        msgB.msgType(if (isOnlyEmoji) MsgMediaType.EMOJI else MsgMediaType.TEXT)
         msgB.msgData(text)
         vm.sendChatMsg(
             msgB.build(),
@@ -365,6 +371,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             }
         }
         b.replyLayout.visibility = View.GONE
+        vm.updatePersonModel(msgB.build(), tempId)
     }
 
     private fun handleMsgStatusAnimation(serverRec: Boolean, id: Long?) {
@@ -384,11 +391,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
     private fun handleFlow(msg: MsgsFlowState) {
         Log.d("TAG--", "handleFlow: CAHT ACTVITz $msg")
+        if (msg.fromUser != Utils.currentPartner!!.partnerId) return
         when (msg.type) {
             FlowType.MSG -> {
                 val msgL = msg.data ?: return
                 addedItemsSinceLast2Sec++
-                if (msgL.msgType != MsgMediaType.TEXT)
+                if (msgL.msgType != MsgMediaType.TEXT && msgL.msgType != MsgMediaType.EMOJI)
                     vmAssets.downLoadFile(msgL.msg.split(",-,")[0], msgL.mediaFileName!!, msgL.msgType, msgL.id, Utils.currentPartner!!.partnerId) {
                         msgL.isDownloaded = true
                         msgL.isProg = false
@@ -397,6 +405,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                 adap.addItem(msgL)
 
                 if (msg.data.isSent) return
+                if (msg.data.msgType != MsgMediaType.EMOJI) return
 
 
                 val nameGoogleJson = EmojisHashingUtils.googleJHash[ConversionUtils.encode(msgL.msg)]
@@ -522,7 +531,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                 }
             }
 
-
             FlowType.TYPING -> "Typing...".also { b.tvDetails.text = it }
 
             FlowType.NO_TYPING -> {
@@ -544,15 +552,61 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                 adap.notifyDataSetChanged()
             }
 
-            FlowType.CHANGE_GIF -> {
-                lifecycleScope.launch {
-                    delay(120)
-                    if (msg.data!!.msg.isEmpty()) return@launch
-                    b.btImg.setAnimationFromJson(msg.data.msg, msg.data.mediaFileName)
-                    b.btImg.playAnimation()
+            FlowType.SEND_NEW_CONNECTION_REQUEST -> {
+                vm.connectNew(msg.fromUser, false)
+                finish()
+            }
+
+            FlowType.REQ_ACCEPTED -> {
+                runOnUiThread {
+                    b.contRelation.visibility = View.GONE
+                    vm.openChat(msg.fromUser)
                 }
-                b.btImg.animate().scaleY(0f).scaleX(0f).setDuration(120).start()
-                b.btImg.animate().scaleY(1f).scaleX(1f).setStartDelay(120).setDuration(120).start()
+            }
+
+            FlowType.INCOMING_NEW_CONNECTION_REQUEST -> {
+                runOnUiThread {
+                    b.apply {
+                        contRelation.visibility = View.VISIBLE
+                        Glide.with(this@ChatActivity)
+                            .asBitmap()
+                            .circleCrop()
+                            .load(Utils.currentPartner!!.partnerId.getDpLink())
+                            .into(imgDpCard)
+                        tvPartnerNameCard.text = Utils.currentPartner!!.partnerName.ifEmpty { Utils.currentPartner!!.partnerId }
+
+                        "sending you connection request\nDo you also want to connect?"
+                            .also { tvStatusCard.text = it }
+                        btPositive.setOnClickListener {
+                            vm.acceptConnection(true)
+                            contRelation.visibility = View.GONE
+                        }
+                        btNeg.visibility = View.VISIBLE
+                        btNeg.setOnClickListener {
+                            vm.acceptConnection(false)
+                            contRelation.visibility = View.GONE
+                            finish()
+                        }
+                    }
+                }
+            }
+
+            FlowType.CHANGE_GIF -> {
+                runOnUiThread {
+                    b.tCard.animate().apply {
+                        scaleY(0f)
+                        scaleX(0f)
+                        setDuration(120)
+                        start()
+                    }
+                    b.tCard.animate().scaleY(1f).scaleX(1f).setStartDelay(120).setDuration(120).start()
+                    lifecycleScope.launch {
+                        delay(120)
+                        if (msg.data!!.msg.isEmpty()) return@launch
+                        b.btImg.setAnimationFromJson(msg.data.msg, msg.data.mediaFileName)
+                        b.btImg.playAnimation()
+                    }
+                }
             }
 
             FlowType.SHOW_BIG_JSON -> {
@@ -587,6 +641,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         return MsgItemBinding.bind(view)
     }
 
+    private fun isOnlyEmoji(text: String): Boolean {
+        return (EmojisHashingUtils.googleJHash.containsKey(ConversionUtils.encode(text))
+                || EmojisHashingUtils.jHash.containsKey(ConversionUtils.encode(text))
+                || EmojisHashingUtils.gHash.containsKey(ConversionUtils.encode(text))
+                || EmojisHashingUtils.teleHash.containsKey(ConversionUtils.encode(text)))
+    }
 
     private fun startTimer() {
         if (!isTimer) vm.sendMsg(Typing())
@@ -667,7 +727,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         b.apply {
             replyLayout.visibility = View.VISIBLE
             when (mod.msgType) {
-                MsgMediaType.TEXT -> {
+                MsgMediaType.TEXT, MsgMediaType.EMOJI -> {
                     tvRep.text = mod.msg
                     imgReplyMedia.visibility = View.GONE
                 }

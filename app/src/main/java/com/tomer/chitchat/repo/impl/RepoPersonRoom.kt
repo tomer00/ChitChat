@@ -8,8 +8,8 @@ import com.tomer.chitchat.room.ModelRoomPersons
 class RepoPersonRoom(
     private val room: Dao
 ) : RepoPersons {
-    override suspend fun getAllPersons(): List<PersonModel> {
-        return room.getMainViewList().map { it.toPersonModel() }
+    override suspend fun getAllPersons(): List<ModelRoomPersons> {
+        return room.getMainViewList()
     }
 
     override suspend fun insertPerson(personRoom: ModelRoomPersons) {

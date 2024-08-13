@@ -5,7 +5,7 @@ import com.tomer.chitchat.room.ModelRoomPersons
 
 interface RepoPersons {
 
-    suspend fun getAllPersons():List<PersonModel>
+    suspend fun getAllPersons():List<ModelRoomPersons>
     suspend fun insertPerson(personRoom: ModelRoomPersons)
     suspend fun deletePerson(personRoom: ModelRoomPersons)
     suspend fun updatePerson(personRoom: ModelRoomPersons)

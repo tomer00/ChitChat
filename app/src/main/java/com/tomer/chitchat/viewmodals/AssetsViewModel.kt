@@ -64,13 +64,13 @@ class AssetsViewModel @Inject constructor(
             while (isActive) {
                 delay(20000)
                 val l = repoAssets.getRandomJson()
-                flowEvents.emit(MsgsFlowState.ChangeGif(null, l))
+                flowEvents.emit(MsgsFlowState.ChangeGif(null, l, phone = Utils.currentPartner?.partnerId.toString()))
             }
         }
     }
 
     private fun getBmpFromDrawable(): Bitmap {
-        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888);
+        val bitmap = Bitmap.createBitmap(100, 100, Bitmap.Config.ARGB_8888)
         val canvas = Canvas(bitmap)
         canvas.drawText("Chit Chat", 0f, 0f, Paint().apply {
             color = Color.CYAN
@@ -81,44 +81,44 @@ class AssetsViewModel @Inject constructor(
 
     //region BIG JSON
 
-    fun showJsonViaFlow(nameJson: String) {
+    fun showJsonViaFlow(nameJson: String, fromUser: String = Utils.currentPartner?.partnerId.toString()) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val r = repoAssets.getLottieJson(nameJson) ?: return@withContext
                 val builder = UiMsgModalBuilder()
                 builder.setMsg(r)
                 builder.mediaFileName(nameJson)
-                flowEvents.emit(MsgsFlowState.ChangeGif(null, builder.build(), FlowType.SHOW_BIG_JSON))
+                flowEvents.emit(MsgsFlowState.ChangeGif(null, builder.build(), FlowType.SHOW_BIG_JSON, fromUser))
             }
         }
     }
 
-    fun showGoogleJsonViaFlow(nameJson: String) {
+    fun showGoogleJsonViaFlow(nameJson: String, fromUser: String = Utils.currentPartner?.partnerId.toString()) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val r = repoAssets.getGoogleLottieJson(nameJson) ?: return@withContext
                 val builder = UiMsgModalBuilder()
                 builder.setMsg(r)
                 builder.mediaFileName(nameJson)
-                flowEvents.emit(MsgsFlowState.ChangeGif(null, builder.build(), FlowType.SHOW_BIG_JSON))
+                flowEvents.emit(MsgsFlowState.ChangeGif(null, builder.build(), FlowType.SHOW_BIG_JSON, fromUser))
             }
         }
     }
 
-    fun showGifViaFlow(nameGif: String) {
+    fun showGifViaFlow(nameGif: String, fromUser: String = Utils.currentPartner?.partnerId.toString()) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val r = repoAssets.getGifFile(nameGif) ?: return@withContext
-                flowEvents.emit(MsgsFlowState.ChangeGif(r, typeF = FlowType.SHOW_BIG_GIF))
+                flowEvents.emit(MsgsFlowState.ChangeGif(r, typeF = FlowType.SHOW_BIG_GIF, phone = fromUser))
             }
         }
     }
 
-    fun showTeleGifViaFlow(nameGif: String) {
+    fun showTeleGifViaFlow(nameGif: String, fromUser: String = Utils.currentPartner?.partnerId.toString()) {
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 val r = repoAssets.getGifTelemoji(ConversionUtils.encode(nameGif)) ?: return@withContext
-                flowEvents.emit(MsgsFlowState.ChangeGif(r, typeF = FlowType.SHOW_BIG_GIF))
+                flowEvents.emit(MsgsFlowState.ChangeGif(r, typeF = FlowType.SHOW_BIG_GIF, phone = fromUser))
             }
         }
     }
@@ -126,7 +126,7 @@ class AssetsViewModel @Inject constructor(
     fun getGifNow() {
         viewModelScope.launch {
             val l = repoAssets.getRandomJson()
-            flowEvents.emit(MsgsFlowState.ChangeGif(null, l))
+            flowEvents.emit(MsgsFlowState.ChangeGif(null, l, phone = Utils.currentPartner?.partnerId.toString()))
         }
     }
 
@@ -215,7 +215,7 @@ class AssetsViewModel @Inject constructor(
                     builder.msgText("Uploading,-,${ConversionUtils.byteArrToBase64(thumbBytes)}")
 
                     val fileName = fileNa ?: when (mediaType) {
-                        MsgMediaType.TEXT -> ""
+                        MsgMediaType.TEXT,MsgMediaType.EMOJI -> ""
                         MsgMediaType.IMAGE -> getImageName(msg.timeMillis)
                         MsgMediaType.GIF -> getGifName(msg.timeMillis)
                         MsgMediaType.FILE -> {
@@ -251,7 +251,7 @@ class AssetsViewModel @Inject constructor(
                 }
 
                 when (mediaType) {
-                    MsgMediaType.TEXT -> {}
+                    MsgMediaType.TEXT,MsgMediaType.EMOJI -> {}
                     MsgMediaType.IMAGE -> {
 
                         val baos = ByteArrayOutputStream()

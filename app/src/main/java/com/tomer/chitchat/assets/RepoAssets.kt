@@ -1,7 +1,6 @@
 package com.tomer.chitchat.assets
 
 import com.tomer.chitchat.modals.states.UiMsgModal
-import com.tomer.chitchat.room.MsgMediaType
 import java.io.File
 
 interface RepoAssets {

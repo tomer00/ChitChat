@@ -12,9 +12,8 @@ data class ModelRoomPersons(
     val name: String,
     val mediaType: MsgMediaType,
     val lastMsg: String,
+    val lastMsgId: Long,
     var timeMillis: Long,
     var unReadCount: Int = 0,
     var lastSeenMillis: Long
-) {
-    fun toPersonModel() = PersonModel(phoneNo, name, mediaType, ConversionUtils.millisToTimeText(timeMillis), lastMsg, false, unReadCount, lastSeenMillis == -1L)
-}
+)
