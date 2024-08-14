@@ -5,11 +5,11 @@ import java.io.File
 
 interface RepoAssets {
 
-    suspend fun getLottieJson(name: String): String?
-    suspend fun getGoogleLottieJson(nameJson: String): String?
+    suspend fun getLottieJson(name: String,sync:Boolean = false): String?
+    suspend fun getGoogleLottieJson(nameJson: String,sync:Boolean = false): String?
 
-    suspend fun getGifFile(name: String): File?
-    suspend fun getGifTelemoji(name: String): File?
+    suspend fun getGifFile(name: String,sync:Boolean = false): File?
+    suspend fun getGifTelemoji(name: String,sync:Boolean = false): File?
 
     suspend fun getRandomJson(): UiMsgModal
 

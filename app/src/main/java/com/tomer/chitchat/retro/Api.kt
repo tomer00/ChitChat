@@ -44,6 +44,13 @@ interface Api {
     ): Response<String>
 
     @FormUrlEncoded
+    @POST("/chat")
+    suspend fun sendAckBulk(
+        @Field("messageIds") msgIds: String,
+        @Field("toPhone") partnerNo: String,
+    ): Response<String>
+
+    @FormUrlEncoded
     @POST("/chat/check")
     suspend fun checkForUpload(
         @Field("uri") uri: String

@@ -7,6 +7,7 @@ import com.tomer.chitchat.modals.msgs.ModelMsgSocket
 import com.tomer.chitchat.modals.states.FlowType
 import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.modals.states.MsgsFlowState
+import com.tomer.chitchat.modals.states.UiMsgModalBuilder
 import com.tomer.chitchat.notifications.NotificationService
 import com.tomer.chitchat.repo.RepoMessages
 import com.tomer.chitchat.repo.RepoPersons
@@ -16,6 +17,7 @@ import com.tomer.chitchat.room.ModelRoomMessageBuilder
 import com.tomer.chitchat.room.ModelRoomPersonRelation
 import com.tomer.chitchat.room.ModelRoomPersons
 import com.tomer.chitchat.room.MsgMediaType
+import java.util.stream.Collectors
 
 class MessageHandler(
     private val gson: Gson,
@@ -38,7 +40,6 @@ class MessageHandler(
 
             //<(10)fromUser><(7)MSG_TYPE><RTT<DATA>>
             "*-MSG-*" -> {
-                val builderRoom = ModelRoomMessageBuilder()
                 val actualDecData = crypto.decString(fromUser, ConversionUtils.decode(text.substring(29)))
                 if (actualDecData == null) {
                     callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.SEND_NEW_CONNECTION_REQUEST, fromUser))
@@ -46,89 +47,11 @@ class MessageHandler(
                 }
                 try {
                     val mod = gson.fromJson(actualDecData, ModelMsgSocket::class.java)
-                    Log.d("TAG--", "handelMsg: $mod")
                     val currentId = ConversionUtils.fromBase64(text.substring(17, 29))
-                    builderRoom
-                        .id(currentId)
-                        .isRep(mod.isReply)
-                        .msgType(mod.msgType)
-                        .setPartner(fromUser)
-                        .msgStatus(MsgStatus.RECEIVED)
-                        .mediaFileName(mod.mediaFileName)
-                        .replyMediaFileName(mod.replyMediaFileName)
-                        .isSent(false)
-                        .setTimeMillis(mod.timeMillis)
-                        .setTimeText(ConversionUtils.millisToTimeText(mod.timeMillis))
-
-                    if (mod.isReply) {
-                        builderRoom
-                            .replyId(mod.replyId)
-                            .repText(mod.replyData)
-                            .replyType(mod.replyMsgType)
-
-                        if (mod.replyData.isNotEmpty())
-                            try {
-                                when (mod.replyMsgType) {
-                                    MsgMediaType.IMAGE, MsgMediaType.GIF -> {
-                                        builderRoom.setRepBytes(
-                                            repoStorage.getBytesFromFolder(mod.replyMsgType, mod.replyMediaFileName ?: "def")
-                                                ?: ConversionUtils.base64ToByteArr(mod.replyData.split(",-,")[1])
-                                        )
-                                    }
-
-                                    MsgMediaType.VIDEO -> builderRoom.setRepBytes(
-                                        repoStorage.getBytesOfVideoThumb(mod.replyMediaFileName ?: "def")
-                                            ?: ConversionUtils.base64ToByteArr(mod.replyData.split(",-,")[1])
-                                    )
-
-                                    else -> {}
-
-                                }
-                            } catch (_: Exception) {
-
-                            }
-
-                    }
-                    val roomMsg = builderRoom
-                        .msgText(mod.msgData)
-                        .build()
-                    repoMsg.addMsg(roomMsg)
-
-                    when (mod.msgType) {
-                        MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO -> {
-                            val sts = mod.msgData.split(",-,")
-                            try {
-                                builderRoom.msgText(mod.msgData)
-                                    .setBytes(ConversionUtils.base64ToByteArr(sts[1]))
-                            } catch (_: Exception) {
-                            }
-                        }
-
-                        else -> {}
-                    }
-
-                    callBack(MsgsFlowState.ChatMessageFlowState(builderRoom.buildUI(), fromUser))
-
-                    val per = repoPersons.getPersonByPhone(fromUser) ?: return
-                    val lastMsg: String = when (mod.msgType) {
-                        MsgMediaType.TEXT, MsgMediaType.EMOJI -> mod.msgData
-                        MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> mod.mediaFileName ?: mod.msgType.name
-                    }
-                    ModelRoomPersons(
-                        phoneNo = per.phoneNo,
-                        name = per.name,
-                        mediaType = mod.msgType,
-                        lastMsg = lastMsg,
-                        lastMsgId = currentId,
-                        timeMillis = mod.timeMillis,
-                        unReadCount = per.unReadCount + 1,
-                        lastSeenMillis = per.lastSeenMillis
-                    ).also { repoPersons.insertPerson(it) }
-
+                    handleMsgCombine(fromUser, currentId, mod, false)
                 } catch (e: Exception) {
                     Log.e("TAG--", "handelMsg: ", e)
                 }
-
             }
 
             "*ACK-SR" -> {
@@ -154,8 +77,7 @@ class MessageHandler(
             }
 
             "*ACK-PR" -> {
-                val id = text.substring(17)
-                val idL = id.toLong()
+                val idL = text.substring(17).toLong()
                 repoMsg.updateMsgReceived(idL, MsgStatus.RECEIVED)
                 callBack(MsgsFlowState.MsgStatusFlowState(idL, idL, FlowType.PARTNER_REC, fromUser))
 
@@ -183,6 +105,49 @@ class MessageHandler(
                 }
             }
 
+            "*MSG-B*" -> {
+                var isNeedToSendNewConn = false
+                val msgs = text.substring(17).split(",-,")
+                    .parallelStream()
+                    .map { item ->
+                        try {
+                            val id = ConversionUtils.fromBase64(item.substring(0, 12))
+                            val actualDecData = crypto.decString(fromUser, ConversionUtils.decode(item.substring(12)))
+                            if (actualDecData == null) isNeedToSendNewConn = true
+                            Pair(id, gson.fromJson(actualDecData, ModelMsgSocket::class.java))
+                        } catch (e: Exception) {
+                            isNeedToSendNewConn = true
+                            Pair(1L, ModelMsgSocket.Builder().setTimeMillis(0L).build())
+                        }
+                    }
+                if (isNeedToSendNewConn) {
+                    callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.SEND_NEW_CONNECTION_REQUEST, fromUser))
+                    return
+                }
+
+                val sorted = msgs.sorted { o1, o2 -> o1.second.timeMillis.compareTo(o2.second.timeMillis) }.collect(Collectors.toList())
+                val sb = StringBuilder()
+                sorted.forEach {
+                    sb.append(it.first)
+                    sb.append(',')
+                }
+                val uiB = UiMsgModalBuilder()
+                sb.deleteCharAt(sb.length-1)
+                uiB.setMsg(sb.toString())
+                callBack(MsgsFlowState.IOFlowState(0L, FlowType.SEND_BULK_REC, fromUser, uiB.build()))
+
+                for (i in sorted) handleMsgCombine(fromUser, i.first, i.second, true)
+                Log.d("TAG--", "Handeling BULK MSg: $sorted")
+            }
+
+            "ACK-PRB" -> {
+                text.substring(17).split(",")
+                    .forEach {
+                        val idL = it.toLong()
+                        repoMsg.updateMsgReceived(idL, MsgStatus.RECEIVED)
+                        callBack(MsgsFlowState.MsgStatusFlowState(idL, idL, FlowType.PARTNER_REC, fromUser))
+                    }
+            }
 
             "*-NEW-*" -> {
                 val sts = text.substring(17).split(",-,".toRegex(), 2)
@@ -236,6 +201,94 @@ class MessageHandler(
                 )
                 callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.REQ_REJECTED, fromUser))
             }
+        }
+    }
+
+    private suspend fun handleMsgCombine(fromUser: String, id: Long, mod: ModelMsgSocket, isBulk: Boolean) {
+        val builderRoom = ModelRoomMessageBuilder()
+        try {
+            Log.d("TAG--", "handelMsg: $mod")
+            builderRoom
+                .id(id)
+                .isRep(mod.isReply)
+                .msgType(mod.msgType)
+                .setPartner(fromUser)
+                .msgStatus(MsgStatus.RECEIVED)
+                .mediaFileName(mod.mediaFileName)
+                .replyMediaFileName(mod.replyMediaFileName)
+                .isSent(false)
+                .setTimeMillis(mod.timeMillis)
+                .setTimeText(ConversionUtils.millisToTimeText(mod.timeMillis))
+
+            if (mod.isReply) {
+                builderRoom
+                    .replyId(mod.replyId)
+                    .repText(mod.replyData)
+                    .replyType(mod.replyMsgType)
+
+                if (mod.replyData.isNotEmpty())
+                    try {
+                        when (mod.replyMsgType) {
+                            MsgMediaType.IMAGE, MsgMediaType.GIF -> {
+                                builderRoom.setRepBytes(
+                                    repoStorage.getBytesFromFolder(mod.replyMsgType, mod.replyMediaFileName ?: "def")
+                                        ?: ConversionUtils.base64ToByteArr(mod.replyData.split(",-,")[1])
+                                )
+                            }
+
+                            MsgMediaType.VIDEO -> builderRoom.setRepBytes(
+                                repoStorage.getBytesOfVideoThumb(mod.replyMediaFileName ?: "def")
+                                    ?: ConversionUtils.base64ToByteArr(mod.replyData.split(",-,")[1])
+                            )
+
+                            else -> {}
+
+                        }
+                    } catch (_: Exception) {
+
+                    }
+
+            }
+            val roomMsg = builderRoom
+                .msgText(mod.msgData)
+                .build()
+            repoMsg.addMsg(roomMsg)
+
+            when (mod.msgType) {
+                MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO -> {
+                    val sts = mod.msgData.split(",-,")
+                    try {
+                        builderRoom.msgText(mod.msgData)
+                            .setBytes(ConversionUtils.base64ToByteArr(sts[1]))
+                    } catch (_: Exception) {
+                    }
+                }
+
+                else -> {}
+            }
+
+            callBack(MsgsFlowState.ChatMessageFlowState(builderRoom.buildUI(), fromUser))
+            if (!isBulk) callBack(MsgsFlowState.IOFlowState(id, FlowType.SEND_PR, fromUser))
+
+
+            val per = repoPersons.getPersonByPhone(fromUser) ?: return
+            val lastMsg: String = when (mod.msgType) {
+                MsgMediaType.TEXT, MsgMediaType.EMOJI -> mod.msgData
+                MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> mod.mediaFileName ?: mod.msgType.name
+            }
+            ModelRoomPersons(
+                phoneNo = per.phoneNo,
+                name = per.name,
+                mediaType = mod.msgType,
+                lastMsg = lastMsg,
+                lastMsgId = id,
+                timeMillis = mod.timeMillis,
+                unReadCount = per.unReadCount + 1,
+                lastSeenMillis = per.lastSeenMillis
+            ).also { repoPersons.insertPerson(it) }
+
+        } catch (e: Exception) {
+            Log.e("TAG--", "handelMsg: ", e)
         }
     }
 }

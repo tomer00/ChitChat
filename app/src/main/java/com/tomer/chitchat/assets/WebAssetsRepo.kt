@@ -40,9 +40,10 @@ class WebAssetsRepo @Inject constructor(
             jsonAssets.mkdirs()
     }
 
-    override suspend fun getLottieJson(name: String): String? {
+    override suspend fun getLottieJson(name: String, sync: Boolean): String? {
         val f = File(jsonAssets, name)
         if (f.exists()) return readJson(f)
+        if (sync) return null
 
         val bytes = downLoadBytes("$jsonFilesBinLink$name?alt=media") ?: return null
         withContext(Dispatchers.IO) {
@@ -54,9 +55,10 @@ class WebAssetsRepo @Inject constructor(
         return String(bytes, Charset.defaultCharset())
     }
 
-    override suspend fun getGoogleLottieJson(nameJson: String): String? {
+    override suspend fun getGoogleLottieJson(nameJson: String, sync: Boolean): String? {
         val f = File(jsonAssets, nameJson)
         if (f.exists()) return readJson(f)
+        if (sync) return null
 
         val bytes = downLoadBytes("$googleJsonFilesBinLink$nameJson/lottie.json") ?: return null
         withContext(Dispatchers.IO) {
@@ -68,11 +70,12 @@ class WebAssetsRepo @Inject constructor(
         return String(bytes, Charset.defaultCharset())
     }
 
-    override suspend fun getGifFile(name: String): File? {
+    override suspend fun getGifFile(name: String, sync: Boolean): File? {
         val f = File(gifAssets, name)
         if (f.exists()) return f
+        if (sync) return null
 
-        val bytes = downLoadBytes("$gifFilesBinLink$name?alt=media") ?: return null
+        val bytes = downLoadBytes("$gifFilesBinLink$name.gif?alt=media") ?: return null
         withContext(Dispatchers.IO) {
             FileOutputStream(f).use {
                 it.write(bytes)
@@ -82,11 +85,11 @@ class WebAssetsRepo @Inject constructor(
         return f
     }
 
-    override suspend fun getGifTelemoji(name: String): File? {
+    override suspend fun getGifTelemoji(name: String, sync: Boolean): File? {
         val f = File(gifAssets, name)
         if (f.exists()) return f
-
-        val bytes = downLoadBytes("$telemojiFilesBinLink${ConversionUtils.decode(name)}") ?: return null
+        if (sync) return null
+        val bytes = downLoadBytes("$telemojiFilesBinLink${ConversionUtils.decode(name)}.webp") ?: return null
         withContext(Dispatchers.IO) {
             FileOutputStream(f).use {
                 it.write(bytes)

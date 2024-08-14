@@ -1,7 +1,7 @@
 package com.tomer.chitchat.adap
 
 import android.content.Context
-import android.graphics.Color
+import android.util.Log
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -10,10 +10,12 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.tomer.chitchat.R
 import com.tomer.chitchat.databinding.RowPersonBinding
 import com.tomer.chitchat.modals.rv.PersonModel
-import com.tomer.chitchat.utils.Utils
+import com.tomer.chitchat.room.MsgMediaType
+import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.Utils.Companion.getDpLink
 
 class AdapPerson(
@@ -31,25 +33,26 @@ class AdapPerson(
 
     override fun onBindViewHolder(holder: PersonHolder, position: Int) {
         val model = getItem(position)
-        holder.b.tvName.text = model.name
+        holder.b.tvName.text = model.name.ifEmpty { model.phoneNo }
         holder.b.tvTime.text = model.lastDate
-        holder.b.tvLastMsg.text = model.lastMsg
+        holder.b.tvLastMsg.text = model.lastMsg.also { holder.b.tvLastMsg.tag = it }
 
-        if (model.isSelected) {
-            holder.b.checkSelection.visibility = View.VISIBLE
+        if (model.isSelected)
             holder.b.root.setBackgroundColor(selCol)
-        } else {
-            holder.b.checkSelection.visibility = View.GONE
-            holder.b.root.setBackgroundColor(deSelCol)
-        }
+        else holder.b.root.setBackgroundColor(deSelCol)
+
+        holder.b.onlineIndi.setImmidiateStatus(model.isOnline)
 
         Glide.with(holder.b.imgProfile)
             .asBitmap()
             .load(model.phoneNo.getDpLink())
             .circleCrop()
             .override(200)
+            .placeholder(R.drawable.def_avatar)
+            .error(R.drawable.def_avatar)
             .into(holder.b.imgProfile)
 
+        holder.b.tvLastMsg.setTextColor(ContextCompat.getColor(context, R.color.fore))
         if (model.unreadCount > 0) {
             holder.b.tvUnreadMsgCount.visibility = View.VISIBLE
             holder.b.tvUnreadMsgCount.text = model.unreadCount.toString()
@@ -60,26 +63,124 @@ class AdapPerson(
         }
 
         when (model.mediaType) {
-            com.tomer.chitchat.room.MsgMediaType.TEXT -> {
+            MsgMediaType.EMOJI -> {
                 holder.b.msgType.visibility = View.GONE
+                if (model.fileGifImg == null) {
+                    if (model.jsonText.isNotEmpty()) {
+                        holder.b.imgLottie.setAnimationFromJson(model.jsonText, model.jsonName)
+                        holder.b.imgLottie.playAnimation()
+                    }
+                } else {
+                    Glide.with(context)
+                        .load(model.fileGifImg)
+                        .skipMemoryCache(true)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .into(holder.b.imgLottie)
+                }
             }
 
-            com.tomer.chitchat.room.MsgMediaType.IMAGE -> {
+            MsgMediaType.IMAGE, MsgMediaType.GIF -> {
                 holder.b.msgType.visibility = View.VISIBLE
-                holder.b.msgType.setImageResource(R.drawable.round_image_24)
+                holder.b.msgType.setImageResource(getDrawableId(model.lastMsg))
+                if (model.fileGifImg == null) {
+                    Glide.with(context)
+                        .asBitmap()
+                        .load(getByteArr(model.jsonText))
+                        .skipMemoryCache(true)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .into(holder.b.imgLottie)
+                } else
+                    Glide.with(context)
+                        .load(model.fileGifImg)
+                        .skipMemoryCache(true)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .into(holder.b.imgLottie)
             }
 
-            com.tomer.chitchat.room.MsgMediaType.GIF -> {
+            MsgMediaType.VIDEO -> {
                 holder.b.msgType.visibility = View.VISIBLE
+                holder.b.msgType.setImageResource(getDrawableId(model.lastMsg))
+                holder.b.imgLottie.setImageDrawable(null)
             }
 
-            com.tomer.chitchat.room.MsgMediaType.FILE -> {
-                holder.b.msgType.visibility = View.VISIBLE
-            }
+            else -> {
+                if (model.mediaType == MsgMediaType.FILE) {
+                    holder.b.msgType.visibility = View.VISIBLE
+                    holder.b.msgType.setImageResource(getDrawableId(model.lastMsg))
+                } else holder.b.msgType.visibility = View.GONE
 
-            com.tomer.chitchat.room.MsgMediaType.VIDEO -> {
-                holder.b.msgType.visibility = View.VISIBLE
+                holder.b.imgLottie.setImageDrawable(null)
             }
+        }
+
+    }
+
+    companion object {
+        fun getByteArr(data: String): Any {
+            return try {
+                ConversionUtils.base64ToByteArr(data)
+            } catch (e: Exception) {
+                Log.e("TAG--", "getByteArr: ", e)
+                return R.drawable.ic_send
+            }
+        }
+
+        fun getDrawableId(name: String): Int {
+            val ind = name.lastIndexOf(".")
+            if (ind != -1) return getHashMap()[name.substring(ind + 1)] ?: R.drawable.ic_file
+            return when (name) {
+                MsgMediaType.IMAGE.name, MsgMediaType.GIF.name -> R.drawable.ic_image
+                MsgMediaType.VIDEO.name -> R.drawable.ic_video
+                else -> R.drawable.ic_file
+            }
+        }
+
+        private val map = mutableMapOf<String, Int>()
+
+        private fun getHashMap(): Map<String, Int> {
+            if (map.isNotEmpty()) return map
+            map["webp"] = R.drawable.ic_image
+            map["jpg"] = R.drawable.ic_image
+            map["jpeg"] = R.drawable.ic_image
+            map["png"] = R.drawable.ic_image
+            map["gif"] = R.drawable.ic_image
+            map["svg"] = R.drawable.ic_image
+
+
+
+            map["mp4"] = R.drawable.ic_video
+            map["mkv"] = R.drawable.ic_video
+            map["mov"] = R.drawable.ic_video
+            map["wmv"] = R.drawable.ic_video
+            map["flv"] = R.drawable.ic_video
+            map["avi"] = R.drawable.ic_video
+            map["webm"] = R.drawable.ic_video
+
+
+            map["pdf"] = R.drawable.ic_pdf
+            map["apk"] = R.drawable.ic_android
+
+
+            map["zip"] = R.drawable.ic_zip
+            map["rar"] = R.drawable.ic_zip
+            map["tar"] = R.drawable.ic_zip
+            map["tar.gz"] = R.drawable.ic_zip
+            map["tar.xz"] = R.drawable.ic_zip
+            map["7z"] = R.drawable.ic_zip
+
+            map["txt"] = R.drawable.txt_file
+            map["bat"] = R.drawable.txt_file
+            map["c"] = R.drawable.txt_file
+            map["cpp"] = R.drawable.txt_file
+            map["java"] = R.drawable.txt_file
+            map["py"] = R.drawable.txt_file
+            map["js"] = R.drawable.txt_file
+            map["json"] = R.drawable.txt_file
+            map["html"] = R.drawable.txt_file
+            map["php"] = R.drawable.txt_file
+            map["css"] = R.drawable.txt_file
+
+            return map
         }
     }
 
@@ -106,6 +207,7 @@ class AdapPerson(
 
         override fun areContentsTheSame(oldItem: PersonModel, newItem: PersonModel) =
             oldItem.lastDate == newItem.lastDate && oldItem.lastMsg == newItem.lastMsg
+                    && oldItem.isOnline == newItem.isOnline && oldItem.isSelected == newItem.isSelected
     }
 
 

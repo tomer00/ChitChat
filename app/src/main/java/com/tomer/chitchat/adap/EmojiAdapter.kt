@@ -7,11 +7,11 @@ import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView.ViewHolder
 import com.tomer.chitchat.databinding.RowEmojiBinding
 
-class EmojiAdapter(private val clickLis: (Int) -> Unit) : ListAdapter<String, EmojiAdapter.EmojiHolder>(SamUtil()) {
+class EmojiAdapter(private val clickLis: (Int) -> Unit) : ListAdapter<String, EmojiAdapter.EmojiHolder>(StringUtils()) {
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): EmojiHolder =
-        EmojiHolder(RowEmojiBinding.inflate(LayoutInflater.from(parent.context)), clickLis)
+        EmojiHolder(RowEmojiBinding.inflate(LayoutInflater.from(parent.context),parent,false), clickLis)
 
 
     override fun onBindViewHolder(holder: EmojiHolder, position: Int) {
@@ -20,11 +20,11 @@ class EmojiAdapter(private val clickLis: (Int) -> Unit) : ListAdapter<String, Em
 
     inner class EmojiHolder(val b: RowEmojiBinding, clickLis: (Int) -> Unit) : ViewHolder(b.root){
         init {
-            b.root.setOnClickListener { clickLis(adapterPosition) }
+            b.root.setOnClickListener { clickLis(absoluteAdapterPosition) }
         }
     }
 
-    class SamUtil : DiffUtil.ItemCallback<String>() {
+    class StringUtils : DiffUtil.ItemCallback<String>() {
         override fun areItemsTheSame(oldItem: String, newItem: String) = oldItem == newItem
         override fun areContentsTheSame(oldItem: String, newItem: String) = oldItem == newItem
     }

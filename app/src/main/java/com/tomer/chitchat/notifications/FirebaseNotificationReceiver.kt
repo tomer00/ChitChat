@@ -62,12 +62,20 @@ class FirebaseNotificationReceiver : FirebaseMessagingService() {
         CoroutineScope(Dispatchers.IO).launch {
             MessageHandler(gson, repoMsgs, repoPersons, cryptoService, notificationService, repoRelations, repoStorage) { msg ->
                 Log.d("TAG--", "dfdfg: dfd$msg")
-                if (msg.type == FlowType.MSG) {
-                    val msgmod = msg.data ?: return@MessageHandler
+                val msgmod = msg.data ?: return@MessageHandler
+                if (msg.type == FlowType.MSG) notificationService.showNewMessageNotification(msgmod, msg.fromUser)
+                else if (msg.type == FlowType.SEND_PR) {
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
                             retro.sendAck(msgmod.id.toString(), msg.fromUser)
-                            notificationService.showNewMessageNotification(msgmod, msg.fromUser)
+                        } catch (e: Exception) {
+                            Log.e("TAG--", "onMessageReceived: ", e)
+                        }
+                    }
+                } else if (msg.type == FlowType.SEND_BULK_REC) {
+                    CoroutineScope(Dispatchers.IO).launch {
+                        try {
+                            retro.sendAckBulk(msg.data.msg, msg.fromUser)
                         } catch (e: Exception) {
                             Log.e("TAG--", "onMessageReceived: ", e)
                         }
@@ -76,8 +84,7 @@ class FirebaseNotificationReceiver : FirebaseMessagingService() {
             }.apply {
                 try {
                     handelMsg(message.data["data"] ?: "")
-                } catch (e: Exception) {
-                    Log.e("TAG--", "onMessageReceived: ", e)
+                } catch (_: Exception) {
                 }
             }
         }

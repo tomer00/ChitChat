@@ -6,7 +6,6 @@ import com.tomer.chitchat.crypto.CryptoCipher
 import com.tomer.chitchat.crypto.CryptoKey
 import com.tomer.chitchat.crypto.RepoCipher
 import com.tomer.chitchat.crypto.RoomCipherRepo
-import com.tomer.chitchat.modals.msgs.UserList
 import kotlinx.coroutines.delay
 import org.junit.Test
 

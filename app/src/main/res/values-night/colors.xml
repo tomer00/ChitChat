@@ -18,6 +18,7 @@
     <color name="backgroundC">#121212</color>
     <color name="fore">#fff</color>
     <color name="hint">#99FFFFFF</color>
+    <color name="transBg">#66000000</color>
     <color name="purple">#c678dd</color>
     <color name="white">#fff</color>
     <color name="trans">#00000000</color>

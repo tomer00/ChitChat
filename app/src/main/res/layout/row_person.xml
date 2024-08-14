@@ -2,27 +2,39 @@
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
-    android:layout_height="wrap_content">
+    android:layout_height="72dp">
+
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/imgLottie"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginEnd="20dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintDimensionRatio="1"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_percent=".4"
+        app:lottie_repeatCount="-1"
+        app:lottie_repeatMode="restart" />
+
+    <com.tomer.chitchat.ui.views.ViewOnlineIndi
+        android:id="@+id/onlineIndi"
+        android:layout_width="0dp"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintDimensionRatio="1"
+        android:layout_height="match_parent"/>
 
     <ImageView
         android:id="@+id/imgProfile"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_margin="12dp"
+        android:src="@drawable/def_avatar"
         android:contentDescription="@string/app_name"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
-
-
-    <ImageView
-        android:id="@+id/checkSelection"
-        android:layout_width="18dp"
-        android:layout_height="18dp"
-        android:background="@drawable/bg_circle"
-        android:contentDescription="@string/app_name"
-        app:layout_constraintBottom_toBottomOf="@id/imgProfile"
-        app:layout_constraintEnd_toEndOf="@id/imgProfile" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="0dp"
@@ -48,6 +60,9 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:text="06/09/2024"
+            android:backgroundTint="@color/transBg"
+            android:paddingHorizontal="8dp"
+            android:background="@drawable/round_bg"
             app:layout_constraintBottom_toBottomOf="@id/tvName"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/tvName" />
@@ -55,15 +70,15 @@
         <TextView
             android:id="@+id/tvUnreadMsgCount"
             android:layout_width="0dp"
-            android:gravity="center"
-            android:textColor="@color/white"
-            android:layout_margin="4dp"
-            app:layout_constraintDimensionRatio="1"
-            android:padding="2dp"
-            android:background="@drawable/bg_circle"
             android:layout_height="wrap_content"
+            android:layout_margin="4dp"
+            android:background="@drawable/bg_circle"
             android:backgroundTint="@color/primary_dark"
+            android:gravity="center"
+            android:padding="2dp"
             android:text="1"
+            android:textColor="@color/white"
+            app:layout_constraintDimensionRatio="1"
             app:layout_constraintEnd_toEndOf="@+id/tvTime"
             app:layout_constraintTop_toBottomOf="@id/tvTime" />
 
@@ -71,6 +86,7 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
+            android:gravity="center_vertical"
             android:orientation="horizontal"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvName">
@@ -79,18 +95,21 @@
                 android:id="@+id/msgType"
                 android:layout_width="26dp"
                 android:layout_height="26dp"
-                android:layout_marginEnd="8dp"
+                android:layout_marginEnd="2dp"
                 android:contentDescription="@string/app_name"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:tint="@color/secondary_text" />
+                app:layout_constraintTop_toTopOf="parent" />
 
             <TextView
                 android:id="@+id/tvLastMsg"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Hiiiii"
+                android:alpha=".78"
+                android:backgroundTint="@color/transBg"
+                android:paddingHorizontal="8dp"
+                android:background="@drawable/round_bg"
+                android:textColor="@color/fore"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tvName" />
         </LinearLayout>

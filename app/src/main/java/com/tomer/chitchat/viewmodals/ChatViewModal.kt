@@ -8,6 +8,7 @@ import com.google.gson.Gson
 import com.tomer.chitchat.crypto.CipherUtils
 import com.tomer.chitchat.crypto.CryptoService
 import com.tomer.chitchat.modals.msgs.AcceptConnection
+import com.tomer.chitchat.modals.msgs.BulkReceived
 import com.tomer.chitchat.modals.msgs.ChatMessage
 import com.tomer.chitchat.modals.msgs.Message
 import com.tomer.chitchat.modals.msgs.ModelMsgSocket
@@ -31,7 +32,6 @@ import com.tomer.chitchat.room.ModelRoomPersonRelation
 import com.tomer.chitchat.room.ModelRoomPersons
 import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
-import com.tomer.chitchat.utils.ConversionUtils.chatVM
 import com.tomer.chitchat.utils.MessageHandler
 import com.tomer.chitchat.utils.Utils
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -119,7 +119,7 @@ class ChatViewModal @Inject constructor(
         }.map { it.id }
 
         viewModelScope.launch {
-            pendingMsgs.forEach {
+            pendingMsgs.reversed().forEach {
                 val msgRoom = repoMsgs.getMsg(it)
                 Log.d("TAG--", "Sending peding: ${msgRoom?.msgText}")
                 if (msgRoom != null && !msgRoom.msgText.startsWith('U')) {
@@ -162,12 +162,10 @@ class ChatViewModal @Inject constructor(
     private val msgHandler = MessageHandler(gson, repoMsgs, repoPersons, cryptoService, notificationService, repoRelations, repoStorage) { msg ->
 
         if (Utils.currentPartner?.partnerId.toString() == msg.fromUser) {
-            if (!isChatActivityVisible) {
+            if (!isChatActivityVisible)
                 notificationService.showNewMessageNotification(msg.data, msg.fromUser)
-                viewModelScope.launch { flowMsgs.emit(msg) }
-            }
 
-            if (msg.type == FlowType.SERVER_REC || msg.type == FlowType.PARTNER_REC) {
+            if (msg.type == FlowType.SERVER_REC) {
                 for (i in chatMsgs.indices) {
                     if (chatMsgs[i].id == msg.oldId!!) {
                         chatMsgs[i].id = msg.msgId!!
@@ -177,18 +175,21 @@ class ChatViewModal @Inject constructor(
             }
             viewModelScope.launch {
                 flowMsgs.emit(msg)
-                if (msg.type == FlowType.MSG)
-                    sendViaSocket("${msg.fromUser}*ACK-PR${msg.data!!.id}")
+                if (msg.type == FlowType.SEND_PR)
+                    sendViaSocket("${msg.fromUser}*ACK-PR${msg.msgId}")
             }
             return@MessageHandler
         }
 
         if (msg.type == FlowType.MSG) {
             notificationService.showNewMessageNotification(msg.data, msg.fromUser)
+        } else if (msg.type == FlowType.SEND_PR)
             viewModelScope.launch {
-                sendViaSocket("${msg.fromUser}*ACK-PR${msg.data!!.id}")
+                sendViaSocket("${msg.fromUser}*ACK-PR${msg.msgId}")
             }
-        }
+        else if (msg.type == FlowType.SEND_BULK_REC)
+            sendViaSocket(BulkReceived(msg.fromUser, msg.data?.msg ?: "").toString())
+
         viewModelScope.launch { flowMsgs.emit(msg) }
     }
 
@@ -291,7 +292,7 @@ class ChatViewModal @Inject constructor(
     fun showLastSeen() {
         viewModelScope.launch {
             val per = repoPersons.getPersonByPhone(Utils.currentPartner?.partnerId.toString()) ?: return@launch
-            delay(100)
+            delay(40)
             if (per.lastSeenMillis == -1L) flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.ONLINE, Utils.currentPartner!!.partnerId))
             else flowMsgs.emit(MsgsFlowState.MsgStatusFlowState(per.lastSeenMillis, 0L, FlowType.OFFLINE, Utils.currentPartner!!.partnerId))
         }
@@ -309,7 +310,7 @@ class ChatViewModal @Inject constructor(
                 name = per.name,
                 mediaType = mod.msgType,
                 lastMsg = lastMsg,
-                lastMsgId = -1L,
+                lastMsgId = tempId,
                 timeMillis = mod.timeMillis,
                 unReadCount = per.unReadCount,
                 lastSeenMillis = per.lastSeenMillis
@@ -407,6 +408,10 @@ class ChatViewModal @Inject constructor(
 
                 flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone))
 
+                repoPersons.getPersonByPhone(phone)?.also {
+                    it.unReadCount = 0
+                    repoPersons.insertPerson(it)
+                }
                 if (Utils.currentPartner!!.isAccepted)
                     sendPendingMsgs()
             } catch (e: Exception) {
@@ -497,22 +502,6 @@ class ChatViewModal @Inject constructor(
             Utils.currentPartner = relation
         }
 
-    }
-
-    fun clearUnreadCount() {
-        viewModelScope.launch {
-            val per = repoPersons.getPersonByPhone(Utils.currentPartner!!.partnerId) ?: return@launch
-            ModelRoomPersons(
-                phoneNo = per.phoneNo,
-                name = per.name,
-                mediaType = per.mediaType,
-                lastMsg = per.lastMsg,
-                lastMsgId = per.lastMsgId,
-                timeMillis = per.timeMillis,
-                unReadCount = 0,
-                lastSeenMillis = per.lastSeenMillis
-            ).also { repoPersons.insertPerson(it) }
-        }
     }
 
     //endregion ACTIVITY COMM

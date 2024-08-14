@@ -11,7 +11,8 @@ class RepoMessagesImpl @Inject constructor(
 ) : RepoMessages {
 
     override suspend fun addMsg(modal: ModelRoomMessage) {
-        dao.insertMsg(modal)
+        if (dao.getFromID(modal.id) == null)
+            dao.insertMsg(modal)
     }
 
     override suspend fun getMsg(id: Long): ModelRoomMessage? = dao.getByUser(id).getOrNull(0)

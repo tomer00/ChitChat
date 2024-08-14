@@ -15,6 +15,7 @@ import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.EmojisHashingUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -30,13 +31,13 @@ class MainViewModal @Inject constructor(
     private val _persons = MutableLiveData<List<PersonModel>>()
     val persons: LiveData<List<PersonModel>> = _persons
 
-    private suspend fun ModelRoomPersons.toUi(oldList: List<PersonModel>): PersonModel {
+    private suspend fun ModelRoomPersons.toUi(oldList: List<PersonModel>, needTobeDownload: MutableList<Pair<Int, String>>): PersonModel {
         val builder = PersonModel.Builder()
         builder.lastMsgId(lastMsgId)
         builder.name(name)
         builder.phoneNumber(phoneNo)
         builder.messageMediaType(mediaType)
-        builder.lastDate(ConversionUtils.millisToTimeText(timeMillis))
+        builder.lastDate(ConversionUtils.getRelativeTime(timeMillis))
         builder.lastMessage(lastMsg)
         builder.unreadCount(unReadCount)
         builder.isOnline(lastSeenMillis == -1L)
@@ -54,27 +55,35 @@ class MainViewModal @Inject constructor(
 
             val nameGoogleJson = EmojisHashingUtils.googleJHash[ConversionUtils.encode(lastMsg)]
             if (!nameGoogleJson.isNullOrEmpty()) {
-                builder.jsonText(repoAssets.getLottieJson(nameGoogleJson) ?: "")
+                builder.jsonText(repoAssets.getLottieJson(nameGoogleJson, true).also {
+                    if (it == null) needTobeDownload.add(Pair(0, nameGoogleJson))
+                } ?: "")
                 builder.jsonName(nameGoogleJson)
                 return builder.build()
             }
 
             val nameJson = EmojisHashingUtils.jHash[ConversionUtils.encode(lastMsg)]
             if (!nameJson.isNullOrEmpty()) {
-                builder.jsonText(repoAssets.getLottieJson(nameJson) ?: "")
+                builder.jsonText(repoAssets.getLottieJson(nameJson, true).also {
+                    if (it == null) needTobeDownload.add(Pair(1, nameJson))
+                } ?: "")
                 builder.jsonName(nameJson)
                 return builder.build()
             }
 
             val nameGif = EmojisHashingUtils.gHash[ConversionUtils.encode(lastMsg)]
             if (!nameGif.isNullOrEmpty()) {
-                builder.lastMessageFile(repoAssets.getGifFile(nameGif))
+                builder.lastMessageFile(repoAssets.getGifFile(nameGif, true).also {
+                    if (it == null) needTobeDownload.add(Pair(2, nameGif))
+                })
                 return builder.build()
             }
 
             val nameTeleGif = EmojisHashingUtils.teleHash[ConversionUtils.encode(lastMsg)]
             if (!nameTeleGif.isNullOrEmpty()) {
-                builder.lastMessageFile(repoAssets.getGifFile(nameTeleGif))
+                builder.lastMessageFile(repoAssets.getGifFile(ConversionUtils.encode(nameTeleGif), true).also {
+                    if (it == null) needTobeDownload.add(Pair(3, ConversionUtils.encode(nameTeleGif)))
+                })
                 return builder.build()
             }
 
@@ -82,7 +91,7 @@ class MainViewModal @Inject constructor(
             val msg = repoMsg.getMsg(lastMsgId) ?: return builder.messageMediaType(MsgMediaType.TEXT).build()
             val file = repoStorage.getFileFromFolder(mediaType, msg.mediaFileName.toString())
             if (file == null)
-                builder.jsonText(msg.msgText.split(",-,")[1].also { Log.d("TAG--", "toUi: $it" ) })
+                builder.jsonText(msg.msgText.split(",-,")[1])
             else builder.lastMessageFile(file)
 
         }
@@ -92,9 +101,20 @@ class MainViewModal @Inject constructor(
 
     fun loadPersons(oldList: List<PersonModel>) {
         viewModelScope.launch {
-            val per = repoPersons.getAllPersons().map { it.toUi(oldList) }
+            val needTobeDownload = mutableListOf<Pair<Int, String>>()
+            val per = repoPersons.getAllPersons().map { it.toUi(oldList, needTobeDownload) }
             Log.d("TAG--", "loadPersons: $per")
             _persons.postValue(per)
+            for (i in needTobeDownload) {
+                async {
+                    when (i.first) {
+                        0 -> repoAssets.getGoogleLottieJson(i.second)
+                        1 -> repoAssets.getLottieJson(i.second)
+                        2 -> repoAssets.getGifFile(i.second)
+                        else -> repoAssets.getGifTelemoji(i.second)
+                    }
+                }
+            }
         }
     }
 }

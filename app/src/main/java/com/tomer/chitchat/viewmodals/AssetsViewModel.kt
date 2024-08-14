@@ -430,7 +430,7 @@ class AssetsViewModel @Inject constructor(
         }
     }
 
-    suspend fun getGifThumbBmpUsingGlide(uri: Uri, con: Context): Bitmap? {
+    private suspend fun getGifThumbBmpUsingGlide(uri: Uri, con: Context): Bitmap? {
         return suspendCoroutine { continuation ->
             Glide.with(con)
                 .asBitmap()
@@ -444,12 +444,10 @@ class AssetsViewModel @Inject constructor(
                         override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                             continuation.resumeWith(Result.success(resource))
                         }
-
                         override fun onLoadFailed(errorDrawable: Drawable?) {
                             super.onLoadFailed(errorDrawable)
                             continuation.resumeWith(Result.success(null))
                         }
-
                         override fun onLoadCleared(placeholder: Drawable?) {
                         }
                     }

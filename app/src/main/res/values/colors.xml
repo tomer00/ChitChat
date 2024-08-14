@@ -25,6 +25,7 @@
     <color name="softBg">#ECECEC</color>
     <color name="softFg">#202020</color>
     <color name="hintCol">#80000000</color>
+    <color name="transBg">#66FFFFFF</color>
 
     <color name="backgroundLight">#F1F1F1</color>
     <color name="backgroundC">#fff</color>

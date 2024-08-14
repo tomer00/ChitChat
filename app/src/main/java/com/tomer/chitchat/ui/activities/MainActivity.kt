@@ -99,9 +99,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                     when (it.type) {
                         FlowType.SHOW_BIG_GIF -> if (activityLife) {
                             val b = getRvViewIfVisible(it.fromUser) ?: return@runOnUiThread
-                            b.imgLottie.visibility = View.VISIBLE
                             Glide.with(this@MainActivity)
-                                .asGif()
                                 .load(it.fileGif!!)
                                 .skipMemoryCache(true)
                                 .diskCacheStrategy(DiskCacheStrategy.NONE)
@@ -111,7 +109,6 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                         FlowType.SHOW_BIG_JSON -> if (activityLife) {
                             val b = getRvViewIfVisible(it.fromUser) ?: return@runOnUiThread
                             try {
-                                b.imgLottie.visibility = View.VISIBLE
                                 b.imgLottie.setAnimationFromJson(it.data!!.msg, it.data.mediaFileName)
                                 b.imgLottie.playAnimation()
                             } catch (_: Exception) {
@@ -241,9 +238,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                         FlowType.ONLINE,
                         FlowType.OFFLINE -> if (activityLife) {
                             val b = getRvViewIfVisible(it.fromUser) ?: return@runOnUiThread
-                            b.onlineIndi.visibility =
-                                if (it.type == FlowType.OFFLINE) View.GONE
-                                else View.VISIBLE
+                            b.onlineIndi.setStatusAnimating(it.type == FlowType.ONLINE)
                         }
 
 

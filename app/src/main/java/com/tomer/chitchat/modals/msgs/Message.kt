@@ -15,6 +15,7 @@ class NoTyping : Message("*N-TYP*")
 class NewConnection(publicSecretHEX: String) : Message("*-NEW-*$publicSecretHEX,-,${Utils.myName}")
 class AcceptConnection(publicSecretHEX: String) : Message("*F-ACC*$publicSecretHEX,-,${Utils.myName}")
 class RejectConnection() : Message("*F-REJ*")
+class BulkReceived(toPhone: String, list: String) : Message("$toPhone*MSG-BR$list")
 
 // <(10)toPhone>  <(7)MSG_TYPE>
 // <DATA>  { <(12) TEMPID><ENC DATA> }

@@ -7,7 +7,7 @@
     <TextView
         android:id="@+id/emoTv"
         android:layout_width="0dp"
-        android:layout_height="match_parent"
+        android:layout_height="wrap_content"
         android:gravity="center"
         android:padding="2dp"
         android:textSize="32sp"

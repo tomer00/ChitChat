@@ -8,6 +8,7 @@ import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
+import android.os.Handler
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -15,6 +16,7 @@ import android.view.View
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -75,7 +77,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
     private lateinit var ll: LinearLayoutManager
 
-    private val timeVisibilityQueue = LinkedList<Pair<Long, Int>>()
+    private val timeVisibilityQueue = LinkedList<Pair<Long, Long>>()
 
     private val options by lazy {
         RequestOptions().apply {
@@ -134,10 +136,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
     override fun onPause() {
         super.onPause()
         vm.isChatActivityVisible = false
-        vm.clearUnreadCount()
     }
-
-    private var addedItemsSinceLast2Sec = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -153,18 +152,17 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         //QUEUE SERVICE EXECUTOR
         lifecycleScope.launch {
             while (true) {
-                delay(100)
+                delay(200)
                 var removeCount = 0
-                if (timeVisibilityQueue.isEmpty()) {
-                    addedItemsSinceLast2Sec = 0
+                if (timeVisibilityQueue.isEmpty())
                     continue
-                }
+
                 for (i in timeVisibilityQueue.indices) {
                     if (timeVisibilityQueue[i].first < System.currentTimeMillis()) {
-                        val b = getRvViewIfVisible(timeVisibilityQueue[i].second + addedItemsSinceLast2Sec)
+                        val b = getRvViewIfPossibleForId(timeVisibilityQueue[i].second)
                         b?.contTime?.visibility = View.GONE
                         removeCount++
-                    } else break
+                    }
                 }
                 while (removeCount-- != 0)
                     timeVisibilityQueue.removeFirst()
@@ -236,10 +234,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
             sendTextMessage(msgText, isOnlyEmoji(msgText))
             b.etMsg.setText("")
+            Handler().postDelayed({ b.etMsg.requestFocus() }, 40)
             b.replyLayout.visibility = View.GONE
         }
         b.btCloseReplyLay.setOnClickListener {
             b.replyLayout.visibility = View.GONE
+            Handler().postDelayed({ b.etMsg.requestFocus() }, 40)
         }
         b.btGallery.setOnClickListener {
             if (b.contRelation.visibility == View.VISIBLE) return@setOnClickListener
@@ -260,12 +260,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             if (Utils.currentPartner!!.isAccepted)
                 vm.showLastSeen()
 
-
-
             Glide.with(this@ChatActivity)
                 .asBitmap()
                 .apply(roundOptions)
                 .load(Utils.currentPartner!!.partnerId.getDpLink())
+                .placeholder(R.drawable.def_avatar)
+                .error(R.drawable.def_avatar)
                 .into(imgDp)
 
             if (Utils.currentPartner!!.isAccepted) return@apply
@@ -367,7 +367,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         ) { msg ->
             runOnUiThread {
                 adap.addItem(msg.data.also { it?.isUploaded = true } ?: return@runOnUiThread)
-                addedItemsSinceLast2Sec++
             }
         }
         b.replyLayout.visibility = View.GONE
@@ -395,7 +394,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         when (msg.type) {
             FlowType.MSG -> {
                 val msgL = msg.data ?: return
-                addedItemsSinceLast2Sec++
                 if (msgL.msgType != MsgMediaType.TEXT && msgL.msgType != MsgMediaType.EMOJI)
                     vmAssets.downLoadFile(msgL.msg.split(",-,")[0], msgL.mediaFileName!!, msgL.msgType, msgL.id, Utils.currentPartner!!.partnerId) {
                         msgL.isDownloaded = true
@@ -449,6 +447,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                     builder.mediaFileName(msgT.mediaFileName)
 
                     vm.sendMediaUploaded(builder.build(), msgT.id, msg.fromUser)
+                    vm.updatePersonModel(builder.build(), msgT.id)
                     for (i in vm.chatMsgs.indices) {
                         if (vm.chatMsgs[i].id == msgT.id) {
                             vm.chatMsgs[i].isUploaded = true
@@ -524,11 +523,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
             FlowType.PARTNER_REC -> {
                 handleMsgStatusAnimation(false, msg.msgId)
-                for (i in vm.chatMsgs.indices) {
-                    if (vm.chatMsgs[i].id == msg.msgId)
-                        timeVisibilityQueue.addLast(Pair(System.currentTimeMillis() + 2000, i))
-                    break
-                }
+                timeVisibilityQueue.addLast(Pair(System.currentTimeMillis() + 2000, msg.msgId ?: -1L))
             }
 
             FlowType.TYPING -> "Typing...".also { b.tvDetails.text = it }
@@ -545,7 +540,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
             FlowType.OFFLINE -> {
                 lastSeenMillis = msg.msgId!!
-                "last seen today at ${ConversionUtils.getRelativeTime(lastSeenMillis)}".also { b.tvDetails.text = it }
+                val relTimeText = ConversionUtils.getRelativeTime(lastSeenMillis)
+                if (relTimeText.contains(':'))
+                    "last seen today at $relTimeText".also { b.tvDetails.text = it }
+                else if (relTimeText == "Yesterday")
+                    "last seen yesterday at ${ConversionUtils.millisToTimeText(lastSeenMillis)}".also { b.tvDetails.text = it }
+                else "last seen on $relTimeText".also { b.tvDetails.text = it }
             }
 
             FlowType.RELOAD_RV -> {
@@ -641,6 +641,16 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         return MsgItemBinding.bind(view)
     }
 
+    private fun getRvViewIfPossibleForId(msgId: Long): MsgItemBinding? {
+        for (i in vm.chatMsgs.indices) {
+            if (vm.chatMsgs[i].id == msgId) {
+                val view = ll.findViewByPosition(i) ?: return null
+                return MsgItemBinding.bind(view)
+            }
+        }
+        return null
+    }
+
     private fun isOnlyEmoji(text: String): Boolean {
         return (EmojisHashingUtils.googleJHash.containsKey(ConversionUtils.encode(text))
                 || EmojisHashingUtils.jHash.containsKey(ConversionUtils.encode(text))
@@ -662,8 +672,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         val b = getRvViewIfVisible(pos) ?: return
         if (vm.chatMsgs[pos].status != MsgStatus.RECEIVED) return
         b.contTime.visibility = View.VISIBLE
-        timeVisibilityQueue.removeIf { it.second == pos }
-        timeVisibilityQueue.addLast(Pair(System.currentTimeMillis() + 2000, pos))
+        timeVisibilityQueue.removeIf { it.second == vm.chatMsgs[pos].id }
+        timeVisibilityQueue.addLast(Pair(System.currentTimeMillis() + 2000, vm.chatMsgs[pos].id))
     }
 
     override fun onChatItemLongClicked(pos: Int) {

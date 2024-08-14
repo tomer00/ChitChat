@@ -49,64 +49,78 @@ object EmojisHashingUtils {
     val teleHash: Map<String, String> = hashMapOf<String, String>().apply {
 
         //people
-        put("%F0%9F%95%BA", "People/Man%20Dancing.webp")
-        put("%F0%9F%92%83", "People/Woman%20Dancing.webp")
-        put("%F0%9F%91%A8", "People/Oncoming%20Fist.webp")
-        put("%F0%9F%91%B6", "People/Baby.webp")
-        put("%F0%9F%91%87", "People/Backhand%20Index%20Pointing%20Down.webp")
-        put("%F0%9F%91%88", "People/Backhand%20Index%20Pointing%20Left.webp")
-        put("%F0%9F%91%89", "People/Backhand%20Index%20Pointing%20Right.webp")
-        put("%F0%9F%91%86", "People/Backhand%20Index%20Pointing%20Up.webp")
-        put("%E2%98%9D%EF%B8%8F", "People/Backhand%20Index%20Pointing%20Up.webp")
-        put("%F0%9F%AB%B0", "People/Hand%20With%20Index%20Finger%20And%20Thumb%20Crossed.webp")
-        put("%F0%9F%96%90", "People/Hand%20With%20Fingers%20Splayed.webp")
-        put("%F0%9F%AB%B5", "People/Index%20Pointing%20At%20The%20Viewer.webp")
-        put("%F0%9F%A4%9F", "People/Love%20You%20Gesture.webp")
-        put("%F0%9F%91%8C", "People/Ok%20Hand.webp")
-        put("%F0%9F%AB%B3", "People/Palm%20Down%20Hand.webp")
-        put("%F0%9F%AB%B4", "People/Palm%20Up%20Hand.webp")
-        put("%F0%9F%A4%8C", "People/Pinched%20Fingers.webp")
-        put("%F0%9F%A4%8F", "People/Pinching%20Hand.webp")
-        put("%F0%9F%96%96", "People/Vulcan%20Salute.webp")
+        put("%F0%9F%95%BA", "People/Man%20Dancing")
+        put("%F0%9F%92%83", "People/Woman%20Dancing")
+        put("%F0%9F%91%A8", "People/Oncoming%20Fist")
+        put("%F0%9F%91%B6", "People/Baby")
+        put("%F0%9F%91%87", "People/Backhand%20Index%20Pointing%20Down")
+        put("%F0%9F%91%88", "People/Backhand%20Index%20Pointing%20Left")
+        put("%F0%9F%91%89", "People/Backhand%20Index%20Pointing%20Right")
+        put("%F0%9F%91%86", "People/Backhand%20Index%20Pointing%20Up")
+        put("%E2%98%9D%EF%B8%8F", "People/Backhand%20Index%20Pointing%20Up")
+        put("%F0%9F%AB%B0", "People/Hand%20With%20Index%20Finger%20And%20Thumb%20Crossed")
+        put("%F0%9F%96%90", "People/Hand%20With%20Fingers%20Splayed")
+        put("%F0%9F%AB%B5", "People/Index%20Pointing%20At%20The%20Viewer")
+        put("%F0%9F%A4%9F", "People/Love%20You%20Gesture")
+        put("%F0%9F%91%8C", "People/Ok%20Hand")
+        put("%F0%9F%AB%B3", "People/Palm%20Down%20Hand")
+        put("%F0%9F%AB%B4", "People/Palm%20Up%20Hand")
+        put("%F0%9F%A4%8C", "People/Pinched%20Fingers")
+        put("%F0%9F%A4%8F", "People/Pinching%20Hand")
+        put("%F0%9F%96%96", "People/Vulcan%20Salute")
 
-        put("%F0%9F%A4%A6", "People/Person%20Facepalming.webp")
-        put("%F0%9F%A4%B7", "People/Person%20Shrugging.webp")
-        put("%F0%9F%A4%B7%E2%80%8D%E2%99%82%EF%B8%8F", "People/Man%20Shrugging.webp")
-        put("%F0%9F%A4%A6%E2%80%8D%E2%99%82%EF%B8%8F", "People/Man%20Facepalming.webp")
-        put("%F0%9F%A4%B7%E2%80%8D%E2%99%80%EF%B8%8F", "People/Woman%20Shrugging.webp")
-        put("%F0%9F%A4%A6%E2%80%8D%E2%99%80%EF%B8%8F", "People/Woman%20Facepalming.webp")
+        put("%F0%9F%A4%A6", "People/Person%20Facepalming")
+        put("%F0%9F%A4%B7", "People/Person%20Shrugging")
+        put("%F0%9F%A4%B7%E2%80%8D%E2%99%82%EF%B8%8F", "People/Man%20Shrugging")
+        put("%F0%9F%A4%A6%E2%80%8D%E2%99%82%EF%B8%8F", "People/Man%20Facepalming")
+        put("%F0%9F%A4%B7%E2%80%8D%E2%99%80%EF%B8%8F", "People/Woman%20Shrugging")
+        put("%F0%9F%A4%A6%E2%80%8D%E2%99%80%EF%B8%8F", "People/Woman%20Facepalming")
+        put("%F0%9F%91%8E", "People/Thumbs%20Down")
+        put("%F0%9F%96%95", "People/Middle%20Finger")
 
 
         //Animals
-        put("%F0%9F%90%B6", "Animals%20and%20Nature/Dog%20Face.webp")
-        put("%F0%9F%90%BB", "Animals%20and%20Nature/Bear.webp")
-        put("%F0%9F%90%84", "Animals%20and%20Nature/Cow.webp")
-        put("%F0%9F%A6%81", "Animals%20and%20Nature/Lion.webp")
-        put("%E2%98%83%EF%B8%8F", "Animals%20and%20Nature/Snowman.webp")
-        put("%E2%9B%84", "Animals%20and%20Nature/Snowman.webp")
-        put("%F0%9F%95%B7%EF%B8%8F", "Animals%20and%20Nature/Spider.webp")
-        put("%F0%9F%A6%91", "Animals%20and%20Nature/Squid.webp")
-        put("%F0%9F%90%B3", "Animals%20and%20Nature/Spouting Whale.webp")
+        put("%F0%9F%90%B6", "Animals%20and%20Nature/Dog%20Face")
+        put("%F0%9F%90%BB", "Animals%20and%20Nature/Bear")
+        put("%F0%9F%90%84", "Animals%20and%20Nature/Cow")
+        put("%F0%9F%A6%81", "Animals%20and%20Nature/Lion")
+        put("%E2%98%83%EF%B8%8F", "Animals%20and%20Nature/Snowman")
+        put("%E2%9B%84", "Animals%20and%20Nature/Snowman")
+        put("%F0%9F%95%B7%EF%B8%8F", "Animals%20and%20Nature/Spider")
+        put("%F0%9F%A6%91", "Animals%20and%20Nature/Squid")
+        put("%F0%9F%90%B3", "Animals%20and%20Nature/Spouting Whale")
+        put("%F0%9F%92%90", "Animals%20and%20Nature/Bouquet")
 
 
         //Food
-        put("%F0%9F%8D%BE", "Food%20and%20Drink/Bottle%20With%20Popping%20Cork.webp")
-        put("%F0%9F%8D%95", "Food%20and%20Drink/Pizza.webp")
-        put("%F0%9F%8D%AA", "Food%20and%20Drink/Cookie.webp")
-        put("%F0%9F%A7%81", "Food%20and%20Drink/Cupcake.webp")
-        put("%F0%9F%8D%A9", "Food%20and%20Drink/Doughnut.webp")
-        put("%F0%9F%8C%AD", "Food%20and%20Drink/Hot%20Dog.webp")
-        put("%F0%9F%8D%AD", "Food%20and%20Drink/Lollipop.webp")
-        put("%F0%9F%8D%A6", "Food%20and%20Drink/Soft%20Ice%20Cream.webp")
+        put("%F0%9F%8D%BE", "Food%20and%20Drink/Bottle%20With%20Popping%20Cork")
+        put("%F0%9F%8D%95", "Food%20and%20Drink/Pizza")
+        put("%F0%9F%8D%AA", "Food%20and%20Drink/Cookie")
+        put("%F0%9F%A7%81", "Food%20and%20Drink/Cupcake")
+        put("%F0%9F%8D%A9", "Food%20and%20Drink/Doughnut")
+        put("%F0%9F%8C%AD", "Food%20and%20Drink/Hot%20Dog")
+        put("%F0%9F%8D%AD", "Food%20and%20Drink/Lollipop")
+        put("%F0%9F%8D%A6", "Food%20and%20Drink/Soft%20Ice%20Cream")
 
 
         //Activity
+        put("%F0%9F%A5%87", "Activity/1st%20Place%20Medal")
+        put("%F0%9F%A5%88", "Activity/2nd%20Place%20Medal")
+        put("%F0%9F%A5%89", "Activity/3rd%20Place%20Medal")
+        put("%F0%9F%8F%80", "Activity/Basketball")
+        put("%F0%9F%A7%A8", "Activity/Firecracker")
 
 
         //Travel
+        put("%F0%9F%9A%82", "Travel%20and%20Places/Locomotive")
+        put("%F0%9F%9A%80", "Travel%20and%20Places/Rocket")
 
 
         //Objects
+        put("%F0%9F%92%B8", "Objects/Money With Wings")
+        put("%F0%9F%92%89", "Objects/Syringe")
+        put("%F0%9F%A7%BC", "Objects/Soap")
+        put("%F0%9F%93%BA", "Objects/Television")
 
 
         //Symbols
@@ -114,10 +128,6 @@ object EmojisHashingUtils {
 
         //Flags
 
-
-        put("%F0%9F%92%90", "flower_boq.gif")
-        put("%F0%9F%91%8E", "thumbs_down.gif")
-        put("%F0%9F%96%95", "fuckoff.gif")
     }
 
     val googleJHash: Map<String, String> = hashMapOf<String, String>().apply {
@@ -212,48 +222,55 @@ object EmojisHashingUtils {
         put("%F0%9F%8D%BF", "1f37f")
         put("%F0%9F%8D%B9", "1f379")
 
+        put("%F0%9F%8E%86", "1f386")
+        put("%F0%9F%8F%8F", "1f3cf")
+        put("%F0%9F%AA%81", "1fa81")
+        put("%F0%9F%8E%B2", "1f3b2")
+        put("%F0%9F%8C%8B", "1f30b")
+        put("%F0%9F%9A%80", "1f6f8")
+
     }
 
     val gHash: HashMap<String, String> = hashMapOf<String, String>().apply {
 
-        put("%F0%9F%92%8D", "ring.gif");
-        put("%F0%9F%91%91", "crown.gif");
-        put("%F0%9F%91%A9%E2%80%8D%E2%9D%A4%EF%B8%8F%E2%80%8D%F0%9F%91%A8", "boy_girl_l.gif");
-        put("%F0%9F%91%A9%E2%80%8D%E2%9D%A4%EF%B8%8F%E2%80%8D%F0%9F%92%8B%E2%80%8D%F0%9F%91%A8", "boy_girl_k.gif");
+        put("%F0%9F%92%8D", "ring.gif")
+        put("%F0%9F%91%91", "crown.gif")
+        put("%F0%9F%91%A9%E2%80%8D%E2%9D%A4%EF%B8%8F%E2%80%8D%F0%9F%91%A8", "boy_girl_l.gif")
+        put("%F0%9F%91%A9%E2%80%8D%E2%9D%A4%EF%B8%8F%E2%80%8D%F0%9F%92%8B%E2%80%8D%F0%9F%91%A8", "boy_girl_k.gif")
 
 
 
-        put("%F0%9F%A5%91", "avacado.gif")
-        put("%F0%9F%98%93", "downcast_face_with_sweat.gif")
-        put("%F0%9F%98%A8", "fearful_face.gif")
-        put("%F0%9F%98%A5", "sad_but_relieved_face.gif")
-        put("%F0%9F%98%A6", "frowning_face_with_open_mouth.gif")
-        put("%F0%9F%98%88", "smiling_face_with_horns.gif")
-        put("%F0%9F%98%86", "grinning_squinting_face.gif")
-        put("%F0%9F%98%85", "grinning_face_with_sweat.gif")
-        put("%F0%9F%98%8B", "face_savoring_food.gif")
-        put("%F0%9F%98%8A", "smiling_face_with_smiling_eyes.gif")
-        put("%F0%9F%A4%A6", "man_facepalming.gif")
-        put("%F0%9F%98%B5", "dizzy_face.gif")
-        put("%F0%9F%A4%A5", "lying_face.gif")
-        put("%F0%9F%98%9E", "disappointed_face.gif")
-        put("%F0%9F%A4%95", "face_with_head-bandage.gif")
-        put("%F0%9F%A4%97", "hugging_face.gif")
-        put("%F0%9F%A4%92", "face_with_thermometer.gif")
-        put("%F0%9F%98%B6", "face_without_mouth.gif")
-        put("%F0%9F%98%B7", "face_with_medical_mask.gif")
-        put("%F0%9F%98%AC", "grimacing_face.gif")
-        put("%F0%9F%98%99", "kissing_face_with_smiling_eyes.gif")
-        put("%F0%9F%98%AB", "tired_face.gif")
-        put("%F0%9F%98%95", "confused_face.gif")
-        put("%F0%9F%98%9C", "winking_face_with_tongue.gif")
-        put("%F0%9F%98%9A", "kissing_face_with_closed_eyes.gif")
-        put("%F0%9F%98%9B", "face_with_tongue.gif")
-        put("%F0%9F%98%AE", "face_with_open_mouth.gif")
-        put("%F0%9F%98%83", "grinning_face_with_big_eyes.gif")
-        put("%F0%9F%98%81", "beaming_face_with_smiling_eyes.gif")
-        put("%F0%9F%99%83", "upside-down_face.gif")
-        put("%F0%9F%AB%A2", "face_with_hand_over_mouth.gif")
+        put("%F0%9F%A5%91", "avacado")
+        put("%F0%9F%98%93", "downcast_face_with_sweat")
+        put("%F0%9F%98%A8", "fearful_face")
+        put("%F0%9F%98%A5", "sad_but_relieved_face")
+        put("%F0%9F%98%A6", "frowning_face_with_open_mouth")
+        put("%F0%9F%98%88", "smiling_face_with_horns")
+        put("%F0%9F%98%86", "grinning_squinting_face")
+        put("%F0%9F%98%85", "grinning_face_with_sweat")
+        put("%F0%9F%98%8B", "face_savoring_food")
+        put("%F0%9F%98%8A", "smiling_face_with_smiling_eyes")
+        put("%F0%9F%A4%A6", "man_facepalming")
+        put("%F0%9F%98%B5", "dizzy_face")
+        put("%F0%9F%A4%A5", "lying_face")
+        put("%F0%9F%98%9E", "disappointed_face")
+        put("%F0%9F%A4%95", "face_with_head-bandage")
+        put("%F0%9F%A4%97", "hugging_face")
+        put("%F0%9F%A4%92", "face_with_thermometer")
+        put("%F0%9F%98%B6", "face_without_mouth")
+        put("%F0%9F%98%B7", "face_with_medical_mask")
+        put("%F0%9F%98%AC", "grimacing_face")
+        put("%F0%9F%98%99", "kissing_face_with_smiling_eyes")
+        put("%F0%9F%98%AB", "tired_face")
+        put("%F0%9F%98%95", "confused_face")
+        put("%F0%9F%98%9C", "winking_face_with_tongue")
+        put("%F0%9F%98%9A", "kissing_face_with_closed_eyes")
+        put("%F0%9F%98%9B", "face_with_tongue")
+        put("%F0%9F%98%AE", "face_with_open_mouth")
+        put("%F0%9F%98%83", "grinning_face_with_big_eyes")
+        put("%F0%9F%98%81", "beaming_face_with_smiling_eyes")
+        put("%F0%9F%99%83", "upside-down_face")
+        put("%F0%9F%AB%A2", "face_with_hand_over_mouth")
     }
 
 
@@ -272,9 +289,13 @@ object EmojisHashingUtils {
         val tEmojiList = mutableListOf<String>()
         jHash.forEach { (k, _) -> tEmojiList.add(ConversionUtils.decode(k)) }
         gHash.forEach { (k, _) -> tEmojiList.add(ConversionUtils.decode(k)) }
+        googleJHash.forEach { (k, _) -> tEmojiList.add(ConversionUtils.decode(k)) }
+        teleHash.forEach { (k, _) -> tEmojiList.add(ConversionUtils.decode(k)) }
         tEmojiList.remove("hii")
         tEmojiList.remove("gm")
         tEmojiList.remove("gn")
+        tEmojiList.remove("GM")
+        tEmojiList.remove("GN")
         emojiList = tEmojiList
     }
 }
