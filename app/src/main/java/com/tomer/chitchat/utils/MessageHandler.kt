@@ -106,38 +106,48 @@ class MessageHandler(
             }
 
             "*MSG-B*" -> {
-                var isNeedToSendNewConn = false
                 val msgs = text.substring(17).split(",-,")
                     .parallelStream()
                     .map { item ->
-                        try {
-                            val id = ConversionUtils.fromBase64(item.substring(0, 12))
-                            val actualDecData = crypto.decString(fromUser, ConversionUtils.decode(item.substring(12)))
-                            if (actualDecData == null) isNeedToSendNewConn = true
-                            Pair(id, gson.fromJson(actualDecData, ModelMsgSocket::class.java))
-                        } catch (e: Exception) {
-                            isNeedToSendNewConn = true
-                            Pair(1L, ModelMsgSocket.Builder().setTimeMillis(0L).build())
-                        }
+                        val id = ConversionUtils.fromBase64(item.substring(0, 12))
+                        val actualDecData = crypto.decString(fromUser, ConversionUtils.decode(item.substring(12)))
+                        Pair(id, gson.fromJson(actualDecData, ModelMsgSocket::class.java))
+                    }.collect(Collectors.toList())
+                var isNeedToSendNewConn = false
+                for (i in msgs) {
+                    if (i.second == null) {
+                        isNeedToSendNewConn = true
+                        break
                     }
+                }
+                Log.d("TAG--", "is New Conn SEND : $isNeedToSendNewConn")
                 if (isNeedToSendNewConn) {
                     callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.SEND_NEW_CONNECTION_REQUEST, fromUser))
+                    val sb = StringBuilder()
+                    msgs.forEach {
+                        sb.append(it.first)
+                        sb.append(',')
+                    }
+                    val uiB = UiMsgModalBuilder()
+                    sb.deleteCharAt(sb.length - 1)
+                    uiB.setMsg(sb.toString())
+                    callBack(MsgsFlowState.IOFlowState(0L, FlowType.SEND_BULK_REC, fromUser, uiB.build()))
                     return
                 }
 
-                val sorted = msgs.sorted { o1, o2 -> o1.second.timeMillis.compareTo(o2.second.timeMillis) }.collect(Collectors.toList())
+                msgs.sortWith { o1, o2 -> o1.second.timeMillis.compareTo(o2.second.timeMillis) }
                 val sb = StringBuilder()
-                sorted.forEach {
+                msgs.forEach {
                     sb.append(it.first)
                     sb.append(',')
                 }
                 val uiB = UiMsgModalBuilder()
-                sb.deleteCharAt(sb.length-1)
+                sb.deleteCharAt(sb.length - 1)
                 uiB.setMsg(sb.toString())
                 callBack(MsgsFlowState.IOFlowState(0L, FlowType.SEND_BULK_REC, fromUser, uiB.build()))
 
-                for (i in sorted) handleMsgCombine(fromUser, i.first, i.second, true)
-                Log.d("TAG--", "Handeling BULK MSg: $sorted")
+                for (i in msgs) handleMsgCombine(fromUser, i.first, i.second, true)
+                Log.d("TAG--", "Handeling BULK MSg: $msgs")
             }
 
             "ACK-PRB" -> {
@@ -237,8 +247,7 @@ class MessageHandler(
                             }
 
                             MsgMediaType.VIDEO -> builderRoom.setRepBytes(
-                                repoStorage.getBytesOfVideoThumb(mod.replyMediaFileName ?: "def")
-                                    ?: ConversionUtils.base64ToByteArr(mod.replyData.split(",-,")[1])
+                                ConversionUtils.base64ToByteArr(mod.replyData.split(",-,")[1])
                             )
 
                             else -> {}
@@ -271,10 +280,23 @@ class MessageHandler(
             if (!isBulk) callBack(MsgsFlowState.IOFlowState(id, FlowType.SEND_PR, fromUser))
 
 
-            val per = repoPersons.getPersonByPhone(fromUser) ?: return
+            val per = repoPersons.getPersonByPhone(fromUser)
             val lastMsg: String = when (mod.msgType) {
                 MsgMediaType.TEXT, MsgMediaType.EMOJI -> mod.msgData
                 MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> mod.mediaFileName ?: mod.msgType.name
+            }
+            if (per == null) {
+                ModelRoomPersons(
+                    phoneNo = fromUser,
+                    name = repoRelation.getRelation(fromUser)?.partnerName ?: fromUser,
+                    mediaType = mod.msgType,
+                    lastMsg = lastMsg,
+                    lastMsgId = id,
+                    timeMillis = mod.timeMillis,
+                    unReadCount = 1,
+                    lastSeenMillis = -1L
+                ).also { repoPersons.insertPerson(it) }
+                return
             }
             ModelRoomPersons(
                 phoneNo = per.phoneNo,

@@ -15,6 +15,9 @@ interface Dao {
     @Query("update messages set id=:newId  where id=:tempId")
     fun updateMsgSent(tempId: Long, newId: Long)
 
+    @Query("update messages set msgStatus=:status  where id=:id")
+    fun updateMsgReceived(id: Long, status: String)
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     fun insertMsg(msg: ModelRoomMessage)
 
@@ -32,6 +35,13 @@ interface Dao {
 
     @Query("select * from messages where mediaFileName=:fileName")
     fun getByFileName(fileName: String): List<ModelRoomMessage>
+
+    @Query("DELETE from messages where id=:id")
+    fun deleteById(id: Long)
+
+    @Query("DELETE from messages where partnerId=:no")
+    fun deleteAllByPhone(no: String)
+
 
     //endregion TABLE MESSAGES
 

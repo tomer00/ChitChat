@@ -1,21 +1,22 @@
 package com.tomer.chitchat.modals.msgs
 
+import com.google.gson.annotations.SerializedName
 import com.tomer.chitchat.room.MsgMediaType
 
 data class ModelMsgSocket(
-    val replyId: Long,
-    val msgData: String,
-    val replyData: String,
-    val msgType: MsgMediaType,
-    val replyMsgType: MsgMediaType,
-    val isReply: Boolean,
-    val timeMillis: Long,
-    val replyMediaFileName: String?,
-    val mediaFileName: String?,
+    @SerializedName("reply_id") val replyId: Long,
+    @SerializedName("msg_data") val msgData: String,
+    @SerializedName("reply_data") val replyData: String,
+    @SerializedName("msg_type") val msgType: MsgMediaType,
+    @SerializedName("reply_msg_type") val replyMsgType: MsgMediaType,
+    @SerializedName("is_reply") val isReply: Boolean,
+    @SerializedName("time_millis") val timeMillis: Long,
+    @SerializedName("reply_media_file_name") val replyMediaFileName: String?,
+    @SerializedName("media_file_name") val mediaFileName: String?,
 ) {
     class Builder {
         private var replyId: Long = -1
-        private var time: Long = 0
+        private var time: Long = System.currentTimeMillis()
         private var msgData: String = ""
         private var replyData: String = ""
         private var mediaName: String? = null

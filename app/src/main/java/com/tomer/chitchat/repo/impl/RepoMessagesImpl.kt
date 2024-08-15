@@ -11,8 +11,15 @@ class RepoMessagesImpl @Inject constructor(
 ) : RepoMessages {
 
     override suspend fun addMsg(modal: ModelRoomMessage) {
-        if (dao.getFromID(modal.id) == null)
-            dao.insertMsg(modal)
+        dao.insertMsg(modal)
+    }
+
+    override suspend fun deleteById(msgId: Long) {
+        dao.deleteById(msgId)
+    }
+
+    override suspend fun deleteAllByUser(phone: String) {
+        dao.deleteAllByPhone(phone)
     }
 
     override suspend fun getMsg(id: Long): ModelRoomMessage? = dao.getByUser(id).getOrNull(0)
@@ -23,10 +30,7 @@ class RepoMessagesImpl @Inject constructor(
     }
 
     override suspend fun updateMsgReceived(msgId: Long, status: MsgStatus) {
-        val data = dao.getFromID(msgId) ?: return
-        dao.deleteFromId(msgId)
-        data.msgStatus = status
-        dao.insertMsg(data)
+        dao.updateMsgReceived(msgId, status.name)
     }
 
     override suspend fun getMsgFromFileName(fileName: String) = dao.getByFileName(fileName).getOrNull(0)

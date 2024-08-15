@@ -8,7 +8,6 @@ import android.annotation.SuppressLint
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
-import android.os.Handler
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -16,7 +15,6 @@ import android.view.View
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
-import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -234,12 +232,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
             sendTextMessage(msgText, isOnlyEmoji(msgText))
             b.etMsg.setText("")
-            Handler().postDelayed({ b.etMsg.requestFocus() }, 40)
+            b.root.postDelayed({ b.etMsg.requestFocus() }, 40)
             b.replyLayout.visibility = View.GONE
         }
         b.btCloseReplyLay.setOnClickListener {
             b.replyLayout.visibility = View.GONE
-            Handler().postDelayed({ b.etMsg.requestFocus() }, 40)
+            b.root.postDelayed({ b.etMsg.requestFocus() }, 40)
         }
         b.btGallery.setOnClickListener {
             if (b.contRelation.visibility == View.VISIBLE) return@setOnClickListener
@@ -442,7 +440,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                     builder.msgType(msgT.msgType)
                     builder.replyMsgType(msgT.replyType)
                     builder.isReply(msgT.isReply)
-                    builder.setTimeMillis(msg.msgId!!)
+                    builder.setTimeMillis(System.currentTimeMillis())
                     builder.replyMediaFileName(msgT.replyMediaFileName)
                     builder.mediaFileName(msgT.mediaFileName)
 
@@ -486,7 +484,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                             val b = getRvViewIfVisible(i) ?: return@runOnUiThread
                             animateTo0(b.rvProg)
                             Glide.with(this).load(msg.data.bytes)
-                                .transition(DrawableTransitionOptions.withCrossFade())
+                                .placeholder(b.mediaImg.drawable)
                                 .transform(RoundedCorners(12))
                                 .into(b.mediaImg)
                             break

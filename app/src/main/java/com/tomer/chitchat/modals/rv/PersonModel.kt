@@ -26,6 +26,7 @@ data class PersonModel(
         private var lastMessage: String = ""
         private var unreadCount: Int = 0
         private var isOnline: Boolean = false
+        private var isSelected: Boolean = false
         private var lastMessageFile: File? = null
         private var jsonText: String = ""
         private var jsonName: String = ""
@@ -38,6 +39,7 @@ data class PersonModel(
         fun lastMessage(lastMessage: String) = apply { this.lastMessage = lastMessage }
         fun unreadCount(unreadCount: Int) = apply { this.unreadCount = unreadCount }
         fun isOnline(isOnline: Boolean) = apply { this.isOnline = isOnline }
+        fun isSelected(isSelected: Boolean) = apply { this.isSelected = isSelected }
         fun lastMessageFile(lastMessageFile: File?) = apply { this.lastMessageFile = lastMessageFile }
         fun jsonText(messageContentJson: String) = apply { this.jsonText = messageContentJson }
         fun jsonName(messageSenderJson: String) = apply { this.jsonName = messageSenderJson }
@@ -50,7 +52,7 @@ data class PersonModel(
             messageMediaType,
             lastDate,
             lastMessage,
-            false,
+            isSelected,
             unreadCount,
             isOnline,
             lastMessageFile,

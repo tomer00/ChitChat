@@ -1,6 +1,5 @@
 package com.tomer.chitchat.repo.impl
 
-import com.tomer.chitchat.modals.rv.PersonModel
 import com.tomer.chitchat.repo.RepoPersons
 import com.tomer.chitchat.room.Dao
 import com.tomer.chitchat.room.ModelRoomPersons
@@ -16,8 +15,8 @@ class RepoPersonRoom(
         room.insertPerson(personRoom)
     }
 
-    override suspend fun deletePerson(personRoom: ModelRoomPersons) {
-        room.deletePerson(personRoom.phoneNo)
+    override suspend fun deletePersonById(phoneNo: String) {
+        room.deletePerson(phoneNo)
     }
 
     override suspend fun updatePerson(personRoom: ModelRoomPersons) {

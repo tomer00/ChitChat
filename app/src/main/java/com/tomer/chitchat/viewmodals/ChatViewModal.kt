@@ -58,7 +58,8 @@ class ChatViewModal @Inject constructor(
     private val repoMsgs: RepoMessages,
     private val repoStorage: RepoStorage,
     private val repoPersons: RepoPersons,
-    private val gson: Gson, private val retro: Api,
+    private val gson: Gson,
+    private val retro: Api,
     private val notificationService: NotificationService,
     private val repoRelations: RepoRelations,
     private val cryptoService: CryptoService,
@@ -162,7 +163,7 @@ class ChatViewModal @Inject constructor(
     private val msgHandler = MessageHandler(gson, repoMsgs, repoPersons, cryptoService, notificationService, repoRelations, repoStorage) { msg ->
 
         if (Utils.currentPartner?.partnerId.toString() == msg.fromUser) {
-            if (!isChatActivityVisible)
+            if (!isChatActivityVisible && msg.type == FlowType.MSG)
                 notificationService.showNewMessageNotification(msg.data, msg.fromUser)
 
             if (msg.type == FlowType.SERVER_REC) {
@@ -177,6 +178,8 @@ class ChatViewModal @Inject constructor(
                 flowMsgs.emit(msg)
                 if (msg.type == FlowType.SEND_PR)
                     sendViaSocket("${msg.fromUser}*ACK-PR${msg.msgId}")
+                else if (msg.type == FlowType.SEND_BULK_REC)
+                    sendViaSocket(BulkReceived(msg.fromUser, msg.data?.msg ?: "").toString())
             }
             return@MessageHandler
         }

@@ -206,8 +206,8 @@ class AdapPerson(
             oldItem.phoneNo == newItem.phoneNo
 
         override fun areContentsTheSame(oldItem: PersonModel, newItem: PersonModel) =
-            oldItem.lastDate == newItem.lastDate && oldItem.lastMsg == newItem.lastMsg
-                    && oldItem.isOnline == newItem.isOnline && oldItem.isSelected == newItem.isSelected
+            oldItem.lastMsgId == newItem.lastMsgId && oldItem.isOnline == newItem.isOnline &&
+                    oldItem.isSelected == newItem.isSelected && oldItem.unreadCount == newItem.unreadCount
     }
 
 

@@ -13,7 +13,7 @@ class RepoFileStorage @Inject constructor(
 ) : RepoStorage {
 
 
-    private val folder = context.getExternalFilesDir("media")
+    private val folder = File(context.getExternalFilesDir("ChitChat"), "media")
 
     override fun saveBytesToFolder(type: MsgMediaType, fileName: String, data: ByteArray) {
         val folderChild = File(folder, "/$type")
@@ -37,6 +37,12 @@ class RepoFileStorage @Inject constructor(
         val folderChild = File(folder, "/$type")
         val file = File(folderChild, mediaFileName)
         return file.exists()
+    }
+
+    override fun deleteFile(mediaFileName: String?, msgType: MsgMediaType) {
+        if (mediaFileName == null) return
+        val file = File(folder, "/$msgType/$mediaFileName")
+        if (file.exists()) file.delete()
     }
 
     override fun getBytesFromFolder(type: MsgMediaType, fileName: String): ByteArray? {

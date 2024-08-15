@@ -15,8 +15,10 @@ import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.EmojisHashingUtils
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 
 
@@ -31,7 +33,67 @@ class MainViewModal @Inject constructor(
     private val _persons = MutableLiveData<List<PersonModel>>()
     val persons: LiveData<List<PersonModel>> = _persons
 
-    private suspend fun ModelRoomPersons.toUi(oldList: List<PersonModel>, needTobeDownload: MutableList<Pair<Int, String>>): PersonModel {
+    //region SELECTION HANDLING
+
+    private val _headMenu = MutableLiveData<Boolean>()
+    val headMenu: LiveData<Boolean> = _headMenu
+
+    private val _selCount = MutableLiveData(0)
+    val selCount: LiveData<Int> = _selCount
+
+    private val selectedPhoneNos = mutableListOf<String>()
+
+    fun addDelNo(phoneNo: String): Boolean {
+        val i = selectedPhoneNos.indexOfFirst { phoneNo == it }
+        return if (i == -1) {
+            selectedPhoneNos.add(phoneNo)
+            true
+        } else {
+            selectedPhoneNos.removeIf { phoneNo == it }
+            false
+        }.also {
+            _selCount.postValue(selectedPhoneNos.size)
+            if (selectedPhoneNos.isEmpty()) {
+                if (headMenu.value != false)
+                    _headMenu.postValue(false)
+            } else
+                if (headMenu.value != true)
+                    _headMenu.postValue(true)
+        }
+    }
+
+    fun delSelected(isDel: Boolean, oldList: List<PersonModel>) {
+        if (isDel) {
+            viewModelScope.launch {
+                selectedPhoneNos.forEach {
+                    repoPersons.deletePersonById(it)
+                }
+                loadPersons(oldList)
+                withContext(Dispatchers.IO) {
+                    selectedPhoneNos.forEach { no ->
+                        val msgs = repoMsg.getMsgsOfUser(no)
+                        msgs.forEach { msg ->
+                            repoStorage.deleteFile(msg.mediaFileName, msg.msgType)
+                        }
+                        repoMsg.deleteAllByUser(no)
+                    }
+                }
+            }
+        }
+
+        selectedPhoneNos.clear()
+        _selCount.postValue(0)
+        _headMenu.postValue(false)
+
+    }
+
+    //endregion SELECTION HANDLING
+
+    //region LOAD PERSON DATA
+    private suspend fun ModelRoomPersons.toUi(
+        oldList: List<PersonModel>,
+        needTobeDownload: MutableList<Pair<Int, String>>,
+    ): PersonModel {
         val builder = PersonModel.Builder()
         builder.lastMsgId(lastMsgId)
         builder.name(name)
@@ -40,8 +102,12 @@ class MainViewModal @Inject constructor(
         builder.lastDate(ConversionUtils.getRelativeTime(timeMillis))
         builder.lastMessage(lastMsg)
         builder.unreadCount(unReadCount)
+        builder.isSelected(false)
         builder.isOnline(lastSeenMillis == -1L)
 
+
+        val prevSel = oldList.find { it.phoneNo == phoneNo }
+        if (prevSel != null) builder.isSelected(prevSel.isSelected)
 
         val old = oldList.find { it.lastMsgId == lastMsgId }
         if (old != null) {
@@ -117,4 +183,5 @@ class MainViewModal @Inject constructor(
             }
         }
     }
+    //endregion LOAD PERSON DATA
 }

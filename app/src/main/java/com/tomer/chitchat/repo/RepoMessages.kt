@@ -6,6 +6,8 @@ import com.tomer.chitchat.room.ModelRoomMessage
 interface RepoMessages {
 
     suspend fun addMsg(modal: ModelRoomMessage)
+    suspend fun deleteById(msgId: Long)
+    suspend fun deleteAllByUser(phone: String)
     suspend fun getMsg(id: Long): ModelRoomMessage?
     suspend fun getMsgsOfUser(partnerId: String): List<ModelRoomMessage>
     suspend fun updateMsg(tempId: Long, newId: Long)

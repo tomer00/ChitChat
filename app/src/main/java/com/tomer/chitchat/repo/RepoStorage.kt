@@ -11,4 +11,5 @@ interface RepoStorage {
     fun getBytesOfVideoThumb(mediaFileName: String):ByteArray?
     fun saveVideoThumb(mediaFileName: String, data: ByteArray)
     fun isPresent(mediaFileName: String, type: MsgMediaType): Boolean
+    fun deleteFile(mediaFileName: String?, msgType: MsgMediaType)
 }

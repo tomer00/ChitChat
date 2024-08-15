@@ -9,10 +9,12 @@ import android.graphics.drawable.Drawable
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.view.ViewAnimationUtils
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
 import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.lifecycleScope
@@ -36,6 +38,7 @@ import com.tomer.chitchat.databinding.ActivityMainBinding
 import com.tomer.chitchat.databinding.BarcodeDiaBinding
 import com.tomer.chitchat.databinding.RowPersonBinding
 import com.tomer.chitchat.modals.states.FlowType
+import com.tomer.chitchat.modals.states.MsgsFlowState
 import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.EmojisHashingUtils
@@ -84,6 +87,9 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             imgBarcode.setOnClickListener(this@MainActivity)
             imgFab.setOnClickListener(this@MainActivity)
             btCross.setOnClickListener(this@MainActivity)
+
+            btDel.setOnClickListener(this@MainActivity)
+            btBack.setOnClickListener(this@MainActivity)
         }
 
         ll = LinearLayoutManager(this@MainActivity)
@@ -123,137 +129,56 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         lifecycleScope.launch {
             chatVm.flowMsgs.collectLatest {
                 runOnUiThread {
-                    Log.d("TAG--", "Main Activity Handle msg : $it")
-                    when (it.type) {
-                        FlowType.MSG -> if (activityLife && it.data != null) {
-
-                            val lastMsg: String = when (it.data.msgType) {
-                                MsgMediaType.TEXT, MsgMediaType.EMOJI -> it.data.msg
-                                MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> it.data.mediaFileName ?: it.data.msgType.name
-                            }
-                            val b = getRvViewIfVisible(it.fromUser) ?: return@runOnUiThread
-                            b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.fore))
-                            b.tvLastMsg.text = lastMsg.also { b.tvLastMsg.tag = it }
-                            b.tvUnreadMsgCount.text = b.tvUnreadMsgCount.text.toString().toInt().plus(1).toString()
-
-                            when (it.data.msgType) { //more work to be done
-                                MsgMediaType.TEXT, MsgMediaType.EMOJI -> b.msgType.visibility = View.GONE
-                                MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> b.msgType.visibility = View.VISIBLE
-                            }
-
-                            when (it.data.msgType) {
-                                MsgMediaType.IMAGE, MsgMediaType.GIF -> {
-                                    val byes = assetsVM.getBytesOfFile(it.data.msgType, it.data.mediaFileName.toString())
-                                    Glide.with(this@MainActivity)
-                                        .load(byes ?: AdapPerson.getByteArr(it.data.msg.split(",-,")[1]))
-                                        .skipMemoryCache(true)
-                                        .diskCacheStrategy(DiskCacheStrategy.NONE)
-                                        .into(b.imgLottie)
-                                }
-
-                                MsgMediaType.FILE -> {
-                                    b.imgLottie.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, AdapPerson.getDrawableId(lastMsg)))
-                                }
-
-                                MsgMediaType.VIDEO -> {
-                                    Glide.with(this@MainActivity)
-                                        .asBitmap()
-                                        .load(AdapPerson.getByteArr(it.data.msg.split(",-,")[1]))
-                                        .skipMemoryCache(true)
-                                        .diskCacheStrategy(DiskCacheStrategy.NONE)
-                                        .into(
-                                            object : CustomTarget<Bitmap>() {
-                                                override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                                                    val b1 = getRvViewIfVisible(it.fromUser) ?: return
-                                                    b1.imgLottie.setImageBitmap(resource)
-                                                }
-
-                                                override fun onLoadCleared(placeholder: Drawable?) {
-                                                }
-
-                                                override fun onLoadFailed(errorDrawable: Drawable?) {
-                                                    val b1 = getRvViewIfVisible(it.fromUser) ?: return
-                                                    b1.imgLottie.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_video))
-                                                }
-                                            }
-                                        )
-                                }
-
-                                MsgMediaType.EMOJI -> {
-                                    val nameGoogleJson = EmojisHashingUtils.googleJHash[ConversionUtils.encode(it.data.msg)]
-                                    if (!nameGoogleJson.isNullOrEmpty()) {
-                                        assetsVM.showGoogleJsonViaFlow(nameGoogleJson, it.fromUser)
-                                        return@runOnUiThread
-                                    }
-
-                                    val nameJson = EmojisHashingUtils.jHash[ConversionUtils.encode(it.data.msg)]
-                                    if (!nameJson.isNullOrEmpty()) {
-                                        assetsVM.showJsonViaFlow(nameJson, it.fromUser)
-                                        return@runOnUiThread
-                                    }
-
-                                    val nameGif = EmojisHashingUtils.gHash[ConversionUtils.encode(it.data.msg)]
-                                    if (!nameGif.isNullOrEmpty()) {
-                                        assetsVM.showGifViaFlow(nameGif, it.fromUser)
-                                        return@runOnUiThread
-                                    }
-
-                                    val nameTeleGif = EmojisHashingUtils.teleHash[ConversionUtils.encode(it.data.msg)]
-                                    if (!nameTeleGif.isNullOrEmpty()) {
-                                        assetsVM.showTeleGifViaFlow(nameTeleGif, it.fromUser)
-                                        return@runOnUiThread
-                                    }
-                                }
-
-                                else -> {}
-                            }
-
-                        }
-
-                        FlowType.SERVER_REC -> {
-                            val old = adapter.currentList.find { t -> t.lastMsgId == (it.oldId ?: -2L) } ?: return@runOnUiThread
-                            old.lastMsgId = it.msgId ?: old.lastMsgId
-                        }
-
-                        FlowType.TYPING -> {
-                            val b = getRvViewIfVisible(it.fromUser) ?: return@runOnUiThread
-                            b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.primary))
-                            "Typing...".also { b.tvLastMsg.text = it }
-                        }
-
-                        FlowType.NO_TYPING -> {
-                            val b = getRvViewIfVisible(it.fromUser) ?: return@runOnUiThread
-                            if (b.tvLastMsg.text == "Typing...") {
-                                b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.fore))
-                                b.tvLastMsg.text = b.tvLastMsg.tag.toString()
-                            }
-                        }
-
-                        FlowType.SEND_NEW_CONNECTION_REQUEST -> {
-                            chatVm.connectNew(it.fromUser, false)
-                        }
-
-
-                        FlowType.INCOMING_NEW_CONNECTION_REQUEST -> if (activityLife) viewModal.loadPersons(adapter.currentList)
-                        FlowType.ONLINE,
-                        FlowType.OFFLINE -> if (activityLife) {
-                            val b = getRvViewIfVisible(it.fromUser) ?: return@runOnUiThread
-                            b.onlineIndi.setStatusAnimating(it.type == FlowType.ONLINE)
-                        }
-
-
-                        FlowType.OPEN_NEW_CONNECTION_ACTIVITY -> if (activityLife) startActivity(
-                            Intent(this@MainActivity, ChatActivity::class.java)
-                                .apply {
-                                    putExtra("phone", it.fromUser)
-                                }
-                        )
-
-                        else -> {}
-                    }
+                    handelFlowMsg(it)
                 }
             }
         }
+
+        viewModal.headMenu.observe(this@MainActivity) {
+            b.apply {
+                btProfile.isClickable = false
+                btSearch.isClickable = false
+                btBack.isClickable = false
+                btDel.isClickable = false
+            }
+            if (it) {
+                val width = b.layMainHead.width
+                val height = b.layMainHead.height
+                b.laySelHead.visibility = View.VISIBLE
+                ViewAnimationUtils.createCircularReveal(b.laySelHead, width.times(0.8f).toInt(), height.shr(1), 1f, width.toFloat()).apply {
+                    duration = 340
+                    doOnEnd {
+                        b.apply {
+                            btBack.isClickable = true
+                            btDel.isClickable = true
+                        }
+                    }
+                    start()
+                }
+            } else {
+                val width = b.laySelHead.width
+                val height = b.laySelHead.height
+                ViewAnimationUtils.createCircularReveal(b.laySelHead, width.times(0.8f).toInt(), height.shr(1), width.toFloat(), 1f).apply {
+                    duration = 340
+                    doOnEnd {
+                        b.apply {
+                            laySelHead.visibility = View.GONE
+                            btProfile.isClickable = true
+                            btSearch.isClickable = true
+                        }
+                    }
+                    start()
+                }
+            }
+
+        }
+        viewModal.selCount.observe(this@MainActivity) {
+            b.root.post {
+                b.tvSelCount.text = it.toString()
+            }
+        }
+
+
     }
 
     private fun getRvViewIfVisible(phone: String): RowPersonBinding? {
@@ -343,11 +268,26 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                 b.imgBarcode.pauseAnimation()
                 b.imgFab.visibility = View.VISIBLE
             }
+
+            b.btBack.id -> {
+                viewModal.delSelected(false, adapter.currentList)
+                for (i in adapter.currentList) {
+                    if (i.isSelected) i.isSelected = false
+                    val b = getRvViewIfVisible(i.phoneNo) ?: continue
+                    b.root.setBackgroundColor(ContextCompat.getColor(this, R.color.trans))
+                }
+            }
+
+            b.btDel.id -> viewModal.delSelected(true, adapter.currentList)
         }
     }
 
 
     override fun onClick(pos: Int) {
+        if (viewModal.headMenu.value == true) {
+            onLongClick(pos)
+            return
+        }
         startActivity(
             Intent(this, ChatActivity::class.java)
                 .apply {
@@ -357,7 +297,12 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     }
 
     override fun onLongClick(pos: Int) {
-
+        var isSel: Boolean
+        adapter.currentList[pos].isSelected = viewModal.addDelNo(adapter.currentList[pos].phoneNo).also { isSel = it }
+        val b = getRvViewIfVisible(adapter.currentList[pos].phoneNo) ?: return
+        val col = if (isSel) ContextCompat.getColor(this, R.color.primary_light)
+        else ContextCompat.getColor(this, R.color.backgroundC)
+        b.root.setBackgroundColor(col)
     }
 
 
@@ -403,5 +348,145 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
 //endregion BARCODE CALLBACK
 
+
+    //region Handel FLOW MSGS
+
+    private fun handelFlowMsg(msg: MsgsFlowState) {
+        Log.d("TAG--", "Main Activity Handle msg : $msg")
+        when (msg.type) {
+            FlowType.MSG -> if (activityLife && msg.data != null) {
+
+                if (adapter.currentList.find { it.phoneNo == msg.fromUser } == null) {
+                    b.root.postDelayed({ viewModal.loadPersons(adapter.currentList) }, 40)
+                    return
+                }
+
+                val lastMsg: String = when (msg.data.msgType) {
+                    MsgMediaType.TEXT, MsgMediaType.EMOJI -> msg.data.msg
+                    MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> msg.data.mediaFileName ?: msg.data.msgType.name
+                }
+                val b = getRvViewIfVisible(msg.fromUser) ?: return
+                b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.fore))
+                b.tvLastMsg.text = lastMsg.also { b.tvLastMsg.tag = it }
+                b.tvUnreadMsgCount.text = b.tvUnreadMsgCount.text.toString().toInt().plus(1).toString()
+
+                when (msg.data.msgType) {
+                    MsgMediaType.TEXT, MsgMediaType.EMOJI -> b.msgType.visibility = View.GONE
+                    MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> b.msgType.visibility = View.VISIBLE
+                }
+
+                when (msg.data.msgType) {
+                    MsgMediaType.IMAGE, MsgMediaType.GIF -> {
+                        val byes = assetsVM.getBytesOfFile(msg.data.msgType, msg.data.mediaFileName.toString())
+                        Glide.with(this@MainActivity)
+                            .load(byes ?: AdapPerson.getByteArr(msg.data.msg.split(",-,")[1]))
+                            .skipMemoryCache(true)
+                            .diskCacheStrategy(DiskCacheStrategy.NONE)
+                            .into(b.imgLottie)
+                    }
+
+                    MsgMediaType.FILE -> {
+                        b.imgLottie.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, AdapPerson.getDrawableId(lastMsg)))
+                    }
+
+                    MsgMediaType.VIDEO -> {
+                        Glide.with(this@MainActivity)
+                            .asBitmap()
+                            .load(AdapPerson.getByteArr(msg.data.msg.split(",-,")[1]))
+                            .skipMemoryCache(true)
+                            .diskCacheStrategy(DiskCacheStrategy.NONE)
+                            .into(
+                                object : CustomTarget<Bitmap>() {
+                                    override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                                        val b1 = getRvViewIfVisible(msg.fromUser) ?: return
+                                        b1.imgLottie.setImageBitmap(resource)
+                                    }
+
+                                    override fun onLoadCleared(placeholder: Drawable?) {
+                                    }
+
+                                    override fun onLoadFailed(errorDrawable: Drawable?) {
+                                        val b1 = getRvViewIfVisible(msg.fromUser) ?: return
+                                        b1.imgLottie.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_video))
+                                    }
+                                }
+                            )
+                    }
+
+                    MsgMediaType.EMOJI -> {
+                        val nameGoogleJson = EmojisHashingUtils.googleJHash[ConversionUtils.encode(msg.data.msg)]
+                        if (!nameGoogleJson.isNullOrEmpty()) {
+                            assetsVM.showGoogleJsonViaFlow(nameGoogleJson, msg.fromUser)
+                            return
+                        }
+
+                        val nameJson = EmojisHashingUtils.jHash[ConversionUtils.encode(msg.data.msg)]
+                        if (!nameJson.isNullOrEmpty()) {
+                            assetsVM.showJsonViaFlow(nameJson, msg.fromUser)
+                            return
+                        }
+
+                        val nameGif = EmojisHashingUtils.gHash[ConversionUtils.encode(msg.data.msg)]
+                        if (!nameGif.isNullOrEmpty()) {
+                            assetsVM.showGifViaFlow(nameGif, msg.fromUser)
+                            return
+                        }
+
+                        val nameTeleGif = EmojisHashingUtils.teleHash[ConversionUtils.encode(msg.data.msg)]
+                        if (!nameTeleGif.isNullOrEmpty()) {
+                            assetsVM.showTeleGifViaFlow(nameTeleGif, msg.fromUser)
+                            return
+                        }
+                    }
+
+                    else -> {}
+                }
+
+            }
+
+            FlowType.SERVER_REC -> {
+                val old = adapter.currentList.find { t -> t.lastMsgId == (msg.oldId ?: -2L) } ?: return
+                old.lastMsgId = msg.msgId ?: old.lastMsgId
+            }
+
+            FlowType.TYPING -> {
+                val b = getRvViewIfVisible(msg.fromUser) ?: return
+                b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.primary))
+                "Typing...".also { b.tvLastMsg.text = it }
+            }
+
+            FlowType.NO_TYPING -> {
+                val b = getRvViewIfVisible(msg.fromUser) ?: return
+                if (b.tvLastMsg.text == "Typing...") {
+                    b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.fore))
+                    b.tvLastMsg.text = b.tvLastMsg.tag.toString()
+                }
+            }
+
+            FlowType.SEND_NEW_CONNECTION_REQUEST -> {
+                chatVm.connectNew(msg.fromUser, false)
+            }
+
+
+            FlowType.INCOMING_NEW_CONNECTION_REQUEST -> if (activityLife) viewModal.loadPersons(adapter.currentList)
+            FlowType.ONLINE,
+            FlowType.OFFLINE -> if (activityLife) {
+                val b = getRvViewIfVisible(msg.fromUser) ?: return
+                b.onlineIndi.setStatusAnimating(msg.type == FlowType.ONLINE)
+            }
+
+
+            FlowType.OPEN_NEW_CONNECTION_ACTIVITY -> if (activityLife) startActivity(
+                Intent(this@MainActivity, ChatActivity::class.java)
+                    .apply {
+                        putExtra("phone", msg.fromUser)
+                    }
+            )
+
+            else -> {}
+        }
+    }
+
+    //endregion Handel FLOW MSGS
 
 }
