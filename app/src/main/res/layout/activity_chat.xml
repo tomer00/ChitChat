@@ -12,58 +12,126 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/layTop"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="@color/softBg"
-        android:padding="4dp"
+        android:layout_height="52dp"
         app:layout_constraintTop_toTopOf="parent">
 
-        <ImageView
-            android:id="@+id/btBack"
-            android:layout_width="28dp"
-            android:layout_height="28dp"
-            android:contentDescription="@string/app_name"
-            android:src="@drawable/round_arrow_back_24"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="@color/fore" />
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/layMainHead"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:padding="4dp"
+            android:visibility="visible">
 
-        <ImageView
-            android:id="@+id/imgDp"
-            android:layout_width="44dp"
-            android:layout_height="44dp"
-            android:layout_marginHorizontal="4dp"
-            android:contentDescription="@string/app_name"
-            android:src="@drawable/def_avatar"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toEndOf="@id/btBack"
-            app:layout_constraintTop_toTopOf="parent" />
+            <ImageView
+                android:id="@+id/btBack"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/round_arrow_back_24"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/fore" />
 
-        <TextView
-            android:id="@+id/tvPartnerName"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:textColor="@color/fore"
-            android:textSize="20sp"
-            app:layout_constraintStart_toEndOf="@id/imgDp"
-            app:layout_constraintTop_toTopOf="parent" />
+            <ImageView
+                android:id="@+id/imgDp"
+                android:layout_width="44dp"
+                android:layout_height="44dp"
+                android:layout_marginHorizontal="4dp"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/def_avatar"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@id/btBack"
+                app:layout_constraintTop_toTopOf="parent" />
 
-        <TextView
-            android:id="@+id/tvDetails"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
-            android:textColor="@color/fore"
-            app:layout_constraintStart_toEndOf="@id/imgDp"
-            app:layout_constraintTop_toBottomOf="@id/tvPartnerName" />
+            <TextView
+                android:id="@+id/tvPartnerName"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:fontFamily="@font/nunito_bold"
+                android:textColor="@color/fore"
+                android:textSize="20sp"
+                app:layout_constraintStart_toEndOf="@id/imgDp"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <TextView
+                android:id="@+id/tvDetails"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:fontFamily="@font/nunito_medium"
+                android:textColor="@color/hintCol"
+                app:layout_constraintStart_toEndOf="@id/imgDp"
+                app:layout_constraintTop_toBottomOf="@id/tvPartnerName" />
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:id="@+id/laySelHead"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="@color/backgroundSelBg"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/btBackSel"
+                android:layout_width="28dp"
+                android:layout_height="28dp"
+                android:layout_marginStart="8dp"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/round_arrow_back_24"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/fore" />
+
+            <TextView
+                android:id="@+id/tvSelCount"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="12dp"
+                android:fontFamily="@font/galindo"
+                android:text="1"
+                android:textColor="@color/fore"
+                android:textSize="24sp"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintStart_toEndOf="@id/btBackSel"
+                app:layout_constraintTop_toTopOf="parent" />
+
+            <ImageView
+                android:id="@+id/btDel"
+                android:layout_width="26dp"
+                android:layout_height="26dp"
+                android:layout_marginHorizontal="24dp"
+                android:contentDescription="@string/app_name"
+                android:src="@drawable/ic_delete"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
+
+
+    <ImageView
+        android:id="@+id/imgBg"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:alpha=".1"
+        android:contentDescription="@string/app_name"
+        android:scaleType="centerCrop"
+        android:src="@drawable/bg_light"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/rvMsg"
+        app:layout_constraintStart_toStartOf="@id/rvMsg"
+        app:layout_constraintTop_toTopOf="@id/rvMsg" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvMsg"
         android:layout_width="match_parent"
         android:layout_height="0dp"
+        android:scrollbars="vertical"
         app:layout_constraintBottom_toTopOf="@id/layBottom"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -77,17 +145,22 @@
         android:layout_marginEnd="8dp"
         android:layout_marginBottom="2dp"
         android:background="@drawable/round_bg"
-        android:backgroundTint="@color/green"
+        android:backgroundTint="@color/primary"
         android:contentDescription="@string/app_name"
         android:padding="-12dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintDimensionRatio="1"
         app:layout_constraintEnd_toEndOf="parent"
         app:lottie_autoPlay="false"
-        app:lottie_colorFilter="@color/fore"
+        app:lottie_colorFilter="@color/white"
         app:lottie_rawRes="@raw/send"
         app:lottie_renderMode="automatic" />
 
+    <com.google.android.material.divider.MaterialDivider
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        app:dividerColor="@color/hintCol"
+        app:layout_constraintTop_toBottomOf="@id/layTop" />
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/rvEmojiContainer"
@@ -145,12 +218,12 @@
             app:layout_constraintStart_toStartOf="parent">
 
             <androidx.cardview.widget.CardView
+                android:id="@+id/tCard"
                 android:layout_width="0dp"
                 android:layout_height="44dp"
-                app:cardCornerRadius="100dp"
-                android:id="@+id/tCard"
-                app:cardElevation="0dp"
                 app:cardBackgroundColor="@color/softBg"
+                app:cardCornerRadius="100dp"
+                app:cardElevation="0dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintDimensionRatio="1"
                 app:layout_constraintStart_toStartOf="parent">
@@ -173,7 +246,7 @@
                 android:layout_height="wrap_content"
                 android:layout_margin="8dp"
                 android:background="@drawable/etbg"
-                android:backgroundTint="@color/green"
+                android:backgroundTint="@color/primary"
                 android:elevation="-2dp"
                 android:visibility="gone"
                 app:layout_constraintBottom_toTopOf="@id/etMsg"
@@ -187,7 +260,7 @@
                     android:maxLines="4"
                     android:paddingHorizontal="12dp"
                     android:paddingVertical="4dp"
-                    android:textColor="@color/black"
+                    android:textColor="@color/white"
                     android:textSize="18sp"
                     android:visibility="visible"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -202,7 +275,6 @@
                     android:layout_margin="8dp"
                     android:adjustViewBounds="true"
                     android:contentDescription="@string/app_name"
-                    android:src="@drawable/ic_send"
                     android:visibility="gone"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintDimensionRatio="1"
@@ -214,10 +286,10 @@
                     android:layout_width="0dp"
                     android:layout_height="16dp"
                     android:layout_margin="8dp"
-                    android:focusable="false"
                     android:background="@drawable/round_bg"
                     android:backgroundTint="@color/white"
                     android:contentDescription="@string/app_name"
+                    android:focusable="false"
                     android:rotation="45"
                     android:src="@drawable/round_add_24"
                     app:layout_constraintBottom_toBottomOf="parent"
@@ -255,11 +327,11 @@
                 android:src="@drawable/ic_gifs"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintDimensionRatio="1"
-                app:layout_constraintEnd_toStartOf="@+id/btCamera"
-                app:tint="@color/green" />
+                app:layout_constraintEnd_toStartOf="@+id/btAttachments"
+                app:tint="@color/hintCol" />
 
             <ImageView
-                android:id="@+id/btCamera"
+                android:id="@+id/btAttachments"
                 android:layout_width="0dp"
                 android:layout_height="44dp"
                 android:contentDescription="@string/app_name"
@@ -268,7 +340,7 @@
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintDimensionRatio="1"
                 app:layout_constraintEnd_toStartOf="@+id/btAnimHelper"
-                app:tint="@color/green" />
+                app:tint="@color/hintCol" />
 
             <ImageView
                 android:id="@+id/btAnimHelper"
@@ -335,7 +407,7 @@
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="24dp"
         android:visibility="gone"
-        app:cardBackgroundColor="@color/primary_light"
+        app:cardBackgroundColor="@color/accent"
         app:cardCornerRadius="20dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
@@ -345,8 +417,8 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:animateLayoutChanges="true"
             android:layout_height="wrap_content"
+            android:animateLayoutChanges="true"
             android:padding="36dp">
 
             <ImageView
@@ -364,8 +436,9 @@
                 android:id="@+id/tvPartnerNameCard"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:textColor="@color/black"
-                android:fontFamily="@font/galindo"
+                android:layout_marginTop="12dp"
+                android:fontFamily="@font/nunito_bold"
+                android:textColor="@color/fore"
                 android:textSize="20sp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -375,6 +448,7 @@
                 android:id="@+id/tvStatusCard"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
+                android:fontFamily="@font/nunito_medium"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/tvPartnerNameCard" />
@@ -383,11 +457,11 @@
                 android:id="@+id/btNeg"
                 android:layout_width="48dp"
                 android:layout_height="48dp"
+                android:layout_marginTop="20dp"
                 android:background="@drawable/bg_circle"
                 android:backgroundTint="@color/red_update"
                 android:contentDescription="@string/app_name"
                 android:padding="16dp"
-                android:layout_marginTop="20dp"
                 android:src="@drawable/cross"
                 app:layout_constraintBottom_toBottomOf="@+id/btPositive"
                 app:layout_constraintEnd_toStartOf="@+id/btPositive"
@@ -399,18 +473,18 @@
                 android:id="@+id/btPositive"
                 android:layout_width="56dp"
                 android:layout_height="56dp"
-                app:lottie_rawRes="@raw/tick"
+                android:layout_marginTop="16dp"
                 android:background="@drawable/bg_circle"
                 android:backgroundTint="@color/green"
-                android:layout_marginTop="16dp"
-                app:lottie_autoPlay="true"
-                app:lottie_repeatCount="-1"
-                app:lottie_repeatMode="reverse"
                 android:contentDescription="@string/app_name"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintHorizontal_bias="0.5"
                 app:layout_constraintStart_toEndOf="@+id/btNeg"
-                app:layout_constraintTop_toBottomOf="@+id/tvStatusCard" />
+                app:layout_constraintTop_toBottomOf="@+id/tvStatusCard"
+                app:lottie_autoPlay="true"
+                app:lottie_rawRes="@raw/tick"
+                app:lottie_repeatCount="-1"
+                app:lottie_repeatMode="reverse" />
 
         </androidx.constraintlayout.widget.ConstraintLayout>
     </androidx.cardview.widget.CardView>

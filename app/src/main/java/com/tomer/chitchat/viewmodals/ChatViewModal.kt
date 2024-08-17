@@ -166,6 +166,9 @@ class ChatViewModal @Inject constructor(
             if (!isChatActivityVisible && msg.type == FlowType.MSG)
                 notificationService.showNewMessageNotification(msg.data, msg.fromUser)
 
+            if (isChatActivityVisible && msg.type == FlowType.MSG)
+                clearUnreadCount()
+
             if (msg.type == FlowType.SERVER_REC) {
                 for (i in chatMsgs.indices) {
                     if (chatMsgs[i].id == msg.oldId!!) {
@@ -184,6 +187,7 @@ class ChatViewModal @Inject constructor(
             return@MessageHandler
         }
 
+        viewModelScope.launch { flowMsgs.emit(msg) }
         if (msg.type == FlowType.MSG) {
             notificationService.showNewMessageNotification(msg.data, msg.fromUser)
         } else if (msg.type == FlowType.SEND_PR)
@@ -191,9 +195,9 @@ class ChatViewModal @Inject constructor(
                 sendViaSocket("${msg.fromUser}*ACK-PR${msg.msgId}")
             }
         else if (msg.type == FlowType.SEND_BULK_REC)
-            sendViaSocket(BulkReceived(msg.fromUser, msg.data?.msg ?: "").toString())
-
-        viewModelScope.launch { flowMsgs.emit(msg) }
+            viewModelScope.launch {
+                sendViaSocket(BulkReceived(msg.fromUser, msg.data?.msg ?: "").toString())
+            }
     }
 
 
@@ -254,7 +258,7 @@ class ChatViewModal @Inject constructor(
                 }"
                 sendViaSocket(actualMsg)
                 try {
-                    flowMsgs.emit(MsgsFlowState.ChatMessageFlowState(builder.buildUI(), roomMsg.partnerId))
+                    flowMsgs.emit(MsgsFlowState.ChatMessageFlowState(builder.buildUI(), roomMsg.partnerId, true))
                     repoMsgs.addMsg(builder.build())
                     updatePersonModel(msg, builder.build().id)
                 } catch (_: Exception) {
@@ -301,6 +305,14 @@ class ChatViewModal @Inject constructor(
         }
     }
 
+    fun clearUnreadCount() {
+        viewModelScope.launch {
+            val per = repoPersons.getPersonByPhone(Utils.currentPartner!!.partnerId) ?: return@launch
+            per.unReadCount = 0
+            repoPersons.insertPerson(per)
+        }
+    }
+
     fun updatePersonModel(mod: ModelMsgSocket, tempId: Long) {
         viewModelScope.launch {
             val per = repoPersons.getPersonByPhone(Utils.currentPartner!!.partnerId) ?: return@launch
@@ -316,7 +328,9 @@ class ChatViewModal @Inject constructor(
                 lastMsgId = tempId,
                 timeMillis = mod.timeMillis,
                 unReadCount = per.unReadCount,
-                lastSeenMillis = per.lastSeenMillis
+                lastSeenMillis = per.lastSeenMillis,
+                isSent = true,
+                msgStatus = MsgStatus.SENDING
             ).also { repoPersons.insertPerson(it) }
         }
     }
@@ -424,44 +438,32 @@ class ChatViewModal @Inject constructor(
     }
 
     fun connectNew(phone: String, openNextActivity: Boolean) {
-        if (!phone.isDigitsOnly()) return
-        val relation = ModelRoomPersonRelation(phone, phone, isConnSent = true, isAccepted = false, isRejected = false)
-        Utils.currentPartner = relation
-        cryptoService.setCurrentPartner(phone)
         viewModelScope.launch {
-            val per = repoPersons.getPersonByPhone(phone)
-            if (per == null) {
-                repoPersons.insertPerson(
-                    ModelRoomPersons(
-                        phone, "",
-                        MsgMediaType.TEXT, "", -1L,
-                        System.currentTimeMillis(),
-                        lastSeenMillis = System.currentTimeMillis()
-                    )
-                )
-            }
+            if (!phone.isDigitsOnly()) return@launch
+            val oldRel = repoRelations.getRelation(phone)
+            val relation = ModelRoomPersonRelation(phone, oldRel?.partnerName ?: phone, isConnSent = true, isAccepted = false, isRejected = false)
+            Utils.currentPartner = relation
+            cryptoService.setCurrentPartner(phone)
+
             genKeyAndSendNotification(relation)
             if (openNextActivity)
                 flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.OPEN_NEW_CONNECTION_ACTIVITY, phone))
             else flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.INCOMING_NEW_CONNECTION_REQUEST, phone))
 
             //getting Name from server
-            val name = try {
-                retro.getName(phone).body() ?: return@launch
+            val name = oldRel?.partnerName ?: try {
+                retro.getName(phone).body() ?: phone
             } catch (e: Exception) {
-                return@launch
+                phone
             }
-            val oldPer = repoPersons.getPersonByPhone(phone) ?: return@launch
-
-            repoPersons.insertPerson(
-                ModelRoomPersons(
-                    phone, name,
-                    oldPer.mediaType, oldPer.lastMsg,
-                    oldPer.lastMsgId,
-                    oldPer.timeMillis,
-                    lastSeenMillis = oldPer.lastSeenMillis
-                )
-            )
+            ModelRoomPersons(
+                phone, name,
+                MsgMediaType.TEXT, "Connection request sent...", -1L,
+                System.currentTimeMillis(),
+                lastSeenMillis = System.currentTimeMillis(),
+                isSent = false,
+                msgStatus = MsgStatus.RECEIVED
+            ).apply { repoPersons.insertPerson(this) }
         }
     }
 

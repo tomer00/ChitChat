@@ -14,6 +14,7 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.tomer.chitchat.R
 import com.tomer.chitchat.databinding.RowPersonBinding
 import com.tomer.chitchat.modals.rv.PersonModel
+import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.Utils.Companion.getDpLink
@@ -52,15 +53,28 @@ class AdapPerson(
             .error(R.drawable.def_avatar)
             .into(holder.b.imgProfile)
 
-        holder.b.tvLastMsg.setTextColor(ContextCompat.getColor(context, R.color.fore))
+        holder.b.tvUnreadMsgCount.text = model.unreadCount.toString()
         if (model.unreadCount > 0) {
             holder.b.tvUnreadMsgCount.visibility = View.VISIBLE
-            holder.b.tvUnreadMsgCount.text = model.unreadCount.toString()
-            holder.b.tvTime.setTextColor(ContextCompat.getColor(context, R.color.primary))
+            holder.b.tvTime.setTextColor(ContextCompat.getColor(context, R.color.purple))
         } else {
             holder.b.tvUnreadMsgCount.visibility = View.GONE
-            holder.b.tvTime.setTextColor(ContextCompat.getColor(context, R.color.fore))
+            holder.b.tvTime.setTextColor(ContextCompat.getColor(context, R.color.hintCol))
         }
+
+        if (model.isSent) {
+            holder.b.msgStatus.visibility = View.VISIBLE
+            holder.b.msgStatus.setImageDrawable(
+                ContextCompat.getDrawable(
+                    context, when (model.msgStatus) {
+                        MsgStatus.SENDING -> R.drawable.ic_sending
+                        MsgStatus.SENT_TO_SERVER -> R.drawable.ic_tick
+                        MsgStatus.RECEIVED -> R.drawable.ic_double_tick
+                    }
+                )
+            )
+        } else holder.b.msgStatus.visibility = View.GONE
+
 
         when (model.mediaType) {
             MsgMediaType.EMOJI -> {

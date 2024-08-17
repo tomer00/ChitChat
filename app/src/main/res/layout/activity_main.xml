@@ -21,13 +21,13 @@
             android:visibility="visible">
 
             <TextView
-                android:id="@+id/textView"
+                android:id="@+id/tvAppName"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:fontFamily="@font/galindo"
                 android:text="@string/app_name"
-                android:textColor="@color/fore"
+                android:textColor="@color/primary"
                 android:textSize="24sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
@@ -59,7 +59,7 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
             android:id="@+id/laySelHead"
-            android:background="@color/backgroundC"
+            android:background="@color/backgroundSelBg"
             android:layout_height="match_parent"
             android:visibility="gone">
 
@@ -121,7 +121,7 @@
         android:layout_margin="20dp"
         android:contentDescription="@string/app_name"
         android:src="@drawable/baseline_person_pin_24"
-        app:cardBackgroundColor="@color/primary_light"
+        app:cardBackgroundColor="@color/primary"
         app:cardCornerRadius="30dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
@@ -138,7 +138,8 @@
                 android:layout_height="60dp"
                 android:contentDescription="@string/app_name"
                 android:padding="12dp"
-                android:src="@drawable/baseline_person_pin_24"
+                android:src="@drawable/ic_add_chat"
+                android:tint="@color/white"
                 android:visibility="visible"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -162,8 +163,8 @@
                     android:importantForAutofill="no"
                     android:inputType="number"
                     android:maxLength="10"
-                    android:textColor="@color/primary"
-                    android:textColorHint="@color/softBg"
+                    android:textColor="@color/white"
+                    android:textColorHint="@color/white"
                     android:textSize="16sp"
                     android:textStyle="bold"
                     app:layout_constraintTop_toTopOf="parent" />
@@ -203,7 +204,7 @@
                     android:layout_height="40dp"
                     android:layout_margin="20dp"
                     android:background="@drawable/bg_circle"
-                    android:backgroundTint="@color/primary"
+                    android:backgroundTint="@color/purple"
                     android:fontFamily="@font/galindo"
                     android:gravity="center"
                     android:text="CONNECT"

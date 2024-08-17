@@ -73,7 +73,7 @@ interface Api {
 
     @FormUrlEncoded
     @POST("/chat/name")
-    suspend fun getName(phone: String): Response<String>
+    suspend fun getName(@Field("phone") phone: String): Response<String>
 
 
 }

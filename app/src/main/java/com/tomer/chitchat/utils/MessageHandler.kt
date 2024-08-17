@@ -48,7 +48,8 @@ class MessageHandler(
                 try {
                     val mod = gson.fromJson(actualDecData, ModelMsgSocket::class.java)
                     val currentId = ConversionUtils.fromBase64(text.substring(17, 29))
-                    handleMsgCombine(fromUser, currentId, mod, false)
+                    callBack(MsgsFlowState.IOFlowState(currentId, FlowType.SEND_PR, fromUser))
+                    handleMsgCombine(fromUser, currentId, mod, true)
                 } catch (e: Exception) {
                     Log.e("TAG--", "handelMsg: ", e)
                 }
@@ -61,7 +62,6 @@ class MessageHandler(
                 repoMsg.updateMsgReceived(newId, MsgStatus.SENT_TO_SERVER)
                 callBack(MsgsFlowState.MsgStatusFlowState(newId, tempId, FlowType.SERVER_REC, fromUser))
 
-
                 val per = repoPersons.getPersonByPhone(fromUser) ?: return
                 if (per.lastMsgId == tempId)
                     ModelRoomPersons(
@@ -72,7 +72,9 @@ class MessageHandler(
                         lastMsgId = newId,
                         timeMillis = per.timeMillis,
                         unReadCount = per.unReadCount,
-                        lastSeenMillis = per.lastSeenMillis
+                        lastSeenMillis = per.lastSeenMillis,
+                        isSent = true,
+                        msgStatus = MsgStatus.SENT_TO_SERVER
                     ).also { repoPersons.insertPerson(it) }
             }
 
@@ -81,6 +83,20 @@ class MessageHandler(
                 repoMsg.updateMsgReceived(idL, MsgStatus.RECEIVED)
                 callBack(MsgsFlowState.MsgStatusFlowState(idL, idL, FlowType.PARTNER_REC, fromUser))
 
+                val per = repoPersons.getPersonByPhone(fromUser) ?: return
+                if (per.lastMsgId == idL)
+                    ModelRoomPersons(
+                        phoneNo = per.phoneNo,
+                        name = per.name,
+                        mediaType = per.mediaType,
+                        lastMsg = per.lastMsg,
+                        lastMsgId = idL,
+                        timeMillis = per.timeMillis,
+                        unReadCount = per.unReadCount,
+                        lastSeenMillis = per.lastSeenMillis,
+                        isSent = true,
+                        msgStatus = MsgStatus.RECEIVED
+                    ).also { repoPersons.insertPerson(it) }
             }
 
             "*-TYP-*" -> callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.TYPING, fromUser))
@@ -99,8 +115,7 @@ class MessageHandler(
                     per.lastSeenMillis = text.substring(17).toLong()
                     callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.OFFLINE, fromUser, per.lastSeenMillis))
                     repoPersons.insertPerson(per)
-                } catch (e: Exception) {
-                    Log.e("TAG--", "handelMsg: ", e)
+                } catch (_: Exception) {
                     callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.OFFLINE, fromUser, System.currentTimeMillis()))
                 }
             }
@@ -146,16 +161,33 @@ class MessageHandler(
                 uiB.setMsg(sb.toString())
                 callBack(MsgsFlowState.IOFlowState(0L, FlowType.SEND_BULK_REC, fromUser, uiB.build()))
 
-                for (i in msgs) handleMsgCombine(fromUser, i.first, i.second, true)
+                for (i in 0..msgs.size - 2) handleMsgCombine(fromUser, msgs[i].first, msgs[i].second, false)
+                handleMsgCombine(fromUser, msgs[msgs.lastIndex].first, msgs[msgs.lastIndex].second, true)
                 Log.d("TAG--", "Handeling BULK MSg: $msgs")
             }
 
             "ACK-PRB" -> {
+                val per = repoPersons.getPersonByPhone(fromUser) ?: return
+
                 text.substring(17).split(",")
                     .forEach {
                         val idL = it.toLong()
                         repoMsg.updateMsgReceived(idL, MsgStatus.RECEIVED)
                         callBack(MsgsFlowState.MsgStatusFlowState(idL, idL, FlowType.PARTNER_REC, fromUser))
+
+                        if (per.lastMsgId == idL)
+                            ModelRoomPersons(
+                                phoneNo = per.phoneNo,
+                                name = per.name,
+                                mediaType = per.mediaType,
+                                lastMsg = per.lastMsg,
+                                lastMsgId = idL,
+                                timeMillis = per.timeMillis,
+                                unReadCount = per.unReadCount,
+                                lastSeenMillis = per.lastSeenMillis,
+                                isSent = true,
+                                msgStatus = MsgStatus.RECEIVED
+                            ).also { p -> repoPersons.insertPerson(p) }
                     }
             }
 
@@ -171,9 +203,11 @@ class MessageHandler(
                 repoPersons.insertPerson(
                     ModelRoomPersons(
                         fromUser, sts[1],
-                        MsgMediaType.TEXT, "", -1L,
+                        MsgMediaType.TEXT, "Sent you connection request...", -1L,
                         System.currentTimeMillis(),
-                        lastSeenMillis = System.currentTimeMillis()
+                        lastSeenMillis = System.currentTimeMillis(),
+                        isSent = false,
+                        msgStatus = MsgStatus.RECEIVED
                     )
                 )
                 callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.INCOMING_NEW_CONNECTION_REQUEST, fromUser, System.currentTimeMillis()))
@@ -185,6 +219,7 @@ class MessageHandler(
                     return
                 }
 
+                callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.REQ_ACCEPTED, fromUser))
                 val sts = text.substring(17).split(",-,".toRegex(), 2)
                 crypto.updateKeyAndGenerateFullKey(sts[0], fromUser)
                 repoRelation.saveRelation(
@@ -195,26 +230,38 @@ class MessageHandler(
                 repoPersons.insertPerson(
                     ModelRoomPersons(
                         fromUser, sts[1],
-                        MsgMediaType.TEXT, "", -1L,
+                        MsgMediaType.TEXT, "Request accepted...", -1L,
                         System.currentTimeMillis(),
-                        lastSeenMillis = System.currentTimeMillis()
+                        lastSeenMillis = System.currentTimeMillis(),
+                        isSent = false,
+                        msgStatus = MsgStatus.RECEIVED
                     )
                 )
-                callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.REQ_ACCEPTED, fromUser))
             }
 
             "*F-REJ*" -> {
+                callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.REQ_REJECTED, fromUser))
+                val oldPer = repoPersons.getPersonByPhone(fromUser)
+                val name = repoRelation.getRelation(fromUser)?.partnerName ?: fromUser
+                if (oldPer != null)
+                    ModelRoomPersons(
+                        fromUser, name,
+                        MsgMediaType.TEXT, "Request rejected...", -1L,
+                        System.currentTimeMillis(),
+                        lastSeenMillis = oldPer.lastSeenMillis,
+                        isSent = false,
+                        msgStatus = MsgStatus.RECEIVED
+                    ).also { repoPersons.insertPerson(it) }
                 repoRelation.saveRelation(
                     ModelRoomPersonRelation(
                         fromUser, fromUser, isConnSent = true, isAccepted = false, isRejected = true
                     )
                 )
-                callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.REQ_REJECTED, fromUser))
             }
         }
     }
 
-    private suspend fun handleMsgCombine(fromUser: String, id: Long, mod: ModelMsgSocket, isBulk: Boolean) {
+    private suspend fun handleMsgCombine(fromUser: String, id: Long, mod: ModelMsgSocket, isLast: Boolean) {
         val builderRoom = ModelRoomMessageBuilder()
         try {
             Log.d("TAG--", "handelMsg: $mod")
@@ -276,28 +323,28 @@ class MessageHandler(
                 else -> {}
             }
 
-            callBack(MsgsFlowState.ChatMessageFlowState(builderRoom.buildUI(), fromUser))
-            if (!isBulk) callBack(MsgsFlowState.IOFlowState(id, FlowType.SEND_PR, fromUser))
+            if (!isLast) {
+                callBack(MsgsFlowState.ChatMessageFlowState(builderRoom.buildUI(), fromUser, false))
+                return
+            }
 
-
-            val per = repoPersons.getPersonByPhone(fromUser)
             val lastMsg: String = when (mod.msgType) {
                 MsgMediaType.TEXT, MsgMediaType.EMOJI -> mod.msgData
                 MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> mod.mediaFileName ?: mod.msgType.name
             }
-            if (per == null) {
-                ModelRoomPersons(
-                    phoneNo = fromUser,
-                    name = repoRelation.getRelation(fromUser)?.partnerName ?: fromUser,
-                    mediaType = mod.msgType,
-                    lastMsg = lastMsg,
-                    lastMsgId = id,
-                    timeMillis = mod.timeMillis,
-                    unReadCount = 1,
-                    lastSeenMillis = -1L
-                ).also { repoPersons.insertPerson(it) }
-                return
-            }
+            val per = repoPersons.getPersonByPhone(fromUser) ?: ModelRoomPersons(
+                phoneNo = fromUser,
+                name = repoRelation.getRelation(fromUser)?.partnerName ?: fromUser,
+                mediaType = mod.msgType,
+                lastMsg = lastMsg,
+                lastMsgId = id,
+                timeMillis = mod.timeMillis,
+                unReadCount = 0,
+                lastSeenMillis = -1L,
+                isSent = false,
+                msgStatus = MsgStatus.RECEIVED
+            )
+
             ModelRoomPersons(
                 phoneNo = per.phoneNo,
                 name = per.name,
@@ -306,9 +353,11 @@ class MessageHandler(
                 lastMsgId = id,
                 timeMillis = mod.timeMillis,
                 unReadCount = per.unReadCount + 1,
-                lastSeenMillis = per.lastSeenMillis
+                lastSeenMillis = per.lastSeenMillis,
+                isSent = false,
+                msgStatus = MsgStatus.RECEIVED
             ).also { repoPersons.insertPerson(it) }
-
+            callBack(MsgsFlowState.ChatMessageFlowState(builderRoom.buildUI(), fromUser, true))
         } catch (e: Exception) {
             Log.e("TAG--", "handelMsg: ", e)
         }

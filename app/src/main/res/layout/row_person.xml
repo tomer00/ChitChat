@@ -21,17 +21,17 @@
     <com.tomer.chitchat.ui.views.ViewOnlineIndi
         android:id="@+id/onlineIndi"
         android:layout_width="0dp"
-        app:layout_constraintStart_toStartOf="parent"
+        android:layout_height="match_parent"
         app:layout_constraintDimensionRatio="1"
-        android:layout_height="match_parent"/>
+        app:layout_constraintStart_toStartOf="parent" />
 
     <ImageView
         android:id="@+id/imgProfile"
         android:layout_width="48dp"
         android:layout_height="48dp"
         android:layout_margin="12dp"
-        android:src="@drawable/def_avatar"
         android:contentDescription="@string/app_name"
+        android:src="@drawable/def_avatar"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
@@ -49,6 +49,8 @@
             android:id="@+id/tvName"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:fontFamily="@font/nunito_bold"
             android:text="@string/app_name"
             android:textColor="@color/fore"
             android:textSize="18sp"
@@ -59,10 +61,10 @@
             android:id="@+id/tvTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="06/09/2024"
+            android:background="@drawable/round_bg"
             android:backgroundTint="@color/transBg"
             android:paddingHorizontal="8dp"
-            android:background="@drawable/round_bg"
+            android:text="06/09/2024"
             app:layout_constraintBottom_toBottomOf="@id/tvName"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/tvName" />
@@ -73,11 +75,10 @@
             android:layout_height="wrap_content"
             android:layout_margin="4dp"
             android:background="@drawable/bg_circle"
-            android:backgroundTint="@color/primary_dark"
+            android:backgroundTint="@color/purple"
             android:gravity="center"
             android:padding="2dp"
-            android:text="1"
-            android:textColor="@color/white"
+            android:textColor="@color/backgroundC"
             app:layout_constraintDimensionRatio="1"
             app:layout_constraintEnd_toEndOf="@+id/tvTime"
             app:layout_constraintTop_toBottomOf="@id/tvTime" />
@@ -90,6 +91,18 @@
             android:orientation="horizontal"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvName">
+
+            <ImageView
+                android:id="@+id/msgStatus"
+                android:layout_width="20dp"
+                android:layout_height="20dp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="2dp"
+                android:contentDescription="@string/app_name"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/hintCol" />
 
             <ImageView
                 android:id="@+id/msgType"
@@ -105,11 +118,11 @@
                 android:id="@+id/tvLastMsg"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:alpha=".78"
-                android:backgroundTint="@color/transBg"
-                android:paddingHorizontal="8dp"
                 android:background="@drawable/round_bg"
-                android:textColor="@color/fore"
+                android:backgroundTint="@color/transBg"
+                android:fontFamily="@font/nunito_medium"
+                android:paddingHorizontal="8dp"
+                android:textColor="@color/hintCol"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/tvName" />
         </LinearLayout>

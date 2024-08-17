@@ -5,6 +5,7 @@ import com.tomer.chitchat.utils.ConversionUtils.chatVM as vm
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.annotation.SuppressLint
+import android.content.res.Configuration
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -129,12 +130,23 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
     override fun onResume() {
         super.onResume()
         vm.isChatActivityVisible = true
+        vm.clearUnreadCount()
     }
 
     override fun onPause() {
         super.onPause()
         vm.isChatActivityVisible = false
     }
+
+    // Import required classes
+
+
+    // Method to check if dark mode is enabled
+    private fun isDarkModeEnabled(): Boolean {
+        val currentNightMode = resources.configuration.uiMode.and(Configuration.UI_MODE_NIGHT_MASK)
+        return currentNightMode == Configuration.UI_MODE_NIGHT_YES
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -143,7 +155,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             finish()
             return
         }
-        window.statusBarColor = ContextCompat.getColor(this, R.color.softBg)
         setContentView(b.root)
 
         vm.openChat(intent.getStringExtra("phone")!!)
@@ -166,6 +177,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                     timeVisibilityQueue.removeFirst()
             }
         }
+
+        if (isDarkModeEnabled()) b.imgBg.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.bg_dark))
 
         b.etMsg.setKeyboardInputCall { info ->
             if (b.contRelation.visibility == View.VISIBLE) return@setKeyboardInputCall
@@ -373,6 +386,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
     private fun handleMsgStatusAnimation(serverRec: Boolean, id: Long?) {
         val index = vm.chatMsgs.indexOfFirst { id == it.id }
+        if (index == -1) return
         vm.chatMsgs[index].status = if (serverRec) MsgStatus.SENT_TO_SERVER else MsgStatus.RECEIVED
         val b = getRvViewIfVisible(index) ?: return
         val animDur = 200L
@@ -666,16 +680,28 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
     //region CLICK LISTENERS
 
-    override fun onChatItemClicked(pos: Int) {
-        val b = getRvViewIfVisible(pos) ?: return
-        if (vm.chatMsgs[pos].status != MsgStatus.RECEIVED) return
-        b.contTime.visibility = View.VISIBLE
-        timeVisibilityQueue.removeIf { it.second == vm.chatMsgs[pos].id }
-        timeVisibilityQueue.addLast(Pair(System.currentTimeMillis() + 2000, vm.chatMsgs[pos].id))
+    override fun onChatItemClicked(pos: Int, type: ChatAdapter.ClickEvents) {
+        when (type) {
+            ChatAdapter.ClickEvents.DOWNLOAD -> onChatItemDownloadClicked(pos)
+            ChatAdapter.ClickEvents.UPLOAD -> onChatItemUploadClicked(pos)
+            ChatAdapter.ClickEvents.REPLY -> onChatItemReplyClicked(pos)
+            //root Case
+            else -> {
+                val b = getRvViewIfVisible(pos) ?: return
+                if (vm.chatMsgs[pos].status != MsgStatus.RECEIVED) return
+                b.contTime.visibility = View.VISIBLE
+                timeVisibilityQueue.removeIf { it.second == vm.chatMsgs[pos].id }
+                timeVisibilityQueue.addLast(Pair(System.currentTimeMillis() + 2000, vm.chatMsgs[pos].id))
+            }
+        }
     }
 
     override fun onChatItemLongClicked(pos: Int) {
         //todo DELETING MSGS
+    }
+
+    override fun onImageClick(pos: Int, imageView: View) {
+
     }
 
 
@@ -700,7 +726,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         v.isClickable = true
     }
 
-    override fun onChatItemDownloadClicked(pos: Int) {
+    private fun onChatItemDownloadClicked(pos: Int) {
         val mod = vm.chatMsgs[pos]
         vmAssets.downLoadFile(mod.msg.split(",-,")[0], mod.mediaFileName!!, mod.msgType, mod.id, Utils.currentPartner!!.partnerId) {
             runOnUiThread {
@@ -721,13 +747,22 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         animateTo1(b.rvProg)
     }
 
-    override fun onChatItemUploadClicked(pos: Int) {
+    private fun onChatItemUploadClicked(pos: Int) {
         vmAssets.uploadRetry(vm.chatMsgs[pos], Utils.currentPartner!!.partnerId)
         val b = getRvViewIfVisible(pos) ?: return
 
         animateTo0(b.btRet)
         animateTo1(b.rvProg)
     }
+
+    private fun onChatItemReplyClicked(pos: Int) {
+        vmAssets.uploadRetry(vm.chatMsgs[pos], Utils.currentPartner!!.partnerId)
+        val b = getRvViewIfVisible(pos) ?: return
+
+        animateTo0(b.btRet)
+        animateTo1(b.rvProg)
+    }
+
 
     override fun showRep(position: Int) {
         currentReplyMsgData = vm.chatMsgs[position]

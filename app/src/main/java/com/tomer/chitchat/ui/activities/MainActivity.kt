@@ -3,6 +3,7 @@ package com.tomer.chitchat.ui.activities
 import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -10,6 +11,7 @@ import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.view.ViewAnimationUtils
+import android.view.animation.LinearInterpolator
 import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
@@ -38,15 +40,18 @@ import com.tomer.chitchat.databinding.ActivityMainBinding
 import com.tomer.chitchat.databinding.BarcodeDiaBinding
 import com.tomer.chitchat.databinding.RowPersonBinding
 import com.tomer.chitchat.modals.states.FlowType
+import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.modals.states.MsgsFlowState
 import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
+import com.tomer.chitchat.utils.ConversionUtils.chatVM
 import com.tomer.chitchat.utils.EmojisHashingUtils
 import com.tomer.chitchat.utils.Utils
 import com.tomer.chitchat.viewmodals.AssetsViewModel
 import com.tomer.chitchat.viewmodals.ChatViewModal
 import com.tomer.chitchat.viewmodals.MainViewModal
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 
@@ -68,6 +73,12 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
     private var activityLife = false
 
+    // Method to check if dark mode is enabled
+    private fun isDarkModeEnabled(): Boolean {
+        val currentNightMode = resources.configuration.uiMode.and(Configuration.UI_MODE_NIGHT_MASK)
+        return currentNightMode == Configuration.UI_MODE_NIGHT_YES
+    }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
@@ -79,7 +90,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             return
         }
         Utils.myPhone = FirebaseAuth.getInstance().currentUser?.phoneNumber?.substring(3) ?: ""
-
+        if (isDarkModeEnabled()) b.tvAppName.setTextColor(ContextCompat.getColor(this, R.color.white))
         ConversionUtils.chatVM = chatVm
         ConversionUtils.assetsVM = assetsVM
         b.apply {
@@ -145,29 +156,38 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                 val width = b.layMainHead.width
                 val height = b.layMainHead.height
                 b.laySelHead.visibility = View.VISIBLE
-                ViewAnimationUtils.createCircularReveal(b.laySelHead, width.times(0.8f).toInt(), height.shr(1), 1f, width.toFloat()).apply {
-                    duration = 340
-                    doOnEnd {
-                        b.apply {
-                            btBack.isClickable = true
-                            btDel.isClickable = true
-                        }
-                    }
-                    start()
+                window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundSelBg)
+                b.apply {
+                    btBack.isClickable = true
+                    btDel.isClickable = true
                 }
+                if (b.laySelHead.isAttachedToWindow)
+                    ViewAnimationUtils.createCircularReveal(b.laySelHead, width.times(0.8f).toInt(), height.shr(1), 1f, width.toFloat()).apply {
+                        duration = 340
+                        start()
+                    }
             } else {
                 val width = b.laySelHead.width
                 val height = b.laySelHead.height
-                ViewAnimationUtils.createCircularReveal(b.laySelHead, width.times(0.8f).toInt(), height.shr(1), width.toFloat(), 1f).apply {
-                    duration = 340
-                    doOnEnd {
-                        b.apply {
-                            laySelHead.visibility = View.GONE
-                            btProfile.isClickable = true
-                            btSearch.isClickable = true
+                window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
+                if (b.laySelHead.isAttachedToWindow)
+                    ViewAnimationUtils.createCircularReveal(b.laySelHead, width.times(0.8f).toInt(), height.shr(1), width.toFloat(), 1f).apply {
+                        duration = 200
+                        doOnEnd {
+                            b.apply {
+                                laySelHead.visibility = View.GONE
+                                btProfile.isClickable = true
+                                btSearch.isClickable = true
+                            }
                         }
+                        start()
                     }
-                    start()
+                else {
+                    b.apply {
+                        laySelHead.visibility = View.GONE
+                        btProfile.isClickable = true
+                        btSearch.isClickable = true
+                    }
                 }
             }
 
@@ -306,7 +326,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     }
 
 
-//region BARCODE CALLBACK
+    //region BARCODE CALLBACK
 
     private fun crQr(): AlertDialog {
         val fb: BarcodeDiaBinding = BarcodeDiaBinding.inflate(layoutInflater)
@@ -346,7 +366,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         return result == PackageManager.PERMISSION_GRANTED
     }
 
-//endregion BARCODE CALLBACK
+    //endregion BARCODE CALLBACK
 
 
     //region Handel FLOW MSGS
@@ -356,8 +376,9 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         when (msg.type) {
             FlowType.MSG -> if (activityLife && msg.data != null) {
 
-                if (adapter.currentList.find { it.phoneNo == msg.fromUser } == null) {
-                    b.root.postDelayed({ viewModal.loadPersons(adapter.currentList) }, 40)
+                if (!msg.isLast) return
+                if (adapter.currentList.indexOfFirst { it.phoneNo == msg.fromUser } == -1) {
+                    viewModal.loadPersons(adapter.currentList)
                     return
                 }
 
@@ -369,6 +390,9 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                 b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.fore))
                 b.tvLastMsg.text = lastMsg.also { b.tvLastMsg.tag = it }
                 b.tvUnreadMsgCount.text = b.tvUnreadMsgCount.text.toString().toInt().plus(1).toString()
+                b.msgStatus.visibility = View.GONE
+                b.tvUnreadMsgCount.visibility = View.VISIBLE
+                b.tvTime.setTextColor(ContextCompat.getColor(this, R.color.purple))
 
                 when (msg.data.msgType) {
                     MsgMediaType.TEXT, MsgMediaType.EMOJI -> b.msgType.visibility = View.GONE
@@ -447,6 +471,14 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             FlowType.SERVER_REC -> {
                 val old = adapter.currentList.find { t -> t.lastMsgId == (msg.oldId ?: -2L) } ?: return
                 old.lastMsgId = msg.msgId ?: old.lastMsgId
+                old.msgStatus = MsgStatus.SENT_TO_SERVER
+                handleMsgStatusAnimation(true, msg.fromUser)
+            }
+
+            FlowType.PARTNER_REC -> {
+                val old = adapter.currentList.find { t -> t.lastMsgId == (msg.msgId ?: -2L) } ?: return
+                old.msgStatus = MsgStatus.RECEIVED
+                handleMsgStatusAnimation(false, msg.fromUser)
             }
 
             FlowType.TYPING -> {
@@ -468,7 +500,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             }
 
 
-            FlowType.INCOMING_NEW_CONNECTION_REQUEST -> if (activityLife) viewModal.loadPersons(adapter.currentList)
+            FlowType.INCOMING_NEW_CONNECTION_REQUEST, FlowType.REQ_ACCEPTED, FlowType.REQ_REJECTED -> if (activityLife) b.root.postDelayed({ viewModal.loadPersons(adapter.currentList) }, 40)
             FlowType.ONLINE,
             FlowType.OFFLINE -> if (activityLife) {
                 val b = getRvViewIfVisible(msg.fromUser) ?: return
@@ -488,5 +520,19 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     }
 
     //endregion Handel FLOW MSGS
+
+    private fun handleMsgStatusAnimation(serverRec: Boolean, phone: String) {
+        val index = adapter.currentList.indexOfFirst { phone == it.phoneNo }
+        if (index == -1) return
+        chatVM.chatMsgs[index].status = if (serverRec) MsgStatus.SENT_TO_SERVER else MsgStatus.RECEIVED
+        val b = getRvViewIfVisible(phone) ?: return
+        val animDur = 200L
+        lifecycleScope.launch {
+            delay(animDur)
+            b.msgStatus.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, if (serverRec) R.drawable.ic_tick else R.drawable.ic_double_tick))
+            b.msgStatus.animate().rotationYBy(-180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+        }
+        b.msgStatus.animate().rotationYBy(180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+    }
 
 }

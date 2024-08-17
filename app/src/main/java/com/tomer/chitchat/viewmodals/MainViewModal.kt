@@ -104,6 +104,8 @@ class MainViewModal @Inject constructor(
         builder.unreadCount(unReadCount)
         builder.isSelected(false)
         builder.isOnline(lastSeenMillis == -1L)
+        builder.isSent(isSent)
+        builder.msgStatus(msgStatus)
 
 
         val prevSel = oldList.find { it.phoneNo == phoneNo }

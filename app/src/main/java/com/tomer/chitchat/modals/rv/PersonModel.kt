@@ -1,5 +1,6 @@
 package com.tomer.chitchat.modals.rv
 
+import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.room.MsgMediaType
 import java.io.File
 
@@ -16,6 +17,8 @@ data class PersonModel(
     val fileGifImg: File?,
     val jsonText: String,
     val jsonName: String,
+    val isSent: Boolean,
+    var msgStatus: MsgStatus
 ) {
     class Builder {
         private var lastMsgId: Long = -1L
@@ -30,6 +33,8 @@ data class PersonModel(
         private var lastMessageFile: File? = null
         private var jsonText: String = ""
         private var jsonName: String = ""
+        private var isSent: Boolean = false
+        private var msgStatus: MsgStatus = MsgStatus.RECEIVED
 
 
         fun phoneNumber(phoneNumber: String) = apply { this.phoneNumber = phoneNumber }
@@ -44,6 +49,8 @@ data class PersonModel(
         fun jsonText(messageContentJson: String) = apply { this.jsonText = messageContentJson }
         fun jsonName(messageSenderJson: String) = apply { this.jsonName = messageSenderJson }
         fun lastMsgId(lastMsgId: Long) = apply { this.lastMsgId = lastMsgId }
+        fun isSent(isSent: Boolean) = apply { this.isSent = isSent }
+        fun msgStatus(msgStatus: MsgStatus) = apply { this.msgStatus = msgStatus }
 
         fun build() = PersonModel(
             lastMsgId,
@@ -57,7 +64,9 @@ data class PersonModel(
             isOnline,
             lastMessageFile,
             jsonText = jsonText,
-            jsonName = jsonName
+            jsonName = jsonName,
+            isSent = isSent,
+            msgStatus = msgStatus
         )
     }
 }

@@ -147,9 +147,11 @@ class ChatAdapter(
     inner class ChatViewHolder(val b: MsgItemBinding, private val callBack: ChatViewEvents) : RecyclerView.ViewHolder(b.root) {
         private val onCli = View.OnClickListener {
             when (it.id) {
-                b.btRet.id -> callBack.onChatItemUploadClicked(absoluteAdapterPosition)
-                b.btDRet.id -> callBack.onChatItemDownloadClicked(absoluteAdapterPosition)
-                b.root.id -> callBack.onChatItemClicked(absoluteAdapterPosition)
+                b.root.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.ROOT)
+                b.btRet.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.UPLOAD)
+                b.btDRet.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.DOWNLOAD)
+                b.repImgRv.id, b.RepTv.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.REPLY)
+                b.mediaImg.id -> callBack.onImageClick(absoluteAdapterPosition, b.mediaImg)
             }
         }
 
@@ -158,7 +160,7 @@ class ChatAdapter(
             b.btDRet.setOnClickListener(onCli)
             b.btRet.setOnClickListener(onCli)
             b.root.setOnLongClickListener {
-                callBack.onChatItemClicked(absoluteAdapterPosition)
+                callBack.onChatItemLongClicked(absoluteAdapterPosition)
                 true
             }
         }
@@ -176,11 +178,14 @@ class ChatAdapter(
     //endregion COMMU
 
 
+    enum class ClickEvents {
+        DOWNLOAD, UPLOAD, REPLY, ROOT
+    }
+
     interface ChatViewEvents {
-        fun onChatItemClicked(pos: Int)
+        fun onChatItemClicked(pos: Int, type: ClickEvents)
         fun onChatItemLongClicked(pos: Int)
 
-        fun onChatItemDownloadClicked(pos: Int)
-        fun onChatItemUploadClicked(pos: Int)
+        fun onImageClick(pos: Int, imageView: View)
     }
 }

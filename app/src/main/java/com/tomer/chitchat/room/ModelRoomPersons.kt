@@ -2,8 +2,7 @@ package com.tomer.chitchat.room
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
-import com.tomer.chitchat.modals.rv.PersonModel
-import com.tomer.chitchat.utils.ConversionUtils
+import com.tomer.chitchat.modals.states.MsgStatus
 
 @Entity(tableName = "persons")
 data class ModelRoomPersons(
@@ -15,5 +14,7 @@ data class ModelRoomPersons(
     val lastMsgId: Long,
     var timeMillis: Long,
     var unReadCount: Int = 0,
-    var lastSeenMillis: Long
+    var lastSeenMillis: Long,
+    val isSent: Boolean,
+    var msgStatus: MsgStatus
 )

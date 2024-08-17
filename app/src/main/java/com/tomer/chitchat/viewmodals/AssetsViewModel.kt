@@ -215,7 +215,7 @@ class AssetsViewModel @Inject constructor(
                     builder.msgText("Uploading,-,${ConversionUtils.byteArrToBase64(thumbBytes)}")
 
                     val fileName = fileNa ?: when (mediaType) {
-                        MsgMediaType.TEXT,MsgMediaType.EMOJI -> ""
+                        MsgMediaType.TEXT, MsgMediaType.EMOJI -> ""
                         MsgMediaType.IMAGE -> getImageName(msg.timeMillis)
                         MsgMediaType.GIF -> getGifName(msg.timeMillis)
                         MsgMediaType.FILE -> {
@@ -228,7 +228,7 @@ class AssetsViewModel @Inject constructor(
                     }
                     builder.mediaFileName(fileName)
                     //sending Callback to activity to display img and loading
-                    created(MsgsFlowState.ChatMessageFlowState(builder.buildUI(), roomMsg.partnerId))
+                    created(MsgsFlowState.ChatMessageFlowState(builder.buildUI(), roomMsg.partnerId, true))
 
                     repoStorage.saveBytesToFolder(msg.msgType, fileName, fileBytes)
                     repoMsgs.addMsg(builder.build())
@@ -251,7 +251,7 @@ class AssetsViewModel @Inject constructor(
                 }
 
                 when (mediaType) {
-                    MsgMediaType.TEXT,MsgMediaType.EMOJI -> {}
+                    MsgMediaType.TEXT, MsgMediaType.EMOJI -> {}
                     MsgMediaType.IMAGE -> {
 
                         val baos = ByteArrayOutputStream()
@@ -262,7 +262,7 @@ class AssetsViewModel @Inject constructor(
                         val isFilePresent = repoStorage.isPresent(previousFile.toString(), mediaType)
                         if (previousFile == null || !isFilePresent) {
                             val bmp = getBmpUsingGlide(file, con) ?: return@withContext
-                            val bmpThumb = getThumbBmpUsingGlide(file, con) ?: return@withContext
+                            val bmpThumb = getThumbBmpUsingGlide(file, con, bmp) ?: return@withContext
 
                             bmp.compress(Bitmap.CompressFormat.WEBP, 80, baos)
                             bmpThumb.compress(Bitmap.CompressFormat.WEBP, 20, baosT)
@@ -406,11 +406,11 @@ class AssetsViewModel @Inject constructor(
         }
     }
 
-    private suspend fun getThumbBmpUsingGlide(uri: Uri, con: Context): Bitmap? {
+    private suspend fun getThumbBmpUsingGlide(uri: Uri, con: Context, bmp: Bitmap? = null): Bitmap? {
         return suspendCoroutine { continuation ->
             Glide.with(con)
                 .asBitmap()
-                .load(uri)
+                .load(bmp ?: uri)
                 .override(12)
                 .into(
                     object : CustomTarget<Bitmap>() {

@@ -1,11 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <color name="primary">#0487E2</color>
+    <color name="primary">#005FEB</color>
+    <color name="secondary">#7cccee</color>
     <color name="primary_dark">#0463CA</color>
     <color name="primary_light">#B0D6F5</color>
-    <color name="accent">#09B1EC</color>
-    <color name="primary_text">#212121</color>
+    <color name="accent">#6ACCFA</color>
+    <color name="primary_text">#070f13</color>
     <color name="secondary_text">#757575</color>
     <color name="error">#B00020</color>
 
@@ -25,11 +26,11 @@
     <color name="softBg">#ECECEC</color>
     <color name="softFg">#202020</color>
     <color name="hintCol">#80000000</color>
-    <color name="transBg">#66FFFFFF</color>
+    <color name="transBg">#66F4F8FB</color>
 
     <color name="backgroundLight">#F1F1F1</color>
-    <color name="backgroundC">#fff</color>
+    <color name="backgroundC">#f4f8fb</color>
+    <color name="backgroundSelBg">#CFFAFE</color>
     <color name="fore">#000</color>
-    <color name="hint">#99000000</color>
     <color name="purple">#c678dd</color>
 </resources>
