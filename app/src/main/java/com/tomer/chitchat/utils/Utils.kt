@@ -24,7 +24,7 @@ class Utils {
         var currentPartner: ModelRoomPersonRelation? = null
 
         @SuppressLint("DefaultLocale")
-        fun humanReadableSize(size: Long): String {
+        fun humanReadableSize(size: Int): String {
             return when {
                 size < 1024 -> String.format("%1$.0f B", size.toDouble())
                 size < 1024.0.pow(2.0) -> String.format("%1$.0f KB", (size / 1024).toDouble())

@@ -120,6 +120,8 @@ class MessageHandler(
                 }
             }
 
+		//"*P-STA*" -> //9999999999*P-STA*-1(ONLINE)epochTIme if offline
+
             "*MSG-B*" -> {
                 val msgs = text.substring(17).split(",-,")
                     .parallelStream()
@@ -276,6 +278,7 @@ class MessageHandler(
                 .isSent(false)
                 .setTimeMillis(mod.timeMillis)
                 .setTimeText(ConversionUtils.millisToTimeText(mod.timeMillis))
+                .mediaSize(mod.mediaFileSize)
 
             if (mod.isReply) {
                 builderRoom

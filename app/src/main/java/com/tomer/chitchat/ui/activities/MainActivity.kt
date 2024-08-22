@@ -229,6 +229,10 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     }
 
     override fun onBackPressed() {
+        if (viewModal.headMenu.value == true) {
+            viewModal.delSelected(false, adapter.currentList)
+            return
+        }
         super.onBackPressed()
         finishAffinity()
     }
@@ -277,7 +281,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                     b.etNewNumber.error = "Enter Valid Number"
                     return
                 }
-                chatVm.connectNew(b.etNewNumber.text.toString(), true)
+                chatVm.connectNew(b.etNewNumber.text.toString(), true,false)
                 b.layNewNumber.visibility = View.GONE
                 b.imgBarcode.pauseAnimation()
                 b.imgFab.visibility = View.VISIBLE
@@ -355,7 +359,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         barcodeView.pause()
         qrDia.dismiss()
         if (!result.text.isDigitsOnly()) return@BarcodeCallback
-        chatVm.connectNew(result.text, true)
+        chatVm.connectNew(result.text, true,false)
         b.layNewNumber.visibility = View.GONE
         b.imgBarcode.pauseAnimation()
         b.imgFab.visibility = View.VISIBLE
@@ -483,14 +487,14 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
             FlowType.TYPING -> {
                 val b = getRvViewIfVisible(msg.fromUser) ?: return
-                b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.primary))
+                b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.purple))
                 "Typing...".also { b.tvLastMsg.text = it }
             }
 
             FlowType.NO_TYPING -> {
                 val b = getRvViewIfVisible(msg.fromUser) ?: return
                 if (b.tvLastMsg.text == "Typing...") {
-                    b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.fore))
+                    b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.hintCol))
                     b.tvLastMsg.text = b.tvLastMsg.tag.toString()
                 }
             }

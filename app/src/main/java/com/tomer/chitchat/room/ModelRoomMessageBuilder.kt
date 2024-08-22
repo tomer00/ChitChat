@@ -20,6 +20,7 @@ class ModelRoomMessageBuilder {
     private var repBytes: ByteArray? = null
 
     private var mediaName: String? = null
+    private var mediaSize: String = ""
     private var replyMediaName: String? = null
 
     private var timeText: String = ""
@@ -36,6 +37,7 @@ class ModelRoomMessageBuilder {
     fun isSent(isSent: Boolean) = apply { this.isSent = isSent }
     fun isRep(isRep: Boolean) = apply { this.isRep = isRep }
     fun mediaFileName(fileName: String?) = apply { this.mediaName = fileName }
+    fun mediaSize(mediaSize: String) = apply { this.mediaSize = mediaSize }
     fun replyMediaFileName(fileName: String?) = apply { this.replyMediaName = fileName }
     fun setBytes(bytes: ByteArray?) = apply { this.bytes = bytes }
     fun setRepBytes(repBytes: ByteArray?) = apply { this.repBytes = repBytes }
@@ -52,6 +54,7 @@ class ModelRoomMessageBuilder {
         msgType = msgType,
         replyType = replyType,
         mediaFileName = mediaName,
+        mediaSize = mediaSize,
         replyMediaFileName = replyMediaName,
         isSent = isSent,
         isRep = isRep,
@@ -69,6 +72,7 @@ class ModelRoomMessageBuilder {
         timeText = timeText,
         msgType = msgType,
         mediaFileName = mediaName,
+        mediaSize = mediaSize,
         replyMediaFileName = replyMediaName,
         replyType = replyType,
         isUploaded = !isSent,

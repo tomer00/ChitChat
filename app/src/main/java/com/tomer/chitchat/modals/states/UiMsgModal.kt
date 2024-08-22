@@ -9,6 +9,7 @@ class UiMsgModal constructor(
     val msg: String,
     val rep: String,
     val mediaFileName: String?,
+    val mediaSize: String,
     val replyMediaFileName: String?,
     val timeText: String,
     var isSent: Boolean,

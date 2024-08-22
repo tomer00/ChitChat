@@ -13,6 +13,7 @@ data class ModelMsgSocket(
     @SerializedName("time_millis") val timeMillis: Long,
     @SerializedName("reply_media_file_name") val replyMediaFileName: String?,
     @SerializedName("media_file_name") val mediaFileName: String?,
+    @SerializedName("media_file_size") val mediaFileSize: String,
 ) {
     class Builder {
         private var replyId: Long = -1
@@ -24,6 +25,7 @@ data class ModelMsgSocket(
         private var msgType: MsgMediaType = MsgMediaType.TEXT
         private var replyMsgType: MsgMediaType = MsgMediaType.TEXT
         private var isReply: Boolean = false
+        private var mediaSize: String = ""
 
         fun replyId(replyId: Long) = apply { this.replyId = replyId }
         fun msgData(msgData: String) = apply { this.msgData = msgData }
@@ -34,6 +36,7 @@ data class ModelMsgSocket(
         fun replyMsgType(replyMsgType: MsgMediaType) = apply { this.replyMsgType = replyMsgType }
         fun isReply(isReply: Boolean) = apply { this.isReply = isReply }
         fun setTimeMillis(time: Long) = apply { this.time = time }
+        fun mediaSize(mediaSize: String) = apply { this.mediaSize = mediaSize }
 
         fun build() = ModelMsgSocket(
             replyId = replyId,
@@ -44,7 +47,8 @@ data class ModelMsgSocket(
             msgType = msgType,
             replyMsgType = replyMsgType,
             isReply = isReply,
-            timeMillis = time
+            timeMillis = time,
+            mediaFileSize = mediaSize
         )
     }
 }

@@ -10,8 +10,8 @@
         android:id="@+id/msg_lay"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:orientation="vertical"
         android:animateLayoutChanges="true"
+        android:orientation="vertical"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintWidth_percent="0.8">
 
@@ -31,8 +31,8 @@
                 android:layout_marginTop="4dp"
                 android:background="@drawable/rep_bg"
                 android:backgroundTint="@color/backgroundC"
-                android:maxLines="4"
                 android:fontFamily="@font/nunito_medium"
+                android:maxLines="4"
                 android:paddingHorizontal="12dp"
                 android:paddingVertical="4dp"
                 android:textColor="@color/fore"
@@ -52,14 +52,15 @@
                 android:id="@+id/msg_tv"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:fontFamily="@font/nunito_medium"
                 android:padding="8dp"
                 android:textColor="@color/fore"
-                android:fontFamily="@font/nunito_medium"
                 android:textSize="18sp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
+
             <TextView
                 android:id="@+id/emoji_tv"
                 android:layout_width="wrap_content"
@@ -83,77 +84,110 @@
                     android:layout_height="wrap_content"
                     android:adjustViewBounds="true"
                     android:scaleType="fitXY"
-                    android:transitionName="detail"
+                    android:src="@drawable/ic_add_chat"
                     app:layout_constraintTop_toTopOf="parent" />
 
-                <ProgressBar
-                    android:id="@+id/rvProg"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_margin="8dp"
+                <LinearLayout
+                    android:id="@+id/layMediaRoot"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:animateLayoutChanges="true"
                     android:background="@drawable/round_bg"
                     android:backgroundTint="#66000000"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent" />
-
-                <ImageView
-                    android:id="@+id/btRet"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_margin="8dp"
-                    android:background="@drawable/round_bg"
-                    android:backgroundTint="#66000000"
-                    android:contentDescription="@string/app_name"
                     android:padding="8dp"
-                    android:rotation="-90"
-                    android:scaleX="0"
-                    android:scaleY="0"
-                    android:src="@drawable/ic_baseline_double_arrow_24"
                     app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent" />
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent">
 
-                <ImageView
-                    android:id="@+id/btDRet"
-                    android:layout_width="32dp"
-                    android:layout_height="32dp"
-                    android:layout_margin="8dp"
-                    android:background="@drawable/round_bg"
-                    android:backgroundTint="@color/orange"
-                    android:contentDescription="@string/app_name"
-                    android:padding="8dp"
-                    android:rotation="90"
-                    android:scaleX="0"
-                    android:scaleY="0"
-                    android:src="@drawable/ic_baseline_double_arrow_24"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent" />
+                    <ProgressBar
+                        android:id="@+id/rvProg"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:background="@drawable/round_bg"
+                        android:backgroundTint="#66000000"
+                        android:visibility="gone"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent" />
+
+                    <LinearLayout
+                        android:id="@+id/layUpload"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center">
+
+                        <ImageView
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:contentDescription="@string/app_name"
+                            android:padding="2dp"
+                            android:rotation="-90"
+                            android:src="@drawable/ic_baseline_double_arrow_24"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:tint="@color/white" />
+
+                        <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="@string/retry"
+                            android:textColor="@color/white" />
+                    </LinearLayout>
+
+                    <LinearLayout
+                        android:id="@+id/layDownload"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:gravity="center">
+
+                        <ImageView
+                            android:layout_width="26dp"
+                            android:layout_height="26dp"
+                            android:contentDescription="@string/app_name"
+                            android:padding="2dp"
+                            android:rotation="90"
+                            android:src="@drawable/ic_baseline_double_arrow_24"
+                            app:layout_constraintBottom_toBottomOf="parent"
+                            app:layout_constraintEnd_toEndOf="parent"
+                            app:tint="@color/white" />
+
+                        <TextView
+                            android:id="@+id/tvDownBytes"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="98 kB"
+                            android:textColor="@color/white" />
+                    </LinearLayout>
+
+                </LinearLayout>
+
             </androidx.constraintlayout.widget.ConstraintLayout>
 
         </LinearLayout>
 
         <LinearLayout
             android:id="@+id/contTime"
-            android:gravity="start"
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:gravity="start">
 
             <TextView
-                android:layout_gravity="center_vertical"
                 android:id="@+id/tvTime"
-                android:textSize="10sp"
-                android:fontFamily="@font/nunito_bold"
-                android:textColor="@color/bmi_tint"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginEnd="4dp" />
+                android:layout_gravity="center_vertical"
+                android:layout_marginEnd="4dp"
+                android:fontFamily="@font/nunito_bold"
+                android:textColor="@color/bmi_tint"
+                android:textSize="10sp" />
 
             <ImageView
                 android:id="@+id/imgMsgStatus"
                 android:layout_width="16dp"
-                app:tint="@color/bmi_tint"
                 android:layout_height="16dp"
                 android:contentDescription="@string/app_name"
-                android:src="@drawable/ic_sending" />
+                android:src="@drawable/ic_sending"
+                app:tint="@color/bmi_tint" />
         </LinearLayout>
 
     </LinearLayout>

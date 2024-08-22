@@ -1,6 +1,7 @@
 package com.tomer.chitchat.di
 
 import android.content.Context
+import android.util.Log
 import androidx.room.Room
 import com.google.gson.Gson
 import com.tomer.chitchat.assets.RepoAssets
@@ -34,6 +35,9 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
+import okhttp3.Protocol
+import okhttp3.Response
+import okhttp3.ResponseBody
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 import javax.inject.Singleton
@@ -54,7 +58,15 @@ class HiltModules {
                     val authenticatedRequest = originalRequest.newBuilder()
                         .header("Authorization", "Bearer ${repoUtils.getToken()}")
                         .build()
-                    chain.proceed(authenticatedRequest)
+                    try {
+                        chain.proceed(authenticatedRequest)
+                    } catch (e: Exception) {
+                        Response.Builder().
+                            request(chain.request())
+                            .protocol(Protocol.HTTP_1_0)
+                            .message(e.message.toString())
+                            .code(400).body(ResponseBody.Companion.create(null,"")).build()
+                    }
                 }
                 .build())
             .build()
@@ -68,7 +80,7 @@ class HiltModules {
 
     @Provides
     @Singleton
-    fun provideCryptoService(repo:RepoCipher): CryptoService = CryptoCipher(repo)
+    fun provideCryptoService(repo: RepoCipher): CryptoService = CryptoCipher(repo)
 
     @Provides
     @Singleton

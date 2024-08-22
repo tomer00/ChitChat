@@ -118,7 +118,7 @@
         android:id="@+id/imgBg"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:alpha=".1"
+        android:alpha=".4"
         android:contentDescription="@string/app_name"
         android:scaleType="centerCrop"
         android:src="@drawable/bg_light"
@@ -132,7 +132,7 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:scrollbars="vertical"
-        app:layout_constraintBottom_toTopOf="@id/layBottom"
+        app:layout_constraintBottom_toTopOf="@id/btSend"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/layTop" />
@@ -409,11 +409,10 @@
         android:visibility="gone"
         app:cardBackgroundColor="@color/accent"
         app:cardCornerRadius="20dp"
-        app:layout_constraintBottom_toBottomOf="parent"
+        android:layout_marginTop="20dp"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.12">
+        app:layout_constraintTop_toBottomOf="@id/layTop">
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
@@ -449,6 +448,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:fontFamily="@font/nunito_medium"
+                android:textColor="@color/hintCol"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@+id/tvPartnerNameCard" />

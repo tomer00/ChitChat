@@ -24,8 +24,8 @@ class RepoUtilImpl(
     }
 
     override fun getTempId(): Long {
-        val tempId = prefUtils.getLong("tempId", Long.MAX_VALUE)
-        prefUtils.edit().putLong("tempId", tempId - 1).apply()
+        val tempId = prefUtils.getLong("tempId", 0L)
+        prefUtils.edit().putLong("tempId", tempId + 1).apply()
         return tempId
     }
 

@@ -178,7 +178,9 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             }
         }
 
-        if (isDarkModeEnabled()) b.imgBg.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.bg_dark))
+        if (isDarkModeEnabled()) b.imgBg.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.bg_dark)).also {
+            b.imgBg.alpha = 0.1f
+        }
 
         b.etMsg.setKeyboardInputCall { info ->
             if (b.contRelation.visibility == View.VISIBLE) return@setKeyboardInputCall
@@ -457,6 +459,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                     builder.setTimeMillis(System.currentTimeMillis())
                     builder.replyMediaFileName(msgT.replyMediaFileName)
                     builder.mediaFileName(msgT.mediaFileName)
+                    builder.mediaSize(msgT.mediaSize)
 
                     vm.sendMediaUploaded(builder.build(), msgT.id, msg.fromUser)
                     vm.updatePersonModel(builder.build(), msgT.id)
@@ -465,7 +468,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                             vm.chatMsgs[i].isUploaded = true
                             vm.chatMsgs[i].isProg = false
                             val b = getRvViewIfVisible(i) ?: return@runOnUiThread
-                            animateTo0(b.rvProg)
+                            animateTo0(b.layMediaRoot)
                             break
                         }
                     }
@@ -480,8 +483,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                             vm.chatMsgs[i].isProg = false
                             val b = getRvViewIfVisible(i) ?: return@runOnUiThread
 
-                            animateTo0(b.rvProg)
-                            animateTo1(b.btRet)
+                            b.layUpload.visibility = View.VISIBLE
+                            b.rvProg.visibility = View.GONE
                             break
                         }
                     }
@@ -496,7 +499,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                             vm.chatMsgs[i].isProg = false
                             vm.chatMsgs[i].bytes = msg.data!!.bytes
                             val b = getRvViewIfVisible(i) ?: return@runOnUiThread
-                            animateTo0(b.rvProg)
+                            animateTo0(b.layMediaRoot)
                             Glide.with(this).load(msg.data.bytes)
                                 .placeholder(b.mediaImg.drawable)
                                 .transform(RoundedCorners(12))
@@ -520,8 +523,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                                 setDuration(200)
                                 start()
                             }
-                            animateTo0(b.rvProg)
-                            animateTo1(b.btDRet)
+                            b.layDownload.visibility = View.VISIBLE
+                            b.rvProg.visibility = View.GONE
                             break
                         }
                     }
@@ -743,24 +746,20 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         }
         val b = getRvViewIfVisible(pos) ?: return
 
-        animateTo0(b.btDRet)
-        animateTo1(b.rvProg)
+        b.layDownload.visibility = View.GONE
+        b.rvProg.visibility = View.VISIBLE
     }
 
     private fun onChatItemUploadClicked(pos: Int) {
         vmAssets.uploadRetry(vm.chatMsgs[pos], Utils.currentPartner!!.partnerId)
         val b = getRvViewIfVisible(pos) ?: return
 
-        animateTo0(b.btRet)
-        animateTo1(b.rvProg)
+        b.layUpload.visibility = View.GONE
+        b.rvProg.visibility = View.VISIBLE
     }
 
     private fun onChatItemReplyClicked(pos: Int) {
-        vmAssets.uploadRetry(vm.chatMsgs[pos], Utils.currentPartner!!.partnerId)
-        val b = getRvViewIfVisible(pos) ?: return
 
-        animateTo0(b.btRet)
-        animateTo1(b.rvProg)
     }
 
 

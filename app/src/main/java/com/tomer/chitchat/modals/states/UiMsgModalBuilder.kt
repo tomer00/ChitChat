@@ -14,6 +14,7 @@ class UiMsgModalBuilder {
     private var msgType: MsgMediaType = MsgMediaType.TEXT
     private var replyType: MsgMediaType = MsgMediaType.TEXT
     private var mediaName: String? = null
+    private var mediaSize: String = ""
     private var replyMediaName: String? = null
     private var isDone: Boolean = false
     private var isDDone: Boolean = false
@@ -44,6 +45,7 @@ class UiMsgModalBuilder {
     fun bytes(bytes: ByteArray?) = apply { this.bytes = bytes }
     fun repBytes(repBytes: ByteArray?) = apply { this.repBytes = repBytes }
     fun setTimeText(time: String) = apply { this.timeText = time }
+    fun mediaSize(mediaSize: String) = apply { this.mediaSize = mediaSize }
 
     fun build() = UiMsgModal(
         id = id,
@@ -61,6 +63,7 @@ class UiMsgModalBuilder {
         isProg = isProg,
         bytes = bytes,
         mediaFileName = mediaName,
+        mediaSize = mediaSize,
         replyMediaFileName = replyMediaName,
         repBytes = repBytes,
         isEmojiOnly = EmojisHashingUtils.isOnlyEmojis(msg)

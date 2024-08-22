@@ -12,6 +12,7 @@
         android:layout_marginEnd="20dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintDimensionRatio="1"
+        android:scaleType="centerCrop"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintWidth_percent=".4"
@@ -84,20 +85,23 @@
             app:layout_constraintTop_toBottomOf="@id/tvTime" />
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginTop="4dp"
-            android:gravity="center_vertical"
+            android:gravity="center_vertical|start"
             android:orientation="horizontal"
+            app:layout_constraintEnd_toStartOf="@+id/tvUnreadMsgCount"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tvName">
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="match_parent" />
 
             <ImageView
                 android:id="@+id/msgStatus"
                 android:layout_width="20dp"
                 android:layout_height="20dp"
-                android:layout_marginStart="8dp"
-                android:layout_marginEnd="2dp"
                 android:contentDescription="@string/app_name"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
@@ -106,25 +110,34 @@
 
             <ImageView
                 android:id="@+id/msgType"
-                android:layout_width="26dp"
-                android:layout_height="26dp"
-                android:layout_marginEnd="2dp"
+                android:layout_width="24dp"
+                android:layout_height="24dp"
                 android:contentDescription="@string/app_name"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <TextView
-                android:id="@+id/tvLastMsg"
-                android:layout_width="wrap_content"
+
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:background="@drawable/round_bg"
-                android:backgroundTint="@color/transBg"
-                android:fontFamily="@font/nunito_medium"
-                android:paddingHorizontal="8dp"
-                android:textColor="@color/hintCol"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tvName" />
+                android:layout_weight="1">
+
+                <TextView
+                    android:id="@+id/tvLastMsg"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/round_bg"
+                    android:backgroundTint="@color/transBg"
+                    android:ellipsize="marquee"
+                    android:fontFamily="@font/nunito_medium"
+                    android:maxLines="1"
+                    android:paddingHorizontal="8dp"
+                    android:textColor="@color/hintCol"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/tvName" />
+            </LinearLayout>
+
         </LinearLayout>
 
 

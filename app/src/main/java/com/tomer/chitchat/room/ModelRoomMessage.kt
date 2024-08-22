@@ -1,5 +1,6 @@
 package com.tomer.chitchat.room
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.tomer.chitchat.modals.states.MsgStatus
@@ -19,6 +20,7 @@ data class ModelRoomMessage(
 
     var mediaFileName: String?,
     val replyMediaFileName: String?,
+    val mediaSize: String,
 
     val isSent: Boolean,
     val isRep: Boolean,

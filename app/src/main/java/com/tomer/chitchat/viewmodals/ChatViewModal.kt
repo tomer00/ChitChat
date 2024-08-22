@@ -89,7 +89,7 @@ class ChatViewModal @Inject constructor(
         override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
             super.onClosed(webSocket, code, reason)
             Log.d("TAG--", "onClosed: $code $reason")
-            if (code != 1001)
+            if (reason != "Closed for activity close")
                 tryReconnectAfter2Sec()
         }
 
@@ -350,6 +350,7 @@ class ChatViewModal @Inject constructor(
             .msgType(msgType)
             .isProg(false)
             .replyType(replyType)
+            .mediaSize(mediaSize)
             .isUploaded(msgText.startsWith("http"))
             .isDownloaded(
                 if (mediaFileName != null)
@@ -437,7 +438,19 @@ class ChatViewModal @Inject constructor(
         }
     }
 
-    fun connectNew(phone: String, openNextActivity: Boolean) {
+    fun connectNew(phone: String, openNextActivity: Boolean, mandatoryConnect: Boolean = true) {
+        if (!mandatoryConnect) {
+            viewModelScope.launch {
+                if (!phone.isDigitsOnly()) return@launch
+                val oldRel = repoRelations.getRelation(phone)
+                if (oldRel == null) connectNew(phone, openNextActivity, true)
+                else {
+                    if (openNextActivity)
+                        flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.OPEN_NEW_CONNECTION_ACTIVITY, phone))
+                }
+            }
+            return
+        }
         viewModelScope.launch {
             if (!phone.isDigitsOnly()) return@launch
             val oldRel = repoRelations.getRelation(phone)

@@ -32,6 +32,7 @@ class ChatAdapter(
     @SuppressLint("CheckResult")
     private val options = RequestOptions().apply {
         placeholder(R.drawable.ic_gifs)
+        override(400)
         error(R.drawable.ic_search)
         transform(RoundedCorners(12))
     }
@@ -107,6 +108,7 @@ class ChatAdapter(
                 holder.b.emojiTv.visibility = View.GONE
             }
         } else {
+            //There is Media File either upload or download
             holder.b.mediaCont.visibility = View.VISIBLE
             if (mod.msgType == MsgMediaType.GIF) Glide.with(context).load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true).into(holder.b.mediaImg)
             else Glide.with(context).asBitmap().load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true).into(holder.b.mediaImg)
@@ -114,14 +116,30 @@ class ChatAdapter(
             holder.b.msgTv.visibility = View.GONE
             holder.b.emojiTv.visibility = View.GONE
 
-            if (mod.isUploaded) setScale0(holder.b.btRet)
-            else setScale1(holder.b.btRet)
 
-            if (mod.isProg) setScale1(holder.b.rvProg)
-            else setScale0(holder.b.rvProg)
+            if (mod.isProg) {
+                holder.b.rvProg.visibility = View.VISIBLE
+                holder.b.layMediaRoot.visibility = View.VISIBLE
+                holder.b.layUpload.visibility = View.GONE
+                holder.b.layDownload.visibility = View.GONE
+            } else {
+                holder.b.rvProg.visibility = View.GONE
+                holder.b.layMediaRoot.visibility = View.VISIBLE
+                if (mod.isSent) {//uploading
+                    holder.b.layDownload.visibility = View.GONE
+                    if (mod.isUploaded) holder.b.layMediaRoot.visibility = View.GONE
+                    else holder.b.layUpload.visibility = View.VISIBLE
 
-            if (mod.isDownloaded) setScale0(holder.b.btDRet)
-            else setScale1(holder.b.btDRet)
+                } else {//downloading
+                    holder.b.layUpload.visibility = View.GONE
+                    if (mod.isDownloaded) holder.b.layMediaRoot.visibility = View.GONE
+                    else {
+                        holder.b.layDownload.visibility = View.VISIBLE
+                        holder.b.tvDownBytes.text = mod.mediaSize
+                    }
+                }
+            }
+
         }
 
         holder.b.msgTv.text = mod.msg
@@ -130,26 +148,14 @@ class ChatAdapter(
 
     }
 
-    private fun setScale1(view: View) {
-        view.scaleX = 1f
-        view.scaleY = 1f
-        view.isClickable = true
-    }
-
-    private fun setScale0(view: View) {
-        view.scaleX = 0f
-        view.scaleY = 0f
-        view.isClickable = false
-    }
-
     override fun getItemCount(): Int = chatItems.size
 
     inner class ChatViewHolder(val b: MsgItemBinding, private val callBack: ChatViewEvents) : RecyclerView.ViewHolder(b.root) {
         private val onCli = View.OnClickListener {
             when (it.id) {
                 b.root.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.ROOT)
-                b.btRet.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.UPLOAD)
-                b.btDRet.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.DOWNLOAD)
+                b.layUpload.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.UPLOAD)
+                b.layDownload.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.DOWNLOAD)
                 b.repImgRv.id, b.RepTv.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.REPLY)
                 b.mediaImg.id -> callBack.onImageClick(absoluteAdapterPosition, b.mediaImg)
             }
@@ -157,15 +163,13 @@ class ChatAdapter(
 
         init {
             b.root.setOnClickListener(onCli)
-            b.btDRet.setOnClickListener(onCli)
-            b.btRet.setOnClickListener(onCli)
+            b.layUpload.setOnClickListener(onCli)
+            b.layDownload.setOnClickListener(onCli)
             b.root.setOnLongClickListener {
                 callBack.onChatItemLongClicked(absoluteAdapterPosition)
                 true
             }
         }
-
-
     }
 
     //region COMMU
