@@ -16,6 +16,7 @@ class NewConnection(publicSecretHEX: String) : Message("*-NEW-*$publicSecretHEX,
 class AcceptConnection(publicSecretHEX: String) : Message("*F-ACC*$publicSecretHEX,-,${Utils.myName}")
 class RejectConnection() : Message("*F-REJ*")
 class BulkReceived(toPhone: String, list: String) : Message("$toPhone*MSG-BR$list")
+class OfflineStatus() : Message("*P-STA*")
 
 // <(10)toPhone>  <(7)MSG_TYPE>
 // <DATA>  { <(12) TEMPID><ENC DATA> }

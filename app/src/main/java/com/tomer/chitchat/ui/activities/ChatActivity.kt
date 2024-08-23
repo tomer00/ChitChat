@@ -156,7 +156,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             return
         }
         setContentView(b.root)
-
+        vmAssets.getGifNow()
         vm.openChat(intent.getStringExtra("phone")!!)
         //QUEUE SERVICE EXECUTOR
         lifecycleScope.launch {
@@ -270,9 +270,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                 super.onBackPressed()
             }
             tvPartnerName.text = Utils.currentPartner!!.partnerName.ifEmpty { Utils.currentPartner!!.partnerId }
-            if (Utils.currentPartner!!.isAccepted)
-                vm.showLastSeen()
-
             Glide.with(this@ChatActivity)
                 .asBitmap()
                 .apply(roundOptions)
@@ -338,8 +335,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                 b.bigJson.animate().scaleX(0f).scaleY(0f).setDuration(320).setInterpolator(AccelerateInterpolator()).start()
             }
         })
-
-        vmAssets.getGifNow()
 
     }
 

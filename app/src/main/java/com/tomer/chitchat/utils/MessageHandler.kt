@@ -34,8 +34,8 @@ class MessageHandler(
     suspend fun handelMsg(text: String) {
         if (text.isEmpty() || text == "PONG") return
         Log.d("TAG--", "handelMsg: $text")
-        val fromUser = text.substring(0, 10)
-        val msgType = text.substring(10, 17)
+        val fromUser = text.substring(0, 10).intern()
+        val msgType = text.substring(10, 17).intern()
         when (msgType) {
 
             //<(10)fromUser><(7)MSG_TYPE><RTT<DATA>>
@@ -120,7 +120,16 @@ class MessageHandler(
                 }
             }
 
-		//"*P-STA*" -> //9999999999*P-STA*-1(ONLINE)epochTIme if offline
+            "*P-STA*" -> {
+                try {
+                    val per = repoPersons.getPersonByPhone(fromUser) ?: return
+                    per.lastSeenMillis = text.substring(17).toLong()
+                    if (per.lastSeenMillis == -1L) callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.ONLINE, fromUser))
+                    else callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.OFFLINE, fromUser, per.lastSeenMillis))
+                    repoPersons.insertPerson(per)
+                } catch (_: Exception) {
+                }
+            }
 
             "*MSG-B*" -> {
                 val msgs = text.substring(17).split(",-,")
@@ -137,7 +146,6 @@ class MessageHandler(
                         break
                     }
                 }
-                Log.d("TAG--", "is New Conn SEND : $isNeedToSendNewConn")
                 if (isNeedToSendNewConn) {
                     callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.SEND_NEW_CONNECTION_REQUEST, fromUser))
                     val sb = StringBuilder()
@@ -256,7 +264,7 @@ class MessageHandler(
                     ).also { repoPersons.insertPerson(it) }
                 repoRelation.saveRelation(
                     ModelRoomPersonRelation(
-                        fromUser, fromUser, isConnSent = true, isAccepted = false, isRejected = true
+                        fromUser, name, isConnSent = true, isAccepted = false, isRejected = true
                     )
                 )
             }

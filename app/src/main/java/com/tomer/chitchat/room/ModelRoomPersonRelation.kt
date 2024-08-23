@@ -7,7 +7,7 @@ import androidx.room.PrimaryKey
 data class ModelRoomPersonRelation(
     @PrimaryKey
     val partnerId : String,
-    val partnerName : String,
+    var partnerName : String,
     var isConnSent : Boolean,
     var isAccepted : Boolean,
     var isRejected : Boolean

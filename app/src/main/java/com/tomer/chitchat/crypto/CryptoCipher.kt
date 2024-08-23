@@ -73,16 +73,19 @@ class CryptoCipher(
 
     override fun encString(data: String): String {
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-        cipher.init(Cipher.ENCRYPT_MODE, sectKeySpec, CipherUtils.ivSpecProvider)
-        return Base64.encodeToString(cipher.doFinal(data.encodeToByteArray()), Base64.DEFAULT)
+        val iv = CipherUtils.getEncIv()
+        val sb = StringBuilder(Base64.encodeToString(iv.iv, Base64.DEFAULT))
+        cipher.init(Cipher.ENCRYPT_MODE, sectKeySpec, iv)
+        sb.append(Base64.encodeToString(cipher.doFinal(data.encodeToByteArray()), Base64.DEFAULT))
+        return sb.toString()
     }
 
     override fun decString(phone: String, data: String): String? {
         val localSecKey = getKeySpecForPhone(phone) ?: return null
         val cipher = Cipher.getInstance("AES/CBC/PKCS5Padding")
-        cipher.init(Cipher.DECRYPT_MODE, localSecKey, CipherUtils.ivSpecProvider)
+        cipher.init(Cipher.DECRYPT_MODE, localSecKey, CipherUtils.getDecIv(data))
         return try {
-            String(cipher.doFinal(Base64.decode(data, Base64.DEFAULT)))
+            String(cipher.doFinal(Base64.decode(data.substring(24), Base64.DEFAULT)))
         } catch (_: Exception) {
             null
         }

@@ -13,6 +13,7 @@ import com.tomer.chitchat.modals.msgs.ChatMessage
 import com.tomer.chitchat.modals.msgs.Message
 import com.tomer.chitchat.modals.msgs.ModelMsgSocket
 import com.tomer.chitchat.modals.msgs.NewConnection
+import com.tomer.chitchat.modals.msgs.OfflineStatus
 import com.tomer.chitchat.modals.msgs.RejectConnection
 import com.tomer.chitchat.modals.states.FlowType
 import com.tomer.chitchat.modals.states.MsgStatus
@@ -31,23 +32,18 @@ import com.tomer.chitchat.room.ModelRoomMessageBuilder
 import com.tomer.chitchat.room.ModelRoomPersonRelation
 import com.tomer.chitchat.room.ModelRoomPersons
 import com.tomer.chitchat.room.MsgMediaType
+import com.tomer.chitchat.utils.ChunkedWebSocketListener
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.MessageHandler
 import com.tomer.chitchat.utils.Utils
+import com.tomer.chitchat.utils.WebSocketHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import okhttp3.OkHttpClient
-import okhttp3.Request
-import okhttp3.Response
-import okhttp3.WebSocket
-import okhttp3.WebSocketListener
 import java.math.BigInteger
 import java.util.LinkedList
 import javax.inject.Inject
@@ -65,40 +61,17 @@ class ChatViewModal @Inject constructor(
     private val cryptoService: CryptoService,
 ) : ViewModel() {
 
-    private var webSocket: WebSocket? = null
-    private var token = ""
-
-
-    private fun tryReconnectAfter2Sec() {
-        if (token.isNotEmpty())
-            viewModelScope.launch {
-                delay(2000)
-                Log.d("TAG--", "tryReconnectAfter2Sec: ")
-                this@ChatViewModal.webSocket = openWebSocket(token)
-            }
-    }
+    private val webSocket = WebSocketHandler
 
     fun closeWebSocket() {
         try {
-            webSocket!!.close(1001, "Closed for activity close")
+            webSocket.closeConnection()
         } catch (_: Exception) {
         }
     }
 
-    private val webSocketListener = object : WebSocketListener() {
-        override fun onClosed(webSocket: WebSocket, code: Int, reason: String) {
-            super.onClosed(webSocket, code, reason)
-            Log.d("TAG--", "onClosed: $code $reason")
-            if (reason != "Closed for activity close")
-                tryReconnectAfter2Sec()
-        }
-
-        override fun onFailure(webSocket: WebSocket, t: Throwable, response: Response?) {
-            super.onFailure(webSocket, t, response)
-            tryReconnectAfter2Sec()
-        }
-
-        override fun onMessage(webSocket: WebSocket, text: String) {
+    private val webSocketListener = object : ChunkedWebSocketListener {
+        override fun onMessage(text: String) {
             viewModelScope.launch {
                 try {
                     msgHandler.handelMsg(text)
@@ -108,7 +81,7 @@ class ChatViewModal @Inject constructor(
             }
         }
 
-        override fun onOpen(webSocket: WebSocket, response: Response) {
+        override fun onOpen() {
             Log.d("TAG--", "onOpen: ")
             sendPendingMsgs()
         }
@@ -145,7 +118,7 @@ class ChatViewModal @Inject constructor(
                                 ConversionUtils.encode(encMsg)
                             )
                         }"
-                        sendViaSocket(actualMsg)
+                        webSocket.sendMessage(actualMsg)
                     } catch (_: Exception) {
                     }
                 }
@@ -180,9 +153,9 @@ class ChatViewModal @Inject constructor(
             viewModelScope.launch {
                 flowMsgs.emit(msg)
                 if (msg.type == FlowType.SEND_PR)
-                    sendViaSocket("${msg.fromUser}*ACK-PR${msg.msgId}")
+                    webSocket.sendMessage("${msg.fromUser}*ACK-PR${msg.msgId}")
                 else if (msg.type == FlowType.SEND_BULK_REC)
-                    sendViaSocket(BulkReceived(msg.fromUser, msg.data?.msg ?: "").toString())
+                    webSocket.sendMessage(BulkReceived(msg.fromUser, msg.data?.msg ?: "").toString())
             }
             return@MessageHandler
         }
@@ -192,40 +165,25 @@ class ChatViewModal @Inject constructor(
             notificationService.showNewMessageNotification(msg.data, msg.fromUser)
         } else if (msg.type == FlowType.SEND_PR)
             viewModelScope.launch {
-                sendViaSocket("${msg.fromUser}*ACK-PR${msg.msgId}")
+                webSocket.sendMessage("${msg.fromUser}*ACK-PR${msg.msgId}")
             }
         else if (msg.type == FlowType.SEND_BULK_REC)
             viewModelScope.launch {
-                sendViaSocket(BulkReceived(msg.fromUser, msg.data?.msg ?: "").toString())
+                webSocket.sendMessage(BulkReceived(msg.fromUser, msg.data?.msg ?: "").toString())
             }
     }
 
 
     init {
-        token = repoUtils.getToken()
-        webSocket = openWebSocket(token)
+        webSocket.setListenerAndToken(webSocketListener, repoUtils.getToken())
+        webSocket.openConnection()
         Utils.myName = repoUtils.getName()
-
-        viewModelScope.launch {
-            while (isActive) {
-                delay(150000)
-                if (webSocket != null) {
-                    webSocket?.send("PING")
-                } else continue
-            }
-        }
     }
 
-    private fun sendViaSocket(data: String) {
-        try {
-            webSocket?.send(data)
-        } catch (_: Exception) {
-        }
-    }
 
     //<(10)toPhone><(7)MSG_TYPE><DATA>
     fun sendMsg(msg: Message) {
-        sendViaSocket("${Utils.currentPartner?.partnerId}$msg")
+        webSocket.sendMessage("${Utils.currentPartner?.partnerId}$msg")
     }
 
     fun sendChatMsg(msg: ModelMsgSocket, replyBytes: ByteArray?) {
@@ -256,7 +214,7 @@ class ChatViewModal @Inject constructor(
                         ConversionUtils.encode(encMsg)
                     )
                 }"
-                sendViaSocket(actualMsg)
+                webSocket.sendMessage(actualMsg)
                 try {
                     flowMsgs.emit(MsgsFlowState.ChatMessageFlowState(builder.buildUI(), roomMsg.partnerId, true))
                     repoMsgs.addMsg(builder.build())
@@ -265,19 +223,6 @@ class ChatViewModal @Inject constructor(
                 }
             } catch (_: Exception) {
             }
-        }
-    }
-
-    private fun openWebSocket(token: String): WebSocket? {
-        return try {
-            val client = OkHttpClient()
-            val request = Request.Builder()
-                .url(Utils.WEBSOCKET_LINK)
-                .addHeader("Authorization", "Bearer $token")
-                .build()
-            client.newWebSocket(request, webSocketListener)
-        } catch (e: Exception) {
-            null
         }
     }
 
@@ -291,19 +236,10 @@ class ChatViewModal @Inject constructor(
                 ConversionUtils.encode(encMsg)
             )
         }"
-        sendViaSocket(actualMsg)
+        webSocket.sendMessage(actualMsg)
     }
 
     //region ACTIVITY COMM
-
-    fun showLastSeen() {
-        viewModelScope.launch {
-            val per = repoPersons.getPersonByPhone(Utils.currentPartner?.partnerId.toString()) ?: return@launch
-            delay(40)
-            if (per.lastSeenMillis == -1L) flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.ONLINE, Utils.currentPartner!!.partnerId))
-            else flowMsgs.emit(MsgsFlowState.MsgStatusFlowState(per.lastSeenMillis, 0L, FlowType.OFFLINE, Utils.currentPartner!!.partnerId))
-        }
-    }
 
     fun clearUnreadCount() {
         viewModelScope.launch {
@@ -395,14 +331,12 @@ class ChatViewModal @Inject constructor(
                     else -> {}
                 }
         } catch (e: Exception) {
-            Log.e("TAG--", "toUI: ", e)
         }
 
         return builder.build()
     }
 
     fun openChat(phone: String) {
-        Log.d("TAG--", "openChat: $phone")
         Utils.currentPartner = repoRelations.getRelation(phone)
         cryptoService.setCurrentPartner(phone)
         viewModelScope.launch {
@@ -430,10 +364,11 @@ class ChatViewModal @Inject constructor(
                     it.unReadCount = 0
                     repoPersons.insertPerson(it)
                 }
-                if (Utils.currentPartner!!.isAccepted)
+                if (Utils.currentPartner!!.isAccepted) {
+                    sendMsg(OfflineStatus())
                     sendPendingMsgs()
-            } catch (e: Exception) {
-                Log.e("TAG--", ": ", e)
+                }
+            } catch (_: Exception) {
             }
         }
     }
@@ -445,6 +380,14 @@ class ChatViewModal @Inject constructor(
                 val oldRel = repoRelations.getRelation(phone)
                 if (oldRel == null) connectNew(phone, openNextActivity, true)
                 else {
+                    ModelRoomPersons(
+                        phone, oldRel.partnerName,
+                        MsgMediaType.TEXT, "", -1L,
+                        System.currentTimeMillis(),
+                        lastSeenMillis = System.currentTimeMillis(),
+                        isSent = false,
+                        msgStatus = MsgStatus.RECEIVED
+                    ).apply { repoPersons.insertPerson(this) }
                     if (openNextActivity)
                         flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.OPEN_NEW_CONNECTION_ACTIVITY, phone))
                 }
@@ -453,7 +396,7 @@ class ChatViewModal @Inject constructor(
         }
         viewModelScope.launch {
             if (!phone.isDigitsOnly()) return@launch
-            val oldRel = repoRelations.getRelation(phone)
+            var oldRel = repoRelations.getRelation(phone)
             val relation = ModelRoomPersonRelation(phone, oldRel?.partnerName ?: phone, isConnSent = true, isAccepted = false, isRejected = false)
             Utils.currentPartner = relation
             cryptoService.setCurrentPartner(phone)
@@ -464,10 +407,18 @@ class ChatViewModal @Inject constructor(
             else flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.INCOMING_NEW_CONNECTION_REQUEST, phone))
 
             //getting Name from server
-            val name = oldRel?.partnerName ?: try {
-                retro.getName(phone).body() ?: phone
-            } catch (e: Exception) {
-                phone
+            oldRel = relation
+            val name = if (oldRel.partnerName == oldRel.partnerId) {
+                try {
+                    retro.getName(phone).body() ?: phone
+                } catch (e: Exception) {
+                    phone
+                }
+            } else oldRel.partnerName
+            val olRel = repoRelations.getRelation(phone)
+            if (olRel != null) {
+                olRel.partnerName = name
+                repoRelations.saveRelation(olRel)
             }
             ModelRoomPersons(
                 phone, name,
@@ -484,7 +435,7 @@ class ChatViewModal @Inject constructor(
         relation.isRejected = false
         repoRelations.saveRelation(relation)
         val key = cryptoService.checkForKeyAndGenerateIfNot(relation.partnerId)
-        sendViaSocket(
+        webSocket.sendMessage(
             "${relation.partnerId}${
                 NewConnection(
                     CipherUtils.G.modPow(
