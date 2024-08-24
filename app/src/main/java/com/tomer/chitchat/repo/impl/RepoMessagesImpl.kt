@@ -34,4 +34,5 @@ class RepoMessagesImpl @Inject constructor(
     }
 
     override suspend fun getMsgFromFileName(fileName: String) = dao.getByFileName(fileName).getOrNull(0)
+    override suspend fun getLastMsgForPartner(phone: String)=dao.getLastOfUser(phone).getOrNull(0)
 }

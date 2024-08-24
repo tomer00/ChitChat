@@ -75,6 +75,8 @@ class ChatAdapter(
             holder.b.imgMsgStatus.visibility = View.GONE
         }
 
+        if (mod.isSelected) holder.b.root.setBackgroundColor(ContextCompat.getColor(context,R.color.selected))
+        else holder.b.root.setBackgroundColor(ContextCompat.getColor(context,R.color.trans))
 
         holder.b.tvTime.text = mod.timeText
         holder.b.imgMsgStatus.setImageDrawable(statusDrawables[mod.status.ordinal])

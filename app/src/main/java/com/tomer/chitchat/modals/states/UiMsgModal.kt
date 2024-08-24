@@ -21,5 +21,6 @@ class UiMsgModal constructor(
     var isProg: Boolean,
     var bytes: ByteArray?,
     val repBytes: ByteArray?,
-    val isEmojiOnly: Boolean
+    val isEmojiOnly: Boolean,
+    var isSelected: Boolean = false
 )

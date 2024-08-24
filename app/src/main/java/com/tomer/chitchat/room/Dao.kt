@@ -42,6 +42,9 @@ interface Dao {
     @Query("DELETE from messages where partnerId=:no")
     fun deleteAllByPhone(no: String)
 
+    @Query("select * from messages where partnerId=:phoneNo order by timeMillis DESC LIMIT 1")
+    fun getLastOfUser(phoneNo: String): List<ModelRoomMessage>
+
 
     //endregion TABLE MESSAGES
 

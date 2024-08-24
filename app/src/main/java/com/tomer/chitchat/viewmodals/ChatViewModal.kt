@@ -336,7 +336,8 @@ class ChatViewModal @Inject constructor(
         return builder.build()
     }
 
-    fun openChat(phone: String) {
+    fun openChat(phone: String, seletedIds: MutableList<Long>) {
+        seletedIds.sort()
         Utils.currentPartner = repoRelations.getRelation(phone)
         cryptoService.setCurrentPartner(phone)
         viewModelScope.launch {
@@ -356,7 +357,13 @@ class ChatViewModal @Inject constructor(
                     }
                 }
                 job.join()
-                for (a in arrUI) if (a != null) chatMsgs.add(a)
+                for (a in arrUI) {
+                    if (a != null) {
+                        val pos = seletedIds.binarySearch(a.id)
+                        if (pos > -1) a.isSelected = true
+                        chatMsgs.add(a)
+                    }
+                }
 
                 flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone))
 

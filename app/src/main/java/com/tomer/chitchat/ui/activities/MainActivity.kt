@@ -231,6 +231,11 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     override fun onBackPressed() {
         if (viewModal.headMenu.value == true) {
             viewModal.delSelected(false, adapter.currentList)
+            for (i in adapter.currentList) {
+                if (i.isSelected) i.isSelected = false
+                val b = getRvViewIfVisible(i.phoneNo) ?: continue
+                b.root.setBackgroundColor(ContextCompat.getColor(this, R.color.trans))
+            }
             return
         }
         super.onBackPressed()
@@ -534,9 +539,9 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         lifecycleScope.launch {
             delay(animDur)
             b.msgStatus.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, if (serverRec) R.drawable.ic_tick else R.drawable.ic_double_tick))
-            b.msgStatus.animate().rotationYBy(-180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+            b.msgStatus.animate().rotationY(0f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
         }
-        b.msgStatus.animate().rotationYBy(180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+        b.msgStatus.animate().rotationY(180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
     }
 
 }

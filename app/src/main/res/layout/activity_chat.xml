@@ -367,7 +367,7 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
     <ImageView
-        android:id="@+id/btScr"
+        android:id="@+id/btScrollToBottom"
         android:layout_width="0dp"
         android:layout_height="28dp"
         android:layout_marginEnd="12dp"

@@ -12,6 +12,7 @@
 
 
     <color name="divider">#BDBDBD</color>
+    <color name="selected">#667CCCEE</color>
 
     <color name="green">#0AB68B</color>
     <color name="dark_blue">#005FEB</color>

@@ -13,13 +13,16 @@ import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
 import android.view.View
+import android.view.ViewAnimationUtils
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
@@ -41,7 +44,6 @@ import com.tomer.chitchat.modals.msgs.Typing
 import com.tomer.chitchat.modals.states.FlowType
 import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.modals.states.MsgsFlowState
-import com.tomer.chitchat.modals.states.UiMsgModal
 import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.ui.views.MsgSwipeCon
 import com.tomer.chitchat.ui.views.MsgSwipeCon.SwipeCA
@@ -49,10 +51,12 @@ import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.EmojisHashingUtils
 import com.tomer.chitchat.utils.Utils
 import com.tomer.chitchat.utils.Utils.Companion.getDpLink
+import com.tomer.chitchat.viewmodals.ChatActivityVm
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import java.util.Collections
 import java.util.LinkedList
 
 
@@ -61,12 +65,13 @@ import java.util.LinkedList
 class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
     private val b by lazy { ActivityChatBinding.inflate(layoutInflater) }
+    private val vma: ChatActivityVm by viewModels()
 
     private lateinit var adap: ChatAdapter
     private val emojiAdap by lazy {
         EmojiAdapter {
             sendTextMessage(EmojisHashingUtils.emojiList[it], true)
-            b.replyLayout.visibility = View.GONE
+            vma.removeReplyData()
             b.rvEmojiContainer.animate()
                 .x(b.rvEmojiContainer.width.toFloat())
                 .setDuration(220)
@@ -124,9 +129,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
     //endregion MEDIA IO
 
-
-    private var currentReplyMsgData: UiMsgModal? = null
-
     override fun onResume() {
         super.onResume()
         vm.isChatActivityVisible = true
@@ -136,6 +138,21 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
     override fun onPause() {
         super.onPause()
         vm.isChatActivityVisible = false
+        vma.scrollPosition.postValue(ll.findFirstVisibleItemPosition())
+    }
+
+    override fun onBackPressed() {
+        if (vma.headMenu.value == true) {
+            vma.delSelected(false)
+            for (i in vm.chatMsgs) {
+                if (i.isSelected) i.isSelected = false
+                val b = getRvViewIfPossibleForId(i.id) ?: continue
+                b.root.setBackgroundColor(ContextCompat.getColor(this, R.color.trans))
+            }
+            return
+        }
+        super.onBackPressed()
+        finish()
     }
 
     // Import required classes
@@ -156,8 +173,9 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             return
         }
         setContentView(b.root)
+        vm.openChat(intent.getStringExtra("phone")!!,vma.selectedMsgIds)
+        vma.setPartnerNo(intent.getStringExtra("phone")!!)
         vmAssets.getGifNow()
-        vm.openChat(intent.getStringExtra("phone")!!)
         //QUEUE SERVICE EXECUTOR
         lifecycleScope.launch {
             while (true) {
@@ -199,11 +217,28 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             object : RecyclerView.AdapterDataObserver() {
                 override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
                     super.onItemRangeInserted(positionStart, itemCount)
-                    b.rvMsg.smoothScrollToPosition(0)
+                    if (vma.navBottom.value == false)
+                        b.rvMsg.smoothScrollToPosition(0)
                 }
             }
         )
         ll.reverseLayout = true
+
+        b.rvMsg.addOnScrollListener(
+            object : RecyclerView.OnScrollListener() {
+                override fun onScrolled(recyclerView: RecyclerView, dx: Int, dy: Int) {
+                    super.onScrolled(recyclerView, dx, dy)
+                    if (dy < 0 && vma.navBottom.value == false) {
+                        if (ll.findFirstVisibleItemPosition() > 0) vma.setNavBottom(true)
+                    } else if (dy > 0 && vma.navBottom.value == true) {
+                        if (ll.findFirstVisibleItemPosition() == 0) vma.setNavBottom(false)
+                    }
+                }
+            }
+        )
+        b.rvMsg.post {
+            b.rvMsg.scrollToPosition(vma.scrollPosition.value ?: 0)
+        }
 
         b.etMsg.addTextChangedListener(object : TextWatcher {
             override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {
@@ -248,10 +283,10 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             sendTextMessage(msgText, isOnlyEmoji(msgText))
             b.etMsg.setText("")
             b.root.postDelayed({ b.etMsg.requestFocus() }, 40)
-            b.replyLayout.visibility = View.GONE
+            vma.removeReplyData()
         }
         b.btCloseReplyLay.setOnClickListener {
-            b.replyLayout.visibility = View.GONE
+            vma.removeReplyData()
             b.root.postDelayed({ b.etMsg.requestFocus() }, 40)
         }
         b.btGallery.setOnClickListener {
@@ -319,6 +354,135 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             }
         }
 
+        //region DELETE MSGS
+
+        b.btBackSel.setOnClickListener {
+            onBackPressed()
+        }
+        b.btDel.setOnClickListener {
+            vma.delSelected(true)
+        }
+
+        lifecycleScope.launch {
+            vma.flowDeleteIds.collectLatest { id ->
+                Log.d("TAG--", "DELETED $id")
+                val pos = vm.chatMsgs.indexOfFirst { it.id == id }
+                if (pos == -1) return@collectLatest
+
+                vm.chatMsgs.removeAt(pos)
+                adap.notifyItemRemoved(pos)
+            }
+        }
+        vma.headMenu.observe(this@ChatActivity) {
+            b.apply {
+                btBackSel.isClickable = false
+                btBack.isClickable = false
+                btDel.isClickable = false
+            }
+            if (it) {
+                val width = b.layMainHead.width
+                val height = b.layMainHead.height
+                b.laySelHead.visibility = View.VISIBLE
+                window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundSelBg)
+                b.apply {
+                    btBackSel.isClickable = true
+                    btDel.isClickable = true
+                }
+                if (b.laySelHead.isAttachedToWindow)
+                    ViewAnimationUtils.createCircularReveal(b.laySelHead, width.times(0.8f).toInt(), height.shr(1), 1f, width.toFloat()).apply {
+                        duration = 340
+                        start()
+                    }
+            } else {
+                val width = b.laySelHead.width
+                val height = b.laySelHead.height
+                window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
+                if (b.laySelHead.isAttachedToWindow)
+                    ViewAnimationUtils.createCircularReveal(b.laySelHead, width.times(0.8f).toInt(), height.shr(1), width.toFloat(), 1f).apply {
+                        duration = 200
+                        doOnEnd {
+                            b.apply {
+                                laySelHead.visibility = View.GONE
+                                btBack.isClickable = true
+                            }
+                        }
+                        start()
+                    }
+                else {
+                    b.apply {
+                        laySelHead.visibility = View.GONE
+                        btBack.isClickable = true
+                    }
+                }
+            }
+
+        }
+        vma.selCount.observe(this@ChatActivity) {
+            b.root.post {
+                b.tvSelCount.text = it.toString()
+            }
+        }
+        //endregion DELETE MSGS
+
+        //region REPLY LAY
+
+        vma.replyMsgData.observe(this) { uiMod ->
+            if (uiMod == null) {
+                b.replyLayout.visibility = View.GONE
+                return@observe
+            }
+            b.apply {
+                replyLayout.visibility = View.VISIBLE
+                when (uiMod.msgType) {
+                    MsgMediaType.TEXT, MsgMediaType.EMOJI -> {
+                        tvRep.text = uiMod.msg
+                        imgReplyMedia.visibility = View.GONE
+                    }
+
+                    MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO -> {
+                        imgReplyMedia.visibility = View.VISIBLE
+                        Glide.with(tvPartnerNameCard).load(uiMod.bytes).apply(options).into(imgReplyMedia)
+                        tvRep.text = uiMod.mediaFileName
+                    }
+
+                    MsgMediaType.FILE -> {
+                        imgReplyMedia.visibility = View.VISIBLE
+                        Glide.with(tvPartnerNameCard).load(R.drawable.ic_received).apply(options).into(imgReplyMedia)
+                        tvRep.text = uiMod.mediaFileName
+                    }
+                }
+            }
+        }
+
+        //endregion REPLY LAY
+
+        b.btScrollToBottom.setOnClickListener {
+            b.rvMsg.smoothScrollToPosition(0)
+        }
+        vma.navBottom.observe(this) {
+            if (it == true) {
+                if (b.btScrollToBottom.isAttachedToWindow) {
+                    b.btScrollToBottom.animate().apply {
+                        scaleX(1f)
+                        scaleY(1f)
+                        setInterpolator(OvershootInterpolator(1.2f))
+                        setDuration(240)
+                        start()
+                    }
+                    b.btScrollToBottom.isClickable = true
+                } else b.apply {
+                    btScrollToBottom.scaleX = 1f
+                    btScrollToBottom.scaleY = 1f
+                }
+            } else {
+                if (b.btScrollToBottom.isAttachedToWindow) animateTo0(b.btScrollToBottom)
+                else b.apply {
+                    btScrollToBottom.scaleX = 0f
+                    btScrollToBottom.scaleY = 0f
+                }
+            }
+        }
+
         lifecycleScope.launch {
             vmAssets.flowEvents.collectLatest {
                 handleFlow(it)
@@ -343,16 +507,16 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         msgB.isReply(b.replyLayout.visibility == View.VISIBLE)
         msgB.setTimeMillis(System.currentTimeMillis())
         if (b.replyLayout.visibility == View.VISIBLE) {
-            msgB.replyId(currentReplyMsgData!!.id)
-            msgB.replyMsgType(currentReplyMsgData!!.msgType)
-            msgB.replyData(currentReplyMsgData!!.msg)
-            msgB.replyMediaFileName(currentReplyMsgData!!.mediaFileName.toString())
+            msgB.replyId(vma.replyMsgData.value!!.id)
+            msgB.replyMsgType(vma.replyMsgData.value!!.msgType)
+            msgB.replyData(vma.replyMsgData.value!!.msg)
+            msgB.replyMediaFileName(vma.replyMsgData.value!!.mediaFileName.toString())
         }
         msgB.msgType(if (isOnlyEmoji) MsgMediaType.EMOJI else MsgMediaType.TEXT)
         msgB.msgData(text)
         vm.sendChatMsg(
             msgB.build(),
-            if (b.replyLayout.visibility == View.VISIBLE) currentReplyMsgData!!.bytes else null
+            if (b.replyLayout.visibility == View.VISIBLE) vma.replyMsgData.value!!.bytes else null
         )
     }
 
@@ -363,21 +527,21 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         msgB.setTimeMillis(System.currentTimeMillis())
         msgB.msgType(pickingMediaType)
         if (b.replyLayout.visibility == View.VISIBLE) {
-            msgB.replyId(currentReplyMsgData!!.id)
-            msgB.replyMsgType(currentReplyMsgData!!.msgType)
-            msgB.replyData(currentReplyMsgData!!.msg)
-            msgB.replyMediaFileName(currentReplyMsgData!!.mediaFileName.toString())
+            msgB.replyId(vma.replyMsgData.value!!.id)
+            msgB.replyMsgType(vma.replyMsgData.value!!.msgType)
+            msgB.replyData(vma.replyMsgData.value!!.msg)
+            msgB.replyMediaFileName(vma.replyMsgData.value!!.mediaFileName.toString())
         }
         msgB.msgData("Uploading")
         vmAssets.uploadFile(
             Utils.currentPartner?.partnerId ?: "0000000000", pickingMediaType, uri, this, msgB.build(), tempId,
-            if (b.replyLayout.visibility == View.VISIBLE) currentReplyMsgData!!.bytes else null
+            if (b.replyLayout.visibility == View.VISIBLE) vma.replyMsgData.value!!.bytes else null
         ) { msg ->
             runOnUiThread {
                 adap.addItem(msg.data.also { it?.isUploaded = true } ?: return@runOnUiThread)
             }
         }
-        b.replyLayout.visibility = View.GONE
+        vma.removeReplyData()
         vm.updatePersonModel(msgB.build(), tempId)
     }
 
@@ -390,9 +554,9 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         lifecycleScope.launch {
             delay(animDur)
             b.imgMsgStatus.setImageDrawable(ContextCompat.getDrawable(this@ChatActivity, if (serverRec) R.drawable.ic_tick else R.drawable.ic_double_tick))
-            b.imgMsgStatus.animate().rotationYBy(-180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+            b.imgMsgStatus.animate().rotationY(0f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
         }
-        b.imgMsgStatus.animate().rotationYBy(180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+        b.imgMsgStatus.animate().rotationY(180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
     }
 
     //region FLOW EVENTS
@@ -570,7 +734,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             FlowType.REQ_ACCEPTED -> {
                 runOnUiThread {
                     b.contRelation.visibility = View.GONE
-                    vm.openChat(msg.fromUser)
+                    vm.openChat(msg.fromUser,vma.selectedMsgIds)
                 }
             }
 
@@ -679,11 +843,15 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
     //region CLICK LISTENERS
 
     override fun onChatItemClicked(pos: Int, type: ChatAdapter.ClickEvents) {
+        if (vma.headMenu.value == true) {
+            onChatItemLongClicked(pos)
+            return
+        }
         when (type) {
             ChatAdapter.ClickEvents.DOWNLOAD -> onChatItemDownloadClicked(pos)
             ChatAdapter.ClickEvents.UPLOAD -> onChatItemUploadClicked(pos)
             ChatAdapter.ClickEvents.REPLY -> onChatItemReplyClicked(pos)
-            //root Case
+            //root Case show timer
             else -> {
                 val b = getRvViewIfVisible(pos) ?: return
                 if (vm.chatMsgs[pos].status != MsgStatus.RECEIVED) return
@@ -695,11 +863,19 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
     }
 
     override fun onChatItemLongClicked(pos: Int) {
-        //todo DELETING MSGS
+        var isSel: Boolean
+        vm.chatMsgs[pos].isSelected = vma.addDelNo(vm.chatMsgs[pos].id).also { isSel = it }
+        val b = getRvViewIfVisible(pos) ?: return
+        val col = if (isSel) ContextCompat.getColor(this, R.color.selected)
+        else ContextCompat.getColor(this, R.color.trans)
+        b.root.setBackgroundColor(col)
     }
 
     override fun onImageClick(pos: Int, imageView: View) {
-
+        if (vma.headMenu.value == true) {
+            onChatItemLongClicked(pos)
+            return
+        }
     }
 
 
@@ -759,31 +935,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
 
     override fun showRep(position: Int) {
-        currentReplyMsgData = vm.chatMsgs[position]
-        val mod = currentReplyMsgData ?: return
-        b.apply {
-            replyLayout.visibility = View.VISIBLE
-            when (mod.msgType) {
-                MsgMediaType.TEXT, MsgMediaType.EMOJI -> {
-                    tvRep.text = mod.msg
-                    imgReplyMedia.visibility = View.GONE
-                }
-
-                MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO -> {
-                    imgReplyMedia.visibility = View.VISIBLE
-                    Glide.with(tvPartnerNameCard).load(mod.bytes).apply(options).into(imgReplyMedia)
-                    tvRep.text = mod.mediaFileName
-                }
-
-                MsgMediaType.FILE -> {
-                    imgReplyMedia.visibility = View.VISIBLE
-                    Glide.with(tvPartnerNameCard).load(R.drawable.ic_received).apply(options).into(imgReplyMedia)
-                    tvRep.text = mod.mediaFileName
-                }
-            }
-        }
-
-
+        vma.setReplyData(vm.chatMsgs[position])
     }
     //endregion CLICK LISTENERS
 

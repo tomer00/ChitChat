@@ -13,4 +13,5 @@ interface RepoMessages {
     suspend fun updateMsg(tempId: Long, newId: Long)
     suspend fun updateMsgReceived(msgId: Long, status: MsgStatus)
     suspend fun getMsgFromFileName(fileName: String): ModelRoomMessage?
+    suspend fun getLastMsgForPartner(phone: String): ModelRoomMessage?
 }
