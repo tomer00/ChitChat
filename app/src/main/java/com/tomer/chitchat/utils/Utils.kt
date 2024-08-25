@@ -33,6 +33,15 @@ class Utils {
             }
         }
 
+        fun getFileExt(name: String): String {
+            val ind = name.lastIndexOf(".")
+            return try {
+                name.substring(ind + 1)
+            } catch (e: Exception) {
+                ""
+            }
+        }
+
         fun Bitmap.centerCropBitmap(): Bitmap {
             val originalWidth = this.width
             val originalHeight = this.height

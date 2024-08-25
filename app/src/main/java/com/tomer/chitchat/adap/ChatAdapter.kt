@@ -19,6 +19,7 @@ import com.tomer.chitchat.R
 import com.tomer.chitchat.databinding.MsgItemBinding
 import com.tomer.chitchat.modals.states.UiMsgModal
 import com.tomer.chitchat.room.MsgMediaType
+import com.tomer.chitchat.utils.Utils
 import java.util.LinkedList
 
 
@@ -75,9 +76,12 @@ class ChatAdapter(
             holder.b.imgMsgStatus.visibility = View.GONE
         }
 
-        if (mod.isSelected) holder.b.root.setBackgroundColor(ContextCompat.getColor(context,R.color.selected))
-        else holder.b.root.setBackgroundColor(ContextCompat.getColor(context,R.color.trans))
+        if (mod.isSelected) holder.b.root.setBackgroundColor(ContextCompat.getColor(context, R.color.selected))
+        else holder.b.root.setBackgroundColor(ContextCompat.getColor(context, R.color.trans))
 
+        holder.b.msgTv.text = mod.msg
+        holder.b.emojiTv.text = mod.msg
+        holder.b.RepTv.text = mod.rep
         holder.b.tvTime.text = mod.timeText
         holder.b.imgMsgStatus.setImageDrawable(statusDrawables[mod.status.ordinal])
         holder.b.contTime.visibility = View.VISIBLE
@@ -96,11 +100,15 @@ class ChatAdapter(
                 .diskCacheStrategy(DiskCacheStrategy.NONE)
                 .skipMemoryCache(true)
                 .into(holder.b.repImgRv)
-        } else holder.b.repImgRv.setVisibility(View.GONE)
+        } else {
+            holder.b.repImgRv.setVisibility(View.GONE)
+            if (mod.replyType == MsgMediaType.FILE) holder.b.RepTv.text = mod.replyMediaFileName ?: "FILE"
+        }
 
 
         if (mod.bytes == null) {
             holder.b.mediaCont.visibility = View.GONE
+            holder.b.imgFileType.visibility = View.GONE
             if (mod.isEmojiOnly) {
                 holder.b.innerLay.background = ColorDrawable(ContextCompat.getColor(context, R.color.trans))
                 holder.b.msgTv.visibility = View.GONE
@@ -113,9 +121,20 @@ class ChatAdapter(
             //There is Media File either upload or download
             holder.b.mediaCont.visibility = View.VISIBLE
             if (mod.msgType == MsgMediaType.GIF) Glide.with(context).load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true).into(holder.b.mediaImg)
-            else Glide.with(context).asBitmap().load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true).into(holder.b.mediaImg)
+            else if (mod.msgType == MsgMediaType.IMAGE || mod.msgType == MsgMediaType.VIDEO) Glide.with(context).asBitmap().load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(
+                true
+            ).into(holder.b.mediaImg)
+            else holder.b.mediaImg.setImageDrawable(null)
 
-            holder.b.msgTv.visibility = View.GONE
+            if (mod.msgType == MsgMediaType.FILE) {
+                holder.b.msgTv.visibility = View.VISIBLE
+                holder.b.imgFileType.visibility = View.VISIBLE
+                holder.b.imgFileType.setImageDrawable(ContextCompat.getDrawable(context, AdapPerson.getDrawableId(mod.mediaFileName ?: "FILE")))
+                "${mod.mediaFileName ?: "File"}\n${mod.mediaSize} 🔹 ${Utils.getFileExt(mod.mediaFileName ?: "").uppercase()}".also { holder.b.msgTv.text = it }
+            } else {
+                holder.b.msgTv.visibility = View.GONE
+                holder.b.imgFileType.visibility = View.GONE
+            }
             holder.b.emojiTv.visibility = View.GONE
 
 
@@ -125,6 +144,10 @@ class ChatAdapter(
                 holder.b.layUpload.visibility = View.GONE
                 holder.b.layDownload.visibility = View.GONE
             } else {
+                if (mod.isUploaded && mod.isDownloaded){
+                    holder.b.layMediaRoot.visibility = View.GONE
+                    return
+                }
                 holder.b.rvProg.visibility = View.GONE
                 holder.b.layMediaRoot.visibility = View.VISIBLE
                 if (mod.isSent) {//uploading
@@ -143,10 +166,6 @@ class ChatAdapter(
             }
 
         }
-
-        holder.b.msgTv.text = mod.msg
-        holder.b.emojiTv.text = mod.msg
-        holder.b.RepTv.text = mod.rep
 
     }
 
@@ -167,6 +186,8 @@ class ChatAdapter(
             b.root.setOnClickListener(onCli)
             b.layUpload.setOnClickListener(onCli)
             b.layDownload.setOnClickListener(onCli)
+            b.repImgRv.setOnClickListener(onCli)
+            b.RepTv.setOnClickListener(onCli)
             b.root.setOnLongClickListener {
                 callBack.onChatItemLongClicked(absoluteAdapterPosition)
                 true

@@ -1,11 +1,9 @@
 package com.tomer.chitchat.viewmodals
 
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.tomer.chitchat.assets.RepoAssets
 import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.modals.states.UiMsgModal
 import com.tomer.chitchat.repo.RepoMessages
@@ -24,7 +22,6 @@ import javax.inject.Inject
 class ChatActivityVm @Inject constructor(
     private val repoPersons: RepoPersons,
     private val repoStorage: RepoStorage,
-    private val repoAssets: RepoAssets,
     private val repoMsg: RepoMessages,
 ) : ViewModel() {
 
@@ -105,7 +102,7 @@ class ChatActivityVm @Inject constructor(
     private val _navBottom = MutableLiveData(false)
     val navBottom: LiveData<Boolean> = _navBottom
 
-    fun setNavBottom(value:Boolean){
+    fun setNavBottom(value: Boolean) {
         _navBottom.postValue(value)
     }
 
@@ -117,7 +114,10 @@ class ChatActivityVm @Inject constructor(
     fun setReplyData(data: UiMsgModal) {
         _replyMsgData.postValue(data)
     }
+
     fun removeReplyData() = _replyMsgData.postValue(null)
+
+    var replyClickID = -1L
 
     //endregion STATES
 

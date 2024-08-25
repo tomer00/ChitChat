@@ -36,6 +36,7 @@ import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.PermissionListener
 import com.tomer.chitchat.R
 import com.tomer.chitchat.adap.AdapPerson
+import com.tomer.chitchat.adap.AdapPerson.Companion.getDrawableId
 import com.tomer.chitchat.databinding.ActivityMainBinding
 import com.tomer.chitchat.databinding.BarcodeDiaBinding
 import com.tomer.chitchat.databinding.RowPersonBinding
@@ -286,7 +287,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                     b.etNewNumber.error = "Enter Valid Number"
                     return
                 }
-                chatVm.connectNew(b.etNewNumber.text.toString(), true,false)
+                chatVm.connectNew(b.etNewNumber.text.toString(), true, false)
                 b.layNewNumber.visibility = View.GONE
                 b.imgBarcode.pauseAnimation()
                 b.imgFab.visibility = View.VISIBLE
@@ -364,7 +365,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         barcodeView.pause()
         qrDia.dismiss()
         if (!result.text.isDigitsOnly()) return@BarcodeCallback
-        chatVm.connectNew(result.text, true,false)
+        chatVm.connectNew(result.text, true, false)
         b.layNewNumber.visibility = View.GONE
         b.imgBarcode.pauseAnimation()
         b.imgFab.visibility = View.VISIBLE
@@ -418,10 +419,6 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                             .into(b.imgLottie)
                     }
 
-                    MsgMediaType.FILE -> {
-                        b.imgLottie.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, AdapPerson.getDrawableId(lastMsg)))
-                    }
-
                     MsgMediaType.VIDEO -> {
                         Glide.with(this@MainActivity)
                             .asBitmap()
@@ -472,7 +469,16 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                         }
                     }
 
-                    else -> {}
+                    else -> { //todo dkh le ieko
+                        if (msg.data.msgType == MsgMediaType.FILE) {
+                            b.msgType.visibility = View.VISIBLE
+                            b.msgType.setImageResource(getDrawableId(msg.data.mediaFileName ?: ""))
+                            b.imgLottie.setImageResource(getDrawableId(msg.data.mediaFileName ?: ""))
+                        } else {
+                            b.msgType.visibility = View.GONE
+                            b.imgLottie.setImageDrawable(null)
+                        }
+                    }
                 }
 
             }

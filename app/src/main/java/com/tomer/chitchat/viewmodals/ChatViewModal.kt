@@ -310,6 +310,8 @@ class ChatViewModal @Inject constructor(
                     ?: ConversionUtils.base64ToByteArr(msgText.split(",-,")[1])
             )
 
+            MsgMediaType.FILE -> builder.bytes(ByteArray(2))
+
             else -> {}
         }
 
@@ -330,7 +332,7 @@ class ChatViewModal @Inject constructor(
 
                     else -> {}
                 }
-        } catch (e: Exception) {
+        } catch (_: Exception) {
         }
 
         return builder.build()
@@ -357,12 +359,16 @@ class ChatViewModal @Inject constructor(
                     }
                 }
                 job.join()
-                for (a in arrUI) {
-                    if (a != null) {
-                        val pos = seletedIds.binarySearch(a.id)
-                        if (pos > -1) a.isSelected = true
-                        chatMsgs.add(a)
+                if (seletedIds.isEmpty())
+                    for (a in arrUI) {
+                        if (a != null)
+                            chatMsgs.add(a)
                     }
+                else for (a in arrUI) {
+                    if (a == null) continue
+                    val pos = seletedIds.binarySearch(a.id)
+                    if (pos > -1) a.isSelected = true
+                    chatMsgs.add(a)
                 }
 
                 flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone))

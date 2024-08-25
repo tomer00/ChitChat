@@ -51,6 +51,7 @@
                 android:layout_marginHorizontal="24dp"
                 android:contentDescription="@string/app_name"
                 android:src="@drawable/ic_avatar"
+                app:tint="@color/fore"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -120,7 +121,6 @@
         android:layout_height="wrap_content"
         android:layout_margin="20dp"
         android:contentDescription="@string/app_name"
-        android:src="@drawable/baseline_person_pin_24"
         app:cardBackgroundColor="@color/primary"
         app:cardCornerRadius="30dp"
         app:layout_constraintBottom_toBottomOf="parent"
@@ -139,7 +139,7 @@
                 android:contentDescription="@string/app_name"
                 android:padding="12dp"
                 android:src="@drawable/ic_add_chat"
-                android:tint="@color/white"
+                app:tint="@color/white"
                 android:visibility="visible"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />

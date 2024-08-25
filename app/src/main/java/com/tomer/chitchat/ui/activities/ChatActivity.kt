@@ -4,8 +4,11 @@ import com.tomer.chitchat.utils.ConversionUtils.assetsVM as vmAssets
 import com.tomer.chitchat.utils.ConversionUtils.chatVM as vm
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
+import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.content.Intent
 import android.content.res.Configuration
+import android.graphics.Color
 import android.net.Uri
 import android.os.Bundle
 import android.os.CountDownTimer
@@ -17,6 +20,7 @@ import android.view.ViewAnimationUtils
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
+import android.widget.Toast
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -34,6 +38,7 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestOptions
 import com.tomer.chitchat.R
+import com.tomer.chitchat.adap.AdapPerson
 import com.tomer.chitchat.adap.ChatAdapter
 import com.tomer.chitchat.adap.EmojiAdapter
 import com.tomer.chitchat.databinding.ActivityChatBinding
@@ -56,13 +61,12 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import java.util.Collections
 import java.util.LinkedList
 
 
 @SuppressLint("CheckResult")
 @AndroidEntryPoint
-class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
+class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, View.OnClickListener {
 
     private val b by lazy { ActivityChatBinding.inflate(layoutInflater) }
     private val vma: ChatActivityVm by viewModels()
@@ -115,17 +119,28 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
     //region MEDIA IO
 
-    private var pickingMediaType = MsgMediaType.IMAGE
 
     private val mediaPicker: ActivityResultLauncher<PickVisualMediaRequest> =
         registerForActivityResult(
             ActivityResultContracts.PickVisualMedia()
         ) {
             b.btGallery.isClickable = true
-            if (it != null) {
-                sendMediaMsg(it)
-            }
+            if (it != null)
+                sendMediaMsg(it, MsgMediaType.IMAGE)
+
         }
+
+    private val filePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        b.btAttachments.isClickable = true
+        if (result.resultCode != RESULT_OK || result.data == null) return@registerForActivityResult
+        val uri = result.data?.data ?: return@registerForActivityResult
+        val size = contentResolver.openInputStream(uri)?.available() ?: -1
+        if (size == -1 || size > 10485760) {
+            Toast.makeText(this, "File size too large to upload...", Toast.LENGTH_SHORT).show()
+            return@registerForActivityResult
+        }
+        sendMediaMsg(uri, MsgMediaType.FILE)
+    }
 
     //endregion MEDIA IO
 
@@ -173,9 +188,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             return
         }
         setContentView(b.root)
-        vm.openChat(intent.getStringExtra("phone")!!,vma.selectedMsgIds)
+        vm.openChat(intent.getStringExtra("phone")!!, vma.selectedMsgIds)
         vma.setPartnerNo(intent.getStringExtra("phone")!!)
-        vmAssets.getGifNow()
+        b.root.post {
+            vmAssets.getGifNow()
+            vmAssets.setTypingJson()
+        }
         //QUEUE SERVICE EXECUTOR
         lifecycleScope.launch {
             while (true) {
@@ -202,8 +220,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
         b.etMsg.setKeyboardInputCall { info ->
             if (b.contRelation.visibility == View.VISIBLE) return@setKeyboardInputCall
-            pickingMediaType = if (info.description.getMimeType(0).equals("image/gif")) MsgMediaType.GIF else MsgMediaType.IMAGE
-            sendMediaMsg(info.contentUri)
+            val pickingMediaType = if (info.description.getMimeType(0).equals("image/gif")) MsgMediaType.GIF else MsgMediaType.IMAGE
+            sendMediaMsg(info.contentUri, pickingMediaType)
         }
 
         adap = ChatAdapter(this, this, vm.chatMsgs)
@@ -234,6 +252,26 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                         if (ll.findFirstVisibleItemPosition() == 0) vma.setNavBottom(false)
                     }
                 }
+
+                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
+                    super.onScrollStateChanged(recyclerView, newState)
+                    if (newState == RecyclerView.SCROLL_STATE_IDLE && vma.replyClickID != -1L) {
+                        val animator = ValueAnimator.ofFloat(0.6f,0f)
+                        animator.addUpdateListener {
+                            val b = getRvViewIfPossibleForId(vma.replyClickID) ?: return@addUpdateListener
+                            val colSel = Color.valueOf(ContextCompat.getColor(this@ChatActivity, R.color.backgroundSelBg))
+                            b.root.setBackgroundColor(Color.valueOf(colSel.red(), colSel.green(), colSel.blue(), it.animatedValue as Float).toArgb())
+                        }
+                        animator.doOnEnd {
+                            val pos = vm.chatMsgs.indexOfFirst { vma.replyClickID == it.id }
+                            vma.replyClickID = -1L
+                            if (pos != -1)
+                                vm.chatMsgs[pos].isSelected = false
+                        }
+                        animator.setDuration(4000)
+                        animator.start()
+                    }
+                }
             }
         )
         b.rvMsg.post {
@@ -252,58 +290,16 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             override fun afterTextChanged(s: Editable?) {
             }
         })
-        b.btImg.setOnClickListener {
-            if (b.contRelation.visibility == View.VISIBLE) return@setOnClickListener
-            if (emojiAdap.currentList.isEmpty()) {
-                b.rvEmojiContainer.x = b.rvEmojiContainer.width.toFloat()
-                b.rvEmoji.adapter = emojiAdap
-                b.rvEmoji.setLayoutManager(GridLayoutManager(this, 3, GridLayoutManager.HORIZONTAL, false))
-                emojiAdap.submitList(EmojisHashingUtils.emojiList)
-            }
-            if (b.rvEmojiContainer.x.toInt() > 0) {
-                b.rvEmojiContainer.animate()
-                    .x(0F)
-                    .setDuration(220)
-                    .setInterpolator(OvershootInterpolator(1.2f))
-                    .start();
-
-                return@setOnClickListener
-            }
-
-            b.rvEmojiContainer.animate()
-                .x(b.rvEmojiContainer.width.toFloat())
-                .setDuration(220)
-                .start()
-        }
-        b.btSend.setOnClickListener {
-            if (b.contRelation.visibility == View.VISIBLE) return@setOnClickListener
-            b.btSend.playAnimation()
-            val msgText = b.etMsg.text.toString().trim().ifEmpty { return@setOnClickListener }
-
-            sendTextMessage(msgText, isOnlyEmoji(msgText))
-            b.etMsg.setText("")
-            b.root.postDelayed({ b.etMsg.requestFocus() }, 40)
-            vma.removeReplyData()
-        }
-        b.btCloseReplyLay.setOnClickListener {
-            vma.removeReplyData()
-            b.root.postDelayed({ b.etMsg.requestFocus() }, 40)
-        }
-        b.btGallery.setOnClickListener {
-            if (b.contRelation.visibility == View.VISIBLE) return@setOnClickListener
-            b.btGallery.isClickable = false
-            pickingMediaType = MsgMediaType.IMAGE
-            mediaPicker.launch(
-                PickVisualMediaRequest.Builder()
-                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly)
-                    .build()
-            )
-        }
 
         b.apply {
-            btBack.setOnClickListener {
-                super.onBackPressed()
-            }
+            btImg.setOnClickListener(this@ChatActivity)
+            btSend.setOnClickListener(this@ChatActivity)
+            btCloseReplyLay.setOnClickListener(this@ChatActivity)
+            btGallery.setOnClickListener(this@ChatActivity)
+            btAttachments.setOnClickListener(this@ChatActivity)
+            btBack.setOnClickListener(this@ChatActivity)
+            btMenu.setOnClickListener(this@ChatActivity)
+            cardFlipper.setOnClickListener(this@ChatActivity)
             tvPartnerName.text = Utils.currentPartner!!.partnerName.ifEmpty { Utils.currentPartner!!.partnerId }
             Glide.with(this@ChatActivity)
                 .asBitmap()
@@ -356,12 +352,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
         //region DELETE MSGS
 
-        b.btBackSel.setOnClickListener {
-            onBackPressed()
-        }
-        b.btDel.setOnClickListener {
-            vma.delSelected(true)
-        }
+        b.btBackSel.setOnClickListener(this)
+        b.btDel.setOnClickListener(this)
 
         lifecycleScope.launch {
             vma.flowDeleteIds.collectLatest { id ->
@@ -447,7 +439,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
                     MsgMediaType.FILE -> {
                         imgReplyMedia.visibility = View.VISIBLE
-                        Glide.with(tvPartnerNameCard).load(R.drawable.ic_received).apply(options).into(imgReplyMedia)
+                        Glide.with(tvPartnerNameCard).load(AdapPerson.getDrawableId(uiMod.mediaFileName ?: "FILE")).apply(options).into(imgReplyMedia)
                         tvRep.text = uiMod.mediaFileName
                     }
                 }
@@ -456,9 +448,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
 
         //endregion REPLY LAY
 
-        b.btScrollToBottom.setOnClickListener {
-            b.rvMsg.smoothScrollToPosition(0)
-        }
+        b.btScrollToBottom.setOnClickListener(this)
         vma.navBottom.observe(this) {
             if (it == true) {
                 if (b.btScrollToBottom.isAttachedToWindow) {
@@ -514,13 +504,14 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         }
         msgB.msgType(if (isOnlyEmoji) MsgMediaType.EMOJI else MsgMediaType.TEXT)
         msgB.msgData(text)
+        b.rvMsg.smoothScrollToPosition(0)
         vm.sendChatMsg(
             msgB.build(),
             if (b.replyLayout.visibility == View.VISIBLE) vma.replyMsgData.value!!.bytes else null
         )
     }
 
-    private fun sendMediaMsg(uri: Uri) {
+    private fun sendMediaMsg(uri: Uri, pickingMediaType: MsgMediaType) {
         val tempId = vm.getTempId()
         val msgB = ModelMsgSocket.Builder()
         msgB.isReply(b.replyLayout.visibility == View.VISIBLE)
@@ -539,6 +530,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         ) { msg ->
             runOnUiThread {
                 adap.addItem(msg.data.also { it?.isUploaded = true } ?: return@runOnUiThread)
+                b.rvMsg.smoothScrollToPosition(0)
             }
         }
         vma.removeReplyData()
@@ -558,6 +550,78 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         }
         b.imgMsgStatus.animate().rotationY(180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
     }
+
+    //region CLICK LISTENER
+
+    override fun onClick(v: View) {
+        when (v.id) {
+            b.btMenu.id -> {}
+            b.btScrollToBottom.id -> b.rvMsg.smoothScrollToPosition(0)
+            b.btBack.id, b.btBackSel.id, b.cardFlipper.id -> onBackPressed()
+            b.btDel.id -> vma.delSelected(true)
+            b.btCloseReplyLay.id -> {
+                vma.removeReplyData()
+                b.root.postDelayed({ b.etMsg.requestFocus() }, 40)
+            }
+
+            b.btGallery.id -> {
+                if (b.contRelation.visibility == View.VISIBLE) return
+                b.btGallery.isClickable = false
+                mediaPicker.launch(
+                    PickVisualMediaRequest.Builder()
+                        .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        .build()
+                )
+            }
+
+            b.btAttachments.id -> {
+                if (b.contRelation.visibility == View.VISIBLE) return
+                b.btAttachments.isClickable = false
+                filePicker.launch(
+                    Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+                        addCategory(Intent.CATEGORY_OPENABLE)
+                        setType("*/*")
+                    }
+                )
+            }
+
+            b.btSend.id -> {
+                if (b.contRelation.visibility == View.VISIBLE) return
+                b.btSend.playAnimation()
+                val msgText = b.etMsg.text.toString().trim().ifEmpty { return }
+
+                sendTextMessage(msgText, isOnlyEmoji(msgText))
+                b.etMsg.setText("")
+                b.root.postDelayed({ b.etMsg.requestFocus() }, 40)
+                vma.removeReplyData()
+            }
+
+            b.btImg.id -> {
+                if (b.contRelation.visibility == View.VISIBLE) return
+                if (emojiAdap.currentList.isEmpty()) {
+                    b.rvEmojiContainer.x = b.rvEmojiContainer.width.toFloat()
+                    b.rvEmoji.adapter = emojiAdap
+                    b.rvEmoji.setLayoutManager(GridLayoutManager(this, 3, GridLayoutManager.HORIZONTAL, false))
+                    emojiAdap.submitList(EmojisHashingUtils.emojiList)
+                }
+                if (b.rvEmojiContainer.x.toInt() > 0) {
+                    b.rvEmojiContainer.animate()
+                        .x(0F)
+                        .setDuration(220)
+                        .setInterpolator(OvershootInterpolator(1.2f))
+                        .start();
+
+                    return
+                }
+
+                b.rvEmojiContainer.animate()
+                    .x(b.rvEmojiContainer.width.toFloat())
+                    .setDuration(220)
+                    .start()
+            }
+        }
+    }
+    //endregion CLICK LISTENER
 
     //region FLOW EVENTS
 
@@ -628,6 +692,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                             vm.chatMsgs[i].isProg = false
                             val b = getRvViewIfVisible(i) ?: return@runOnUiThread
                             animateTo0(b.layMediaRoot)
+                            b.root.postDelayed({ b.layMediaRoot.visibility = View.GONE }, 200)
                             break
                         }
                     }
@@ -659,6 +724,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                             vm.chatMsgs[i].bytes = msg.data!!.bytes
                             val b = getRvViewIfVisible(i) ?: return@runOnUiThread
                             animateTo0(b.layMediaRoot)
+                            b.root.postDelayed({ b.layMediaRoot.visibility = View.GONE }, 200)
+                            if (msg.data.msgType == MsgMediaType.FILE) continue
                             Glide.with(this).load(msg.data.bytes)
                                 .placeholder(b.mediaImg.drawable)
                                 .transform(RoundedCorners(12))
@@ -700,11 +767,35 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                 timeVisibilityQueue.addLast(Pair(System.currentTimeMillis() + 2000, msg.msgId ?: -1L))
             }
 
-            FlowType.TYPING -> "Typing...".also { b.tvDetails.text = it }
+            FlowType.TYPING -> {
+                "Typing...".also { b.tvDetails.text = it }
+                val animDur = 200L
+                lifecycleScope.launch {
+                    delay(animDur)
+                    b.apply {
+                        lottieTyping.playAnimation()
+                        imgDp.visibility = View.GONE
+                        lottieTyping.visibility = View.VISIBLE
+                    }
+                    b.cardFlipper.animate().rotationY(0f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+                }
+                b.cardFlipper.animate().rotationY(180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+            }
 
             FlowType.NO_TYPING -> {
                 if (lastSeenMillis == -1L) "Online".also { b.tvDetails.text = it }
                 else "last seen today at ${ConversionUtils.getRelativeTime(lastSeenMillis)}".also { b.tvDetails.text = it }
+                val animDur = 200L
+                lifecycleScope.launch {
+                    delay(animDur)
+                    b.apply {
+                        lottieTyping.pauseAnimation()
+                        imgDp.visibility = View.VISIBLE
+                        lottieTyping.visibility = View.GONE
+                    }
+                    b.cardFlipper.animate().rotationY(0f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+                }
+                b.cardFlipper.animate().rotationY(180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
             }
 
             FlowType.ONLINE -> {
@@ -734,7 +825,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
             FlowType.REQ_ACCEPTED -> {
                 runOnUiThread {
                     b.contRelation.visibility = View.GONE
-                    vm.openChat(msg.fromUser,vma.selectedMsgIds)
+                    vm.openChat(msg.fromUser, vma.selectedMsgIds)
                 }
             }
 
@@ -804,6 +895,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
                 }
             }
 
+            FlowType.SET_TYPING_GIF -> {
+                runOnUiThread {
+                    b.lottieTyping.setAnimationFromJson(msg.data!!.msg, msg.data.mediaFileName)
+                }
+            }
+
             else -> {}
         }
     }
@@ -863,6 +960,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
     }
 
     override fun onChatItemLongClicked(pos: Int) {
+        if (b.contRelation.visibility == View.VISIBLE) return
         var isSel: Boolean
         vm.chatMsgs[pos].isSelected = vma.addDelNo(vm.chatMsgs[pos].id).also { isSel = it }
         val b = getRvViewIfVisible(pos) ?: return
@@ -929,8 +1027,15 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA {
         b.rvProg.visibility = View.VISIBLE
     }
 
-    private fun onChatItemReplyClicked(pos: Int) {
-
+    private fun onChatItemReplyClicked(posadap: Int) {
+        val mod = vm.chatMsgs[posadap]
+        val pos = vm.chatMsgs.indexOfFirst { mod.replyId == it.id }
+        if (pos == -1) return
+        vm.chatMsgs[pos].isSelected = true
+        b.rvMsg.smoothScrollToPosition(pos)
+        vma.replyClickID = mod.replyId
+        val b = getRvViewIfVisible(pos) ?: return
+        b.root.setBackgroundColor(ContextCompat.getColor(this, R.color.selected))
     }
 
 

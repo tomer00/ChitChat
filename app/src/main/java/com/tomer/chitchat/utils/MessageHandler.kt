@@ -330,7 +330,7 @@ class MessageHandler(
                     } catch (_: Exception) {
                     }
                 }
-
+                MsgMediaType.FILE -> builderRoom.setBytes(ByteArray(2))
                 else -> {}
             }
 

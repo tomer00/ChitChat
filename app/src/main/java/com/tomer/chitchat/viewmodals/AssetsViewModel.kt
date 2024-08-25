@@ -133,6 +133,17 @@ class AssetsViewModel @Inject constructor(
         }
     }
 
+    fun setTypingJson() {
+        viewModelScope.launch {
+            val builder = UiMsgModalBuilder()
+            builder.setMsg(
+                "{\"v\":\"5.5.8\",\"fr\":60,\"ip\":0,\"op\":110,\"w\":144,\"h\":105,\"nm\":\"typing indicator\",\"ddd\":0,\"assets\":[],\"layers\":[{\"ddd\":0,\"ind\":1,\"ty\":3,\"nm\":\"Ã¢Â\u0096Â½ Dots\",\"sr\":1,\"ks\":{\"o\":{\"a\":0,\"k\":100,\"ix\":11},\"r\":{\"a\":0,\"k\":0,\"ix\":10},\"p\":{\"a\":0,\"k\":[72,51,0],\"ix\":2},\"a\":{\"a\":0,\"k\":[36,9,0],\"ix\":1},\"s\":{\"a\":0,\"k\":[100,100,100],\"ix\":6}},\"ao\":0,\"ip\":0,\"op\":110,\"st\":0,\"bm\":0},{\"ddd\":0,\"ind\":2,\"ty\":4,\"nm\":\"dot 1\",\"parent\":1,\"sr\":1,\"ks\":{\"o\":{\"a\":0,\"k\":100,\"ix\":11},\"r\":{\"a\":0,\"k\":0,\"ix\":10},\"p\":{\"a\":1,\"k\":[{\"i\":{\"x\":0.667,\"y\":1},\"o\":{\"x\":0.333,\"y\":0},\"t\":0,\"s\":[9,9,0],\"to\":[0,0,0],\"ti\":[0,0,0]},{\"i\":{\"x\":0.667,\"y\":1},\"o\":{\"x\":0.333,\"y\":0},\"t\":3.053,\"s\":[9,10,0],\"to\":[0,0,0],\"ti\":[0,0,0]},{\"i\":{\"x\":0.667,\"y\":1},\"o\":{\"x\":0.333,\"y\":0},\"t\":15.273,\"s\":[9,-9,0],\"to\":[0,0,0],\"ti\":[0,0,0]},{\"i\":{\"x\":0.667,\"y\":1},\"o\":{\"x\":0.333,\"y\":0},\"t\":25.174,\"s\":[9,12,0],\"to\":[0,0,0],\"ti\":[0,0,0]},{\"t\":32.744140625,\"s\":[9,9,0]}],\"ix\":2},\"a\":{\"a\":0,\"k\":[0,0,0],\"ix\":1},\"s\":{\"a\":0,\"k\":[100,100,100],\"ix\":6}},\"ao\":0,\"shapes\":[{\"ty\":\"gr\",\"it\":[{\"d\":1,\"ty\":\"el\",\"s\":{\"a\":0,\"k\":[6,6],\"ix\":2},\"p\":{\"a\":0,\"k\":[0,0],\"ix\":3},\"nm\":\"Ellipse Path 1\",\"mn\":\"ADBE Vector Shape - Ellipse\",\"hd\":false},{\"ty\":\"fl\",\"c\":{\"a\":1,\"k\":[{\"i\":{\"x\":[0.472],\"y\":[1]},\"o\":{\"x\":[1],\"y\":[0]},\"t\":0,\"s\":[0.690196078431,0.725490196078,0.752941176471,1]},{\"i\":{\"x\":[0.49],\"y\":[1]},\"o\":{\"x\":[1],\"y\":[0]},\"t\":15.273,\"s\":[0.349019616842,0.392156869173,0.427450984716,1]},{\"t\":32.072265625,\"s\":[0.690196078431,0.725490196078,0.752941176471,1]}],\"ix\":4},\"o\":{\"a\":0,\"k\":100,\"ix\":5},\"r\":1,\"bm\":0,\"nm\":\"Fill 1\",\"mn\":\"ADBE Vector Graphic - Fill\",\"hd\":false},{\"ty\":\"tr\",\"p\":{\"a\":0,\"k\":[0,0],\"ix\":2},\"a\":{\"a\":0,\"k\":[0,0],\"ix\":1},\"s\":{\"a\":0,\"k\":[300,300],\"ix\":3},\"r\":{\"a\":0,\"k\":0,\"ix\":6},\"o\":{\"a\":0,\"k\":100,\"ix\":7},\"sk\":{\"a\":0,\"k\":0,\"ix\":4},\"sa\":{\"a\":0,\"k\":0,\"ix\":5},\"nm\":\"Transform\"}],\"nm\":\"dot 1\",\"np\":2,\"cix\":2,\"bm\":0,\"ix\":1,\"mn\":\"ADBE Vector Group\",\"hd\":false}],\"ip\":0,\"op\":110,\"st\":0,\"bm\":0},{\"ddd\":0,\"ind\":3,\"ty\":4,\"nm\":\"dot 2\",\"parent\":1,\"sr\":1,\"ks\":{\"o\":{\"a\":0,\"k\":100,\"ix\":11},\"r\":{\"a\":0,\"k\":0,\"ix\":10},\"p\":{\"a\":1,\"k\":[{\"i\":{\"x\":0.667,\"y\":1},\"o\":{\"x\":0.333,\"y\":0},\"t\":10.691,\"s\":[36,9,0],\"to\":[0,0,0],\"ti\":[0,0,0]},{\"i\":{\"x\":0.667,\"y\":1},\"o\":{\"x\":0.333,\"y\":0},\"t\":15.273,\"s\":[36,10,0],\"to\":[0,0,0],\"ti\":[0,0,0]},{\"i\":{\"x\":0.667,\"y\":1},\"o\":{\"x\":0.333,\"y\":0},\"t\":25.963,\"s\":[36,-9,0],\"to\":[0,0,0],\"ti\":[0,0,0]},{\"i\":{\"x\":0.667,\"y\":1},\"o\":{\"x\":0.333,\"y\":0},\"t\":36.984,\"s\":[36,14.326,0],\"to\":[0,0,0],\"ti\":[0,0,0]},{\"t\":43.97265625,\"s\":[36,9,0]}],\"ix\":2},\"a\":{\"a\":0,\"k\":[0,0,0],\"ix\":1},\"s\":{\"a\":0,\"k\":[100,100,100],\"ix\":6}},\"ao\":0,\"shapes\":[{\"ty\":\"gr\",\"it\":[{\"d\":1,\"ty\":\"el\",\"s\":{\"a\":0,\"k\":[6,6],\"ix\":2},\"p\":{\"a\":0,\"k\":[0,0],\"ix\":3},\"nm\":\"Ellipse Path 1\",\"mn\":\"ADBE Vector Shape - Ellipse\",\"hd\":false},{\"ty\":\"fl\",\"c\":{\"a\":1,\"k\":[{\"i\":{\"x\":[0.472],\"y\":[1]},\"o\":{\"x\":[1],\"y\":[0]},\"t\":10.691,\"s\":[0.690196078431,0.725490196078,0.752941176471,1]},{\"i\":{\"x\":[0.49],\"y\":[1]},\"o\":{\"x\":[1],\"y\":[0]},\"t\":25.963,\"s\":[0.349019616842,0.392156869173,0.427450984716,1]},{\"t\":42.763671875,\"s\":[0.690196078431,0.725490196078,0.752941176471,1]}],\"ix\":4},\"o\":{\"a\":0,\"k\":100,\"ix\":5},\"r\":1,\"bm\":0,\"nm\":\"Fill 1\",\"mn\":\"ADBE Vector Graphic - Fill\",\"hd\":false},{\"ty\":\"tr\",\"p\":{\"a\":0,\"k\":[0,0],\"ix\":2},\"a\":{\"a\":0,\"k\":[0,0],\"ix\":1},\"s\":{\"a\":0,\"k\":[300,300],\"ix\":3},\"r\":{\"a\":0,\"k\":0,\"ix\":6},\"o\":{\"a\":0,\"k\":100,\"ix\":7},\"sk\":{\"a\":0,\"k\":0,\"ix\":4},\"sa\":{\"a\":0,\"k\":0,\"ix\":5},\"nm\":\"Transform\"}],\"nm\":\"dot 2\",\"np\":2,\"cix\":2,\"bm\":0,\"ix\":1,\"mn\":\"ADBE Vector Group\",\"hd\":false}],\"ip\":0,\"op\":110,\"st\":0,\"bm\":0},{\"ddd\":0,\"ind\":4,\"ty\":4,\"nm\":\"dot 3\",\"parent\":1,\"sr\":1,\"ks\":{\"o\":{\"a\":0,\"k\":100,\"ix\":11},\"r\":{\"a\":0,\"k\":0,\"ix\":10},\"p\":{\"a\":1,\"k\":[{\"i\":{\"x\":0.667,\"y\":1},\"o\":{\"x\":0.333,\"y\":0},\"t\":21.383,\"s\":[63,9,0],\"to\":[0,0,0],\"ti\":[0,0,0]},{\"i\":{\"x\":0.667,\"y\":1},\"o\":{\"x\":0.333,\"y\":0},\"t\":25.963,\"s\":[63,10,0],\"to\":[0,0,0],\"ti\":[0,0,0]},{\"i\":{\"x\":0.667,\"y\":1},\"o\":{\"x\":0.333,\"y\":0},\"t\":38.184,\"s\":[63,-9,0],\"to\":[0,0,0],\"ti\":[0,0,0]},{\"i\":{\"x\":0.667,\"y\":1},\"o\":{\"x\":0.333,\"y\":0},\"t\":49.594,\"s\":[63,13.139,0],\"to\":[0,0,0],\"ti\":[0,0,0]},{\"t\":56,\"s\":[63,9,0]}],\"ix\":2},\"a\":{\"a\":0,\"k\":[0,0,0],\"ix\":1},\"s\":{\"a\":0,\"k\":[100,100,100],\"ix\":6}},\"ao\":0,\"shapes\":[{\"ty\":\"gr\",\"it\":[{\"d\":1,\"ty\":\"el\",\"s\":{\"a\":0,\"k\":[6,6],\"ix\":2},\"p\":{\"a\":0,\"k\":[0,0],\"ix\":3},\"nm\":\"Ellipse Path 1\",\"mn\":\"ADBE Vector Shape - Ellipse\",\"hd\":false},{\"ty\":\"fl\",\"c\":{\"a\":1,\"k\":[{\"i\":{\"x\":[0.472],\"y\":[1]},\"o\":{\"x\":[1],\"y\":[0]},\"t\":21.383,\"s\":[0.690196078431,0.725490196078,0.752941176471,1]},{\"i\":{\"x\":[0.49],\"y\":[1]},\"o\":{\"x\":[1],\"y\":[0]},\"t\":36.656,\"s\":[0.349019616842,0.392156869173,0.427450984716,1]},{\"t\":53.45703125,\"s\":[0.690196078431,0.725490196078,0.752941176471,1]}],\"ix\":4},\"o\":{\"a\":0,\"k\":100,\"ix\":5},\"r\":1,\"bm\":0,\"nm\":\"Fill 1\",\"mn\":\"ADBE Vector Graphic - Fill\",\"hd\":false},{\"ty\":\"tr\",\"p\":{\"a\":0,\"k\":[0,0],\"ix\":2},\"a\":{\"a\":0,\"k\":[0,0],\"ix\":1},\"s\":{\"a\":0,\"k\":[300,300],\"ix\":3},\"r\":{\"a\":0,\"k\":0,\"ix\":6},\"o\":{\"a\":0,\"k\":100,\"ix\":7},\"sk\":{\"a\":0,\"k\":0,\"ix\":4},\"sa\":{\"a\":0,\"k\":0,\"ix\":5},\"nm\":\"Transform\"}],\"nm\":\"dot 3\",\"np\":2,\"cix\":2,\"bm\":0,\"ix\":1,\"mn\":\"ADBE Vector Group\",\"hd\":false}],\"ip\":0,\"op\":110,\"st\":0,\"bm\":0}],\"markers\":[]}"
+            )
+            builder.mediaFileName("typing")
+            flowEvents.emit(MsgsFlowState.ChangeGif(null, builder.build(), FlowType.SET_TYPING_GIF, Utils.currentPartner?.partnerId.toString()))
+        }
+    }
+
     //endregion BIG JSON
 
     //region COMMUNICATION
@@ -213,7 +224,7 @@ class AssetsViewModel @Inject constructor(
                     builder.setTimeText(ConversionUtils.millisToTimeText(msg.timeMillis))
                     builder.replyMediaFileName(msg.replyMediaFileName)
                     builder.setRepBytes(repBytes)
-                    builder.mediaSize(Utils.humanReadableSize(fileBytes.size))
+                    builder.mediaSize(Utils.humanReadableSize(fileBytes.size).also{ Log.d("TAG--", "handleUploaing: $it")})
 
                     val roomMsg = builder.build()
                     builder.msgText("Uploading")
@@ -222,14 +233,10 @@ class AssetsViewModel @Inject constructor(
                         MsgMediaType.TEXT, MsgMediaType.EMOJI -> ""
                         MsgMediaType.IMAGE -> getImageName(msg.timeMillis)
                         MsgMediaType.GIF -> getGifName(msg.timeMillis)
-                        MsgMediaType.FILE -> {
-                            getDocumentName(msg.timeMillis)
-                        }
-
-                        MsgMediaType.VIDEO -> {
-                            getVideoName(msg.timeMillis)
-                        }
+                        MsgMediaType.FILE -> file.getName(con)
+                        MsgMediaType.VIDEO -> getVideoName(msg.timeMillis)
                     }
+                    Log.d("TAG--", "FILE NAME: $fileName")
                     builder.mediaFileName(fileName)
                     //sending Callback to activity to display img and loading
                     created(MsgsFlowState.ChatMessageFlowState(builder.buildUI(), roomMsg.partnerId, true))
@@ -248,29 +255,29 @@ class AssetsViewModel @Inject constructor(
                             return@async
                         }
                         when (msg.msgType) {
-                            MsgMediaType.TEXT, MsgMediaType.EMOJI -> {}
+                            MsgMediaType.TEXT, MsgMediaType.EMOJI, MsgMediaType.FILE -> {}
                             MsgMediaType.IMAGE -> getThumbBmpUsingGlide(fileBytes, con)?.compress(Bitmap.CompressFormat.WEBP, 12, thumbBytes)
-
                             MsgMediaType.GIF -> getGifThumbBmpUsingGlide(file, con)?.compress(Bitmap.CompressFormat.WEBP, 12, thumbBytes)
-                            MsgMediaType.FILE -> {}
                             MsgMediaType.VIDEO -> {}
                         }
                     }
 
-                    var link = retro.checkForUpload(Utils.myPhone + file.encodedPath).body()
+                    var link = retro.checkForUpload(Utils.myPhone + file.encodedPath).body().also { Log.d("TAG--", "handleUploaing: $it") }
                     if (link.isNullOrEmpty() || link == "false")
                         link = uploadToServer(fileBytes, mediaType.name, Utils.myPhone + file.encodedPath, fileName)
 
                     thumb.await()
+                    if (thumbBytes.size() < 10) thumbBytes.write(defBmpBytes)
                     if (link == null) {
                         flowEvents.emit(MsgsFlowState.IOFlowState(tempId, FlowType.UPLOAD_FAILS, toUser))
-                        builder.msgText("Uploading,-,${ConversionUtils.byteArrToBase64(thumbBytes.toByteArray())}")
+                        if (msg.msgType != MsgMediaType.FILE)
+                            builder.msgText("Uploading,-,${ConversionUtils.byteArrToBase64(thumbBytes.toByteArray())}")
                         repoMsgs.addMsg(builder.build())
                         return
                     }
-
-                    if (thumbBytes.size() < 10) thumbBytes.write(defBmpBytes)
-                    builder.msgText("$link,-,${ConversionUtils.byteArrToBase64(thumbBytes.toByteArray())}")
+                    builder.msgText(link)
+                    if (msg.msgType != MsgMediaType.FILE)
+                        builder.msgText("$link,-,${ConversionUtils.byteArrToBase64(thumbBytes.toByteArray())}")
                     flowEvents.emit(MsgsFlowState.IOFlowState(msg.timeMillis, FlowType.UPLOAD_SUCCESS, toUser, builder.buildUI()))
                     repoMsgs.addMsg(builder.build())
                 }
@@ -330,7 +337,17 @@ class AssetsViewModel @Inject constructor(
 
                     }
 
-                    MsgMediaType.FILE -> {}
+                    MsgMediaType.FILE -> {
+                        val baos = ByteArrayOutputStream()
+                        try {
+                            con.contentResolver.openInputStream(file).use {
+                                it?.copyTo(baos)
+                            }
+                        } catch (_: Exception) {
+
+                        }
+                        handleUploaing(baos.toByteArray(), null)
+                    }
                     MsgMediaType.VIDEO -> {}
                 }
             }
@@ -355,6 +372,7 @@ class AssetsViewModel @Inject constructor(
                 else {
                     repoStorage.saveBytesToFolder(type, fileName, byes)
                     val build = UiMsgModalBuilder()
+                    build.msgType(type)
                     build.bytes(byes)
                     flowEvents.emit(MsgsFlowState.IOFlowState(id, FlowType.DOWNLOAD_SUCCESS, fromUser, build.build()))
                 }
@@ -372,7 +390,6 @@ class AssetsViewModel @Inject constructor(
 
     private fun getImageName(millis: Long) = "IMG_${ConversionUtils.millisToFullDateText(millis)}.webp"
     private fun getVideoName(millis: Long) = "VID_${ConversionUtils.millisToFullDateText(millis)}"
-    private fun getDocumentName(millis: Long) = "DOC_${ConversionUtils.millisToFullDateText(millis)}"
     private fun getGifName(millis: Long) = "GIF_${ConversionUtils.millisToFullDateText(millis)}.gif"
     //endregion UTILS
 
@@ -389,8 +406,10 @@ class AssetsViewModel @Inject constructor(
                     "file", fileName, reqBody
                 ), type, uri
             )
+            Log.d("TAG--", "uploadToServer: $res")
             if (res.isSuccessful) res.body() else null
         } catch (e: Exception) {
+            Log.e("TAG--", "uploadToServer: ", e)
             null
         }
     }

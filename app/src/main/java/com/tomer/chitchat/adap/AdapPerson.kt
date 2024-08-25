@@ -121,9 +121,11 @@ class AdapPerson(
                 if (model.mediaType == MsgMediaType.FILE) {
                     holder.b.msgType.visibility = View.VISIBLE
                     holder.b.msgType.setImageResource(getDrawableId(model.lastMsg))
-                } else holder.b.msgType.visibility = View.GONE
-
-                holder.b.imgLottie.setImageDrawable(null)
+                    holder.b.imgLottie.setImageResource(getDrawableId(model.lastMsg))
+                } else {
+                    holder.b.msgType.visibility = View.GONE
+                    holder.b.imgLottie.setImageDrawable(null)
+                }
             }
         }
 

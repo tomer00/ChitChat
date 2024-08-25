@@ -3,8 +3,8 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:paddingHorizontal="8dp"
-    android:layout_marginBottom="4dp">
+    android:layout_marginBottom="4dp"
+    android:paddingHorizontal="8dp">
 
     <LinearLayout
         android:id="@+id/msg_lay"
@@ -48,18 +48,33 @@
                 android:adjustViewBounds="true"
                 android:contentDescription="@string/app_name" />
 
-            <TextView
-                android:id="@+id/msg_tv"
+            <LinearLayout
                 android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:fontFamily="@font/nunito_medium"
-                android:padding="8dp"
-                android:textColor="@color/fore"
-                android:textSize="18sp"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:gravity="center_vertical"
+                android:layout_height="wrap_content">
+
+                <ImageView
+                    android:id="@+id/imgFileType"
+                    android:layout_width="32dp"
+                    android:adjustViewBounds="true"
+                    android:src="@drawable/ic_file"
+                    android:layout_height="32dp"
+                    android:contentDescription="@string/app_name" />
+
+                <TextView
+                    android:id="@+id/msg_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/nunito_medium"
+                    android:padding="8dp"
+                    android:textColor="@color/fore"
+                    android:textSize="18sp"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+            </LinearLayout>
+
 
             <TextView
                 android:id="@+id/emoji_tv"
@@ -84,7 +99,6 @@
                     android:layout_height="wrap_content"
                     android:adjustViewBounds="true"
                     android:scaleType="fitXY"
-                    android:src="@drawable/ic_add_chat"
                     app:layout_constraintTop_toTopOf="parent" />
 
                 <LinearLayout

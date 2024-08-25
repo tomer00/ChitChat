@@ -25,6 +25,7 @@ enum class FlowType {
     CHANGE_GIF,
     SHOW_BIG_JSON,
     SHOW_BIG_GIF,
+    SET_TYPING_GIF,
 
     SEND_BULK_REC,
     SEND_PR
