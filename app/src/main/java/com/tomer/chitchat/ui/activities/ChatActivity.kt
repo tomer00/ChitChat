@@ -26,6 +26,7 @@ import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.animation.doOnCancel
 import androidx.core.animation.doOnEnd
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
@@ -86,6 +87,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
     private lateinit var ll: LinearLayoutManager
 
     private val timeVisibilityQueue = LinkedList<Pair<Long, Long>>()
+    private var replyFadeAnimator: ValueAnimator? = null
 
     private val options by lazy {
         RequestOptions().apply {
@@ -250,26 +252,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                         if (ll.findFirstVisibleItemPosition() > 0) vma.setNavBottom(true)
                     } else if (dy > 0 && vma.navBottom.value == true) {
                         if (ll.findFirstVisibleItemPosition() == 0) vma.setNavBottom(false)
-                    }
-                }
-
-                override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
-                    super.onScrollStateChanged(recyclerView, newState)
-                    if (newState == RecyclerView.SCROLL_STATE_IDLE && vma.replyClickID != -1L) {
-                        val animator = ValueAnimator.ofFloat(0.6f,0f)
-                        animator.addUpdateListener {
-                            val b = getRvViewIfPossibleForId(vma.replyClickID) ?: return@addUpdateListener
-                            val colSel = Color.valueOf(ContextCompat.getColor(this@ChatActivity, R.color.backgroundSelBg))
-                            b.root.setBackgroundColor(Color.valueOf(colSel.red(), colSel.green(), colSel.blue(), it.animatedValue as Float).toArgb())
-                        }
-                        animator.doOnEnd {
-                            val pos = vm.chatMsgs.indexOfFirst { vma.replyClickID == it.id }
-                            vma.replyClickID = -1L
-                            if (pos != -1)
-                                vm.chatMsgs[pos].isSelected = false
-                        }
-                        animator.setDuration(4000)
-                        animator.start()
                     }
                 }
             }
@@ -1031,11 +1013,43 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         val mod = vm.chatMsgs[posadap]
         val pos = vm.chatMsgs.indexOfFirst { mod.replyId == it.id }
         if (pos == -1) return
-        vm.chatMsgs[pos].isSelected = true
-        b.rvMsg.smoothScrollToPosition(pos)
+
+        if (replyFadeAnimator != null) replyFadeAnimator?.cancel()
         vma.replyClickID = mod.replyId
-        val b = getRvViewIfVisible(pos) ?: return
-        b.root.setBackgroundColor(ContextCompat.getColor(this, R.color.selected))
+        makeReplyFadeOutAnim()
+        try {
+            b.rvMsg.smoothScrollToPosition(pos+1)
+        }catch (e:Exception){
+            b.rvMsg.smoothScrollToPosition(pos)
+        }
+
+    }
+
+    private fun makeReplyFadeOutAnim() {
+        replyFadeAnimator = ValueAnimator.ofInt(102, 0).apply {
+            this.addUpdateListener {
+                val b = getRvViewIfPossibleForId(vma.replyClickID) ?: return@addUpdateListener
+                b.root.setBackgroundColor(Color.argb(animatedValue as Int, 124, 204, 238))
+            }
+            this.doOnEnd {
+                val pos = vm.chatMsgs.indexOfFirst { vma.replyClickID == it.id }
+                vma.replyClickID = -1L
+                if (pos != -1)
+                    vm.chatMsgs[pos].isSelected = false
+                replyFadeAnimator = null
+            }
+            this.doOnCancel {
+                val pos = vm.chatMsgs.indexOfFirst { vma.replyClickID == it.id }
+                vma.replyClickID = -1L
+                if (pos != -1)
+                    vm.chatMsgs[pos].isSelected = false
+                val b = getRvViewIfVisible(pos) ?: return@doOnCancel
+                b.root.setBackgroundColor(Color.TRANSPARENT)
+                replyFadeAnimator = null
+            }
+            this.setDuration(2800)
+            this.start()
+        }
     }
 
 

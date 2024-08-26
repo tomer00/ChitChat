@@ -328,6 +328,7 @@ class MessageHandler(
                         builderRoom.msgText(mod.msgData)
                             .setBytes(ConversionUtils.base64ToByteArr(sts[1]))
                     } catch (_: Exception) {
+                        builderRoom.setBytes(ByteArray(2))
                     }
                 }
                 MsgMediaType.FILE -> builderRoom.setBytes(ByteArray(2))

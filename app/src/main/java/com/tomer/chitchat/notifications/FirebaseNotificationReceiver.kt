@@ -51,8 +51,7 @@ class FirebaseNotificationReceiver : FirebaseMessagingService() {
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 retro.updateNotificationToken(token)
-            } catch (e: Exception) {
-                Log.e("TAG--", "onNewToken: ", e)
+            } catch (_: Exception) {
             }
         }
     }
@@ -61,23 +60,22 @@ class FirebaseNotificationReceiver : FirebaseMessagingService() {
         super.onMessageReceived(message)
         CoroutineScope(Dispatchers.IO).launch {
             MessageHandler(gson, repoMsgs, repoPersons, cryptoService, notificationService, repoRelations, repoStorage) { msg ->
-                Log.d("TAG--", "dfdfg: dfd$msg")
-                val msgmod = msg.data ?: return@MessageHandler
-                if (msg.type == FlowType.MSG) notificationService.showNewMessageNotification(msgmod, msg.fromUser)
-                else if (msg.type == FlowType.SEND_PR) {
+                Log.d("TAG--", "NOTIFICATION MANAGER: $msg")
+                if (msg.type == FlowType.MSG) {
+                    val msgmod = msg.data ?: return@MessageHandler
+                    notificationService.showNewMessageNotification(msgmod, msg.fromUser, repoRelations.getRelation(msg.fromUser)?.partnerName ?: msg.fromUser)
+                } else if (msg.type == FlowType.SEND_PR) {
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
-                            retro.sendAck(msgmod.id.toString(), msg.fromUser)
-                        } catch (e: Exception) {
-                            Log.e("TAG--", "onMessageReceived: ", e)
+                            retro.sendAck(msg.msgId.toString(), msg.fromUser)
+                        } catch (_: Exception) {
                         }
                     }
                 } else if (msg.type == FlowType.SEND_BULK_REC) {
                     CoroutineScope(Dispatchers.IO).launch {
                         try {
-                            retro.sendAckBulk(msg.data.msg, msg.fromUser)
-                        } catch (e: Exception) {
-                            Log.e("TAG--", "onMessageReceived: ", e)
+                            retro.sendAckBulk(msg.data!!.msg, msg.fromUser)
+                        } catch (_: Exception) {
                         }
                     }
                 }

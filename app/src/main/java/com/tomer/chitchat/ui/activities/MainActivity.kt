@@ -17,6 +17,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.animation.doOnEnd
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.lifecycleScope
@@ -199,7 +200,8 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             }
         }
 
-
+        val notiMan by lazy { NotificationManagerCompat.from(this) }
+        notiMan.cancelAll()
     }
 
     private fun getRvViewIfVisible(phone: String): RowPersonBinding? {

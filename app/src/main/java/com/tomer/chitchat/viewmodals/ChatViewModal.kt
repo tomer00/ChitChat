@@ -137,7 +137,7 @@ class ChatViewModal @Inject constructor(
 
         if (Utils.currentPartner?.partnerId.toString() == msg.fromUser) {
             if (!isChatActivityVisible && msg.type == FlowType.MSG)
-                notificationService.showNewMessageNotification(msg.data, msg.fromUser)
+                notificationService.showNewMessageNotification(msg.data, msg.fromUser, repoRelations.getRelation(msg.fromUser)?.partnerName ?: msg.fromUser)
 
             if (isChatActivityVisible && msg.type == FlowType.MSG)
                 clearUnreadCount()
@@ -162,7 +162,7 @@ class ChatViewModal @Inject constructor(
 
         viewModelScope.launch { flowMsgs.emit(msg) }
         if (msg.type == FlowType.MSG) {
-            notificationService.showNewMessageNotification(msg.data, msg.fromUser)
+            notificationService.showNewMessageNotification(msg.data, msg.fromUser, repoRelations.getRelation(msg.fromUser)?.partnerName ?: msg.fromUser)
         } else if (msg.type == FlowType.SEND_PR)
             viewModelScope.launch {
                 webSocket.sendMessage("${msg.fromUser}*ACK-PR${msg.msgId}")
@@ -393,14 +393,16 @@ class ChatViewModal @Inject constructor(
                 val oldRel = repoRelations.getRelation(phone)
                 if (oldRel == null) connectNew(phone, openNextActivity, true)
                 else {
-                    ModelRoomPersons(
-                        phone, oldRel.partnerName,
-                        MsgMediaType.TEXT, "", -1L,
-                        System.currentTimeMillis(),
-                        lastSeenMillis = System.currentTimeMillis(),
-                        isSent = false,
-                        msgStatus = MsgStatus.RECEIVED
-                    ).apply { repoPersons.insertPerson(this) }
+                    val oldPersons = repoPersons.getPersonByPhone(phone)
+                    if (oldPersons == null)
+                        ModelRoomPersons(
+                            phone, oldRel.partnerName,
+                            MsgMediaType.TEXT, "", -1L,
+                            System.currentTimeMillis(),
+                            lastSeenMillis = System.currentTimeMillis(),
+                            isSent = false,
+                            msgStatus = MsgStatus.RECEIVED
+                        ).apply { repoPersons.insertPerson(this) }
                     if (openNextActivity)
                         flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.OPEN_NEW_CONNECTION_ACTIVITY, phone))
                 }
