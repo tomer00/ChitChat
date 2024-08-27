@@ -29,6 +29,7 @@ import com.tomer.chitchat.retro.SyncCallAdapterFactory
 import com.tomer.chitchat.room.Dao
 import com.tomer.chitchat.room.Database
 import com.tomer.chitchat.utils.Utils
+import com.tomer.chitchat.utils.WebSocketHandler
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -71,6 +72,20 @@ class HiltModules {
                 .build())
             .build()
             .create(Api::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideGlobalWebSocket(
+        repoMsgs: RepoMessages,
+        repoStorage: RepoStorage,
+        repoPersons: RepoPersons,
+        gson: Gson,
+        notificationService: NotificationService,
+        repoRelations: RepoRelations,
+        cryptoService: CryptoService,
+    ): WebSocketHandler {
+        return WebSocketHandler(repoMsgs,repoStorage,repoPersons,gson,notificationService,repoRelations,cryptoService)
     }
 
     @Provides

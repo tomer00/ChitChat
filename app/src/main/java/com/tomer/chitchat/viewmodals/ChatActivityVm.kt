@@ -121,7 +121,7 @@ class ChatActivityVm @Inject constructor(
 
     //endregion STATES
 
-    private var phone = ""
+    var phone = ""
 
     fun setPartnerNo(phone: String) {
         this.phone = phone

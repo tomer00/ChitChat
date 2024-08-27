@@ -11,6 +11,7 @@ import android.graphics.drawable.Icon
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.PendingIntentCompat
+import androidx.core.app.TaskStackBuilder
 import com.tomer.chitchat.R
 import com.tomer.chitchat.adap.AdapPerson
 import com.tomer.chitchat.modals.states.UiMsgModal
@@ -52,6 +53,10 @@ class AndroidNotificationService(
         val i = Intent(context, ChatActivity::class.java)
         i.putExtra("phone", phonePartner)
         val pendingIntent = PendingIntentCompat.getActivity(context, 0, i, PendingIntent.FLAG_ONE_SHOT, false)
+//        val pendingIntent = TaskStackBuilder.create(context).run {
+//            addNextIntentWithParentStack(i)
+//            getPendingIntent(0,PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+//        }
 
         val notification = NotificationCompat.Builder(context, "new_msg")
             .setContentTitle(namePartner)

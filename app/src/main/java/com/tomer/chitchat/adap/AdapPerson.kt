@@ -57,9 +57,11 @@ class AdapPerson(
         if (model.unreadCount > 0) {
             holder.b.tvUnreadMsgCount.visibility = View.VISIBLE
             holder.b.tvTime.setTextColor(ContextCompat.getColor(context, R.color.purple))
+            holder.b.tvLastMsg.setTextColor(ContextCompat.getColor(context, R.color.purple))
         } else {
             holder.b.tvUnreadMsgCount.visibility = View.GONE
             holder.b.tvTime.setTextColor(ContextCompat.getColor(context, R.color.hintCol))
+            holder.b.tvLastMsg.setTextColor(ContextCompat.getColor(context, R.color.hintCol))
         }
 
         if (model.isSent) {

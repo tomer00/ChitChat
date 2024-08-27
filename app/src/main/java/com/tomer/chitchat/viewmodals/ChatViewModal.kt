@@ -8,7 +8,6 @@ import com.google.gson.Gson
 import com.tomer.chitchat.crypto.CipherUtils
 import com.tomer.chitchat.crypto.CryptoService
 import com.tomer.chitchat.modals.msgs.AcceptConnection
-import com.tomer.chitchat.modals.msgs.BulkReceived
 import com.tomer.chitchat.modals.msgs.ChatMessage
 import com.tomer.chitchat.modals.msgs.Message
 import com.tomer.chitchat.modals.msgs.ModelMsgSocket
@@ -32,9 +31,7 @@ import com.tomer.chitchat.room.ModelRoomMessageBuilder
 import com.tomer.chitchat.room.ModelRoomPersonRelation
 import com.tomer.chitchat.room.ModelRoomPersons
 import com.tomer.chitchat.room.MsgMediaType
-import com.tomer.chitchat.utils.ChunkedWebSocketListener
 import com.tomer.chitchat.utils.ConversionUtils
-import com.tomer.chitchat.utils.MessageHandler
 import com.tomer.chitchat.utils.Utils
 import com.tomer.chitchat.utils.WebSocketHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -42,6 +39,7 @@ import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.math.BigInteger
@@ -55,37 +53,11 @@ class ChatViewModal @Inject constructor(
     private val repoStorage: RepoStorage,
     private val repoPersons: RepoPersons,
     private val gson: Gson,
-    private val retro: Api,
     private val notificationService: NotificationService,
     private val repoRelations: RepoRelations,
     private val cryptoService: CryptoService,
+    private val webSocket: WebSocketHandler
 ) : ViewModel() {
-
-    private val webSocket = WebSocketHandler
-
-    fun closeWebSocket() {
-        try {
-            webSocket.closeConnection()
-        } catch (_: Exception) {
-        }
-    }
-
-    private val webSocketListener = object : ChunkedWebSocketListener {
-        override fun onMessage(text: String) {
-            viewModelScope.launch {
-                try {
-                    msgHandler.handelMsg(text)
-                } catch (e: Exception) {
-                    Log.e("TAG--", "onMessage: ", e)
-                }
-            }
-        }
-
-        override fun onOpen() {
-            Log.d("TAG--", "onOpen: ")
-            sendPendingMsgs()
-        }
-    }
 
     private fun sendPendingMsgs() {
         val pendingMsgs = chatMsgs.filter {
@@ -133,53 +105,36 @@ class ChatViewModal @Inject constructor(
 
     var isChatActivityVisible = false
 
-    private val msgHandler = MessageHandler(gson, repoMsgs, repoPersons, cryptoService, notificationService, repoRelations, repoStorage) { msg ->
+    init {
+        Log.d("TAG--", "NEW CHAT VM CREATED: ")
+        webSocket.openConnection(repoUtils.getToken())
+        Utils.myName = repoUtils.getName()
+        viewModelScope.launch {
+            webSocket.flowMsgs.collectLatest { msg ->
+                if (Utils.currentPartner?.partnerId.toString() == msg.fromUser) {
+                    if (!isChatActivityVisible && msg.type == FlowType.MSG)
+                        notificationService.showNewMessageNotification(msg.data, msg.fromUser, repoRelations.getRelation(msg.fromUser)?.partnerName ?: msg.fromUser)
+                    if (isChatActivityVisible && msg.type == FlowType.MSG)
+                        clearUnreadCount()
 
-        if (Utils.currentPartner?.partnerId.toString() == msg.fromUser) {
-            if (!isChatActivityVisible && msg.type == FlowType.MSG)
-                notificationService.showNewMessageNotification(msg.data, msg.fromUser, repoRelations.getRelation(msg.fromUser)?.partnerName ?: msg.fromUser)
-
-            if (isChatActivityVisible && msg.type == FlowType.MSG)
-                clearUnreadCount()
-
-            if (msg.type == FlowType.SERVER_REC) {
-                for (i in chatMsgs.indices) {
-                    if (chatMsgs[i].id == msg.oldId!!) {
-                        chatMsgs[i].id = msg.msgId!!
-                        break
+                    if (msg.type == FlowType.SERVER_REC) {
+                        for (i in chatMsgs.indices) {
+                            if (chatMsgs[i].id == msg.oldId!!) {
+                                chatMsgs[i].id = msg.msgId!!
+                                break
+                            }
+                        }
                     }
                 }
-            }
-            viewModelScope.launch {
                 flowMsgs.emit(msg)
-                if (msg.type == FlowType.SEND_PR)
-                    webSocket.sendMessage("${msg.fromUser}*ACK-PR${msg.msgId}")
-                else if (msg.type == FlowType.SEND_BULK_REC)
-                    webSocket.sendMessage(BulkReceived(msg.fromUser, msg.data?.msg ?: "").toString())
             }
-            return@MessageHandler
         }
-
-        viewModelScope.launch { flowMsgs.emit(msg) }
-        if (msg.type == FlowType.MSG) {
-            notificationService.showNewMessageNotification(msg.data, msg.fromUser, repoRelations.getRelation(msg.fromUser)?.partnerName ?: msg.fromUser)
-        } else if (msg.type == FlowType.SEND_PR)
-            viewModelScope.launch {
-                webSocket.sendMessage("${msg.fromUser}*ACK-PR${msg.msgId}")
+        viewModelScope.launch {
+            webSocket.flowConnection.collectLatest { isOpen ->
+                if (isOpen) sendPendingMsgs()
             }
-        else if (msg.type == FlowType.SEND_BULK_REC)
-            viewModelScope.launch {
-                webSocket.sendMessage(BulkReceived(msg.fromUser, msg.data?.msg ?: "").toString())
-            }
+        }
     }
-
-
-    init {
-        webSocket.setListenerAndToken(webSocketListener, repoUtils.getToken())
-        webSocket.openConnection()
-        Utils.myName = repoUtils.getName()
-    }
-
 
     //<(10)toPhone><(7)MSG_TYPE><DATA>
     fun sendMsg(msg: Message) {
@@ -339,6 +294,10 @@ class ChatViewModal @Inject constructor(
     }
 
     fun openChat(phone: String, seletedIds: MutableList<Long>) {
+        if (Utils.currentPartner?.partnerId == phone){
+            viewModelScope.launch { flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone)) }
+            return
+        }
         seletedIds.sort()
         Utils.currentPartner = repoRelations.getRelation(phone)
         cryptoService.setCurrentPartner(phone)
@@ -383,66 +342,6 @@ class ChatViewModal @Inject constructor(
                 }
             } catch (_: Exception) {
             }
-        }
-    }
-
-    fun connectNew(phone: String, openNextActivity: Boolean, mandatoryConnect: Boolean = true) {
-        if (!mandatoryConnect) {
-            viewModelScope.launch {
-                if (!phone.isDigitsOnly()) return@launch
-                val oldRel = repoRelations.getRelation(phone)
-                if (oldRel == null) connectNew(phone, openNextActivity, true)
-                else {
-                    val oldPersons = repoPersons.getPersonByPhone(phone)
-                    if (oldPersons == null)
-                        ModelRoomPersons(
-                            phone, oldRel.partnerName,
-                            MsgMediaType.TEXT, "", -1L,
-                            System.currentTimeMillis(),
-                            lastSeenMillis = System.currentTimeMillis(),
-                            isSent = false,
-                            msgStatus = MsgStatus.RECEIVED
-                        ).apply { repoPersons.insertPerson(this) }
-                    if (openNextActivity)
-                        flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.OPEN_NEW_CONNECTION_ACTIVITY, phone))
-                }
-            }
-            return
-        }
-        viewModelScope.launch {
-            if (!phone.isDigitsOnly()) return@launch
-            var oldRel = repoRelations.getRelation(phone)
-            val relation = ModelRoomPersonRelation(phone, oldRel?.partnerName ?: phone, isConnSent = true, isAccepted = false, isRejected = false)
-            Utils.currentPartner = relation
-            cryptoService.setCurrentPartner(phone)
-
-            genKeyAndSendNotification(relation)
-            if (openNextActivity)
-                flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.OPEN_NEW_CONNECTION_ACTIVITY, phone))
-            else flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.INCOMING_NEW_CONNECTION_REQUEST, phone))
-
-            //getting Name from server
-            oldRel = relation
-            val name = if (oldRel.partnerName == oldRel.partnerId) {
-                try {
-                    retro.getName(phone).body() ?: phone
-                } catch (e: Exception) {
-                    phone
-                }
-            } else oldRel.partnerName
-            val olRel = repoRelations.getRelation(phone)
-            if (olRel != null) {
-                olRel.partnerName = name
-                repoRelations.saveRelation(olRel)
-            }
-            ModelRoomPersons(
-                phone, name,
-                MsgMediaType.TEXT, "Connection request sent...", -1L,
-                System.currentTimeMillis(),
-                lastSeenMillis = System.currentTimeMillis(),
-                isSent = false,
-                msgStatus = MsgStatus.RECEIVED
-            ).apply { repoPersons.insertPerson(this) }
         }
     }
 

@@ -1,34 +1,153 @@
 package com.tomer.chitchat.viewmodals
 
 import android.util.Log
+import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tomer.chitchat.assets.RepoAssets
+import com.tomer.chitchat.crypto.CipherUtils
+import com.tomer.chitchat.crypto.CryptoService
+import com.tomer.chitchat.modals.msgs.NewConnection
 import com.tomer.chitchat.modals.rv.PersonModel
+import com.tomer.chitchat.modals.states.FlowType
+import com.tomer.chitchat.modals.states.MsgStatus
+import com.tomer.chitchat.modals.states.MsgsFlowState
 import com.tomer.chitchat.repo.RepoMessages
 import com.tomer.chitchat.repo.RepoPersons
+import com.tomer.chitchat.repo.RepoRelations
 import com.tomer.chitchat.repo.RepoStorage
+import com.tomer.chitchat.repo.RepoUtils
+import com.tomer.chitchat.retro.Api
+import com.tomer.chitchat.room.ModelRoomPersonRelation
 import com.tomer.chitchat.room.ModelRoomPersons
 import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.EmojisHashingUtils
+import com.tomer.chitchat.utils.Utils
+import com.tomer.chitchat.utils.WebSocketHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.math.BigInteger
 import javax.inject.Inject
 
 
 @HiltViewModel
 class MainViewModal @Inject constructor(
+    private val repoUtils: RepoUtils,
     private val repoPersons: RepoPersons,
     private val repoStorage: RepoStorage,
     private val repoAssets: RepoAssets,
     private val repoMsg: RepoMessages,
+    private val retro: Api,
+    private val repoRelations: RepoRelations,
+    private val cryptoService: CryptoService,
+    private val webSocket: WebSocketHandler
 ) : ViewModel() {
+
+    //region WEBSOCK FLOW
+
+    fun closeWebSocket() {
+        try {
+            webSocket.closeConnection()
+        } catch (_: Exception) {
+        }
+    }
+
+    fun connectNew(phone: String, openNextActivity: Boolean, mandatoryConnect: Boolean = true) {
+        if (!mandatoryConnect) {
+            viewModelScope.launch {
+                if (!phone.isDigitsOnly()) return@launch
+                val oldRel = repoRelations.getRelation(phone)
+                if (oldRel == null) connectNew(phone, openNextActivity, true)
+                else {
+                    val oldPersons = repoPersons.getPersonByPhone(phone)
+                    if (oldPersons == null)
+                        ModelRoomPersons(
+                            phone, oldRel.partnerName,
+                            MsgMediaType.TEXT, "", -1L,
+                            System.currentTimeMillis(),
+                            lastSeenMillis = System.currentTimeMillis(),
+                            isSent = false,
+                            msgStatus = MsgStatus.RECEIVED
+                        ).apply { repoPersons.insertPerson(this) }
+                    if (openNextActivity)
+                        flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.OPEN_NEW_CONNECTION_ACTIVITY, phone))
+                }
+            }
+            return
+        }
+        viewModelScope.launch {
+            if (!phone.isDigitsOnly()) return@launch
+            var oldRel = repoRelations.getRelation(phone)
+            val relation = ModelRoomPersonRelation(phone, oldRel?.partnerName ?: phone, isConnSent = true, isAccepted = false, isRejected = false)
+            Utils.currentPartner = relation
+            cryptoService.setCurrentPartner(phone)
+
+            genKeyAndSendNotification(relation)
+            if (openNextActivity)
+                flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.OPEN_NEW_CONNECTION_ACTIVITY, phone))
+            else flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.INCOMING_NEW_CONNECTION_REQUEST, phone))
+
+            //getting Name from server
+            oldRel = relation
+            val name = if (oldRel.partnerName == oldRel.partnerId) {
+                try {
+                    retro.getName(phone).body() ?: phone
+                } catch (e: Exception) {
+                    phone
+                }
+            } else oldRel.partnerName
+            val olRel = repoRelations.getRelation(phone)
+            if (olRel != null) {
+                olRel.partnerName = name
+                repoRelations.saveRelation(olRel)
+            }
+            ModelRoomPersons(
+                phone, name,
+                MsgMediaType.TEXT, "Connection request sent...", -1L,
+                System.currentTimeMillis(),
+                lastSeenMillis = System.currentTimeMillis(),
+                isSent = false,
+                msgStatus = MsgStatus.RECEIVED
+            ).apply { repoPersons.insertPerson(this) }
+        }
+    }
+
+    private fun genKeyAndSendNotification(relation: ModelRoomPersonRelation) {
+        relation.isRejected = false
+        repoRelations.saveRelation(relation)
+        val key = cryptoService.checkForKeyAndGenerateIfNot(relation.partnerId)
+        webSocket.sendMessage(
+            "${relation.partnerId}${
+                NewConnection(
+                    CipherUtils.G.modPow(
+                        BigInteger(key.tempKeyMy, 16),
+                        CipherUtils.P
+                    ).toString(16)
+                )
+            }"
+        )
+    }
+
+    val flowMsgs = MutableSharedFlow<MsgsFlowState>()
+
+    init {
+        webSocket.openConnection(repoUtils.getToken())
+        viewModelScope.launch {
+            webSocket.flowMsgs.collectLatest { msg ->
+                flowMsgs.emit(msg)
+            }
+        }
+    }
+
+    //endregion WEBSOCK FLOW
 
     private val _persons = MutableLiveData<List<PersonModel>>()
     val persons: LiveData<List<PersonModel>> = _persons

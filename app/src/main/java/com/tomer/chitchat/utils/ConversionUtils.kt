@@ -84,7 +84,4 @@ object ConversionUtils {
 
 
     }
-
-    lateinit var chatVM: ChatViewModal
-    lateinit var assetsVM: AssetsViewModel
 }

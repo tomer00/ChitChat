@@ -46,11 +46,9 @@ import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.modals.states.MsgsFlowState
 import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
-import com.tomer.chitchat.utils.ConversionUtils.chatVM
 import com.tomer.chitchat.utils.EmojisHashingUtils
 import com.tomer.chitchat.utils.Utils
 import com.tomer.chitchat.viewmodals.AssetsViewModel
-import com.tomer.chitchat.viewmodals.ChatViewModal
 import com.tomer.chitchat.viewmodals.MainViewModal
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
@@ -63,7 +61,6 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
     private val b by lazy { ActivityMainBinding.inflate(layoutInflater) }
     private val viewModal: MainViewModal by viewModels()
-    private val chatVm: ChatViewModal by viewModels()
     private val assetsVM: AssetsViewModel by viewModels()
 
     private val adapter by lazy { AdapPerson(this, this) }
@@ -93,8 +90,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         }
         Utils.myPhone = FirebaseAuth.getInstance().currentUser?.phoneNumber?.substring(3) ?: ""
         if (isDarkModeEnabled()) b.tvAppName.setTextColor(ContextCompat.getColor(this, R.color.white))
-        ConversionUtils.chatVM = chatVm
-        ConversionUtils.assetsVM = assetsVM
+
         b.apply {
             btConnect.setOnClickListener(this@MainActivity)
             imgBarcode.setOnClickListener(this@MainActivity)
@@ -140,7 +136,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             }
         }
         lifecycleScope.launch {
-            chatVm.flowMsgs.collectLatest {
+            viewModal.flowMsgs.collectLatest {
                 runOnUiThread {
                     handelFlowMsg(it)
                 }
@@ -219,11 +215,12 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         super.onResume()
         activityLife = true
         viewModal.loadPersons(adapter.currentList)
+        Utils.currentPartner = null
     }
 
     override fun onDestroy() {
         super.onDestroy()
-        chatVm.closeWebSocket()
+        viewModal.closeWebSocket()
     }
 
     override fun onPause() {
@@ -289,7 +286,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                     b.etNewNumber.error = "Enter Valid Number"
                     return
                 }
-                chatVm.connectNew(b.etNewNumber.text.toString(), true, false)
+                viewModal.connectNew(b.etNewNumber.text.toString(), true, false)
                 b.layNewNumber.visibility = View.GONE
                 b.imgBarcode.pauseAnimation()
                 b.imgFab.visibility = View.VISIBLE
@@ -367,7 +364,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         barcodeView.pause()
         qrDia.dismiss()
         if (!result.text.isDigitsOnly()) return@BarcodeCallback
-        chatVm.connectNew(result.text, true, false)
+        viewModal.connectNew(result.text, true, false)
         b.layNewNumber.visibility = View.GONE
         b.imgBarcode.pauseAnimation()
         b.imgFab.visibility = View.VISIBLE
@@ -405,6 +402,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                 b.msgStatus.visibility = View.GONE
                 b.tvUnreadMsgCount.visibility = View.VISIBLE
                 b.tvTime.setTextColor(ContextCompat.getColor(this, R.color.purple))
+                b.tvLastMsg.setTextColor(ContextCompat.getColor(this, R.color.purple))
 
                 when (msg.data.msgType) {
                     MsgMediaType.TEXT, MsgMediaType.EMOJI -> b.msgType.visibility = View.GONE
@@ -507,13 +505,14 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             FlowType.NO_TYPING -> {
                 val b = getRvViewIfVisible(msg.fromUser) ?: return
                 if (b.tvLastMsg.text == "Typing...") {
-                    b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.hintCol))
+                    if (b.tvUnreadMsgCount.visibility != View.VISIBLE)
+                        b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.hintCol))
                     b.tvLastMsg.text = b.tvLastMsg.tag.toString()
                 }
             }
 
             FlowType.SEND_NEW_CONNECTION_REQUEST -> {
-                chatVm.connectNew(msg.fromUser, false)
+                viewModal.connectNew(msg.fromUser, false)
             }
 
 
@@ -541,7 +540,6 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     private fun handleMsgStatusAnimation(serverRec: Boolean, phone: String) {
         val index = adapter.currentList.indexOfFirst { phone == it.phoneNo }
         if (index == -1) return
-        chatVM.chatMsgs[index].status = if (serverRec) MsgStatus.SENT_TO_SERVER else MsgStatus.RECEIVED
         val b = getRvViewIfVisible(phone) ?: return
         val animDur = 200L
         lifecycleScope.launch {

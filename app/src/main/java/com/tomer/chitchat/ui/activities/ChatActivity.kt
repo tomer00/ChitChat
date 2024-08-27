@@ -1,7 +1,5 @@
 package com.tomer.chitchat.ui.activities
 
-import com.tomer.chitchat.utils.ConversionUtils.assetsVM as vmAssets
-import com.tomer.chitchat.utils.ConversionUtils.chatVM as vm
 import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
@@ -57,7 +55,9 @@ import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.EmojisHashingUtils
 import com.tomer.chitchat.utils.Utils
 import com.tomer.chitchat.utils.Utils.Companion.getDpLink
+import com.tomer.chitchat.viewmodals.AssetsViewModel
 import com.tomer.chitchat.viewmodals.ChatActivityVm
+import com.tomer.chitchat.viewmodals.ChatViewModal
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
@@ -71,6 +71,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
     private val b by lazy { ActivityChatBinding.inflate(layoutInflater) }
     private val vma: ChatActivityVm by viewModels()
+    private val vm: ChatViewModal by viewModels()
+    private val vmAssets: AssetsViewModel by viewModels()
 
     private lateinit var adap: ChatAdapter
     private val emojiAdap by lazy {
@@ -170,6 +172,18 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         }
         super.onBackPressed()
         finish()
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        if (!intent.hasExtra("phone")) {
+            finish()
+            return
+        }
+        val phone = intent.getStringExtra("phone").toString()
+        if (phone == vma.phone) return
+        finish()
+        startActivity(intent)
     }
 
     // Import required classes
@@ -800,7 +814,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             }
 
             FlowType.SEND_NEW_CONNECTION_REQUEST -> {
-                vm.connectNew(msg.fromUser, false)
                 finish()
             }
 
@@ -1018,8 +1031,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         vma.replyClickID = mod.replyId
         makeReplyFadeOutAnim()
         try {
-            b.rvMsg.smoothScrollToPosition(pos+1)
-        }catch (e:Exception){
+            b.rvMsg.smoothScrollToPosition(pos + 1)
+        } catch (e: Exception) {
             b.rvMsg.smoothScrollToPosition(pos)
         }
 
