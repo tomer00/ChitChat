@@ -17,4 +17,5 @@
     <string name="enter_your_name">Enter your Name</string>
     <string name="type_mobile_no">Type Mobile No...</string>
     <string name="retry">Retry</string>
+    <string name="resend_in_40">Resend in 40</string>
 </resources>

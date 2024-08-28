@@ -1,6 +1,7 @@
 package com.tomer.chitchat.ui.activities
 
 import android.Manifest
+import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -84,6 +85,13 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         setContentView(b.root)
 
         if (FirebaseAuth.getInstance().currentUser == null) {
+            startActivity(Intent(this, LoginActivity::class.java))
+            finish()
+            return
+        }
+        val prefUtils = getSharedPreferences("utils", Context.MODE_PRIVATE)
+        if (prefUtils.getString("userName", "").toString().isEmpty()) {
+            FirebaseAuth.getInstance().signOut()
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
             return

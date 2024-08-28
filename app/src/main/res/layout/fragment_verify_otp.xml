@@ -27,7 +27,7 @@
             android:text="@string/otp_verification"
             android:textStyle="bold"
             android:textSize="20sp"
-            android:textColor="@color/primary"/>
+            android:textColor="@color/accent"/>
 
         <TextView
             android:layout_width="match_parent"
@@ -47,7 +47,7 @@
             android:layout_marginHorizontal="50dp"
             android:layout_marginTop="4dp"
             android:gravity="center"
-            android:textColor="@color/primary"
+            android:textColor="@color/purple"
             android:textSize="14sp"
             android:textStyle="bold" />
 
@@ -67,7 +67,7 @@
                 android:importantForAutofill="no"
                 android:inputType="number"
                 android:maxLength="1"
-                android:textColor="@color/primary"
+                android:textColor="@color/fore"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 tools:ignore="LabelFor"/>
@@ -81,7 +81,7 @@
                 android:importantForAutofill="no"
                 android:inputType="number"
                 android:maxLength="1"
-                android:textColor="@color/primary"
+                android:textColor="@color/fore"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 tools:ignore="LabelFor"/>
@@ -95,7 +95,7 @@
                 android:importantForAutofill="no"
                 android:inputType="number"
                 android:maxLength="1"
-                android:textColor="@color/primary"
+                android:textColor="@color/fore"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 tools:ignore="LabelFor"/>
@@ -109,7 +109,7 @@
                 android:importantForAutofill="no"
                 android:inputType="number"
                 android:maxLength="1"
-                android:textColor="@color/primary"
+                android:textColor="@color/fore"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 tools:ignore="LabelFor"/>
@@ -123,7 +123,7 @@
                 android:importantForAutofill="no"
                 android:inputType="number"
                 android:maxLength="1"
-                android:textColor="@color/primary"
+                android:textColor="@color/fore"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 tools:ignore="LabelFor"/>
@@ -137,7 +137,7 @@
                 android:importantForAutofill="no"
                 android:inputType="number"
                 android:maxLength="1"
-                android:textColor="@color/primary"
+                android:textColor="@color/fore"
                 android:textSize="24sp"
                 android:textStyle="bold"
                 tools:ignore="LabelFor"/>
@@ -164,8 +164,18 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="8dp"
                 android:text="@string/resend_otp"
-                android:enabled="false"
-                android:textColor="@color/accent"
+                android:visibility="gone"
+                android:textColor="@color/primary"
+                android:textStyle="bold"
+                android:textSize="15sp"/>
+
+            <TextView
+                android:id="@+id/textResendOTPTimer"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:text="@string/resend_in_40"
+                android:textColor="@color/primary"
                 android:textStyle="bold"
                 android:textSize="15sp"/>
         </LinearLayout>
@@ -191,6 +201,7 @@
                 android:layout_width="40dp"
                 android:layout_height="40dp"
                 android:layout_gravity="center"
+                android:layout_margin="30dp"
                 android:visibility="gone"/>
         </FrameLayout>
 

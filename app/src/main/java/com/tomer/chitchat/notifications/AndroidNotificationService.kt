@@ -35,7 +35,7 @@ class AndroidNotificationService(
 
         val notification = NotificationCompat.Builder(context, "new_user")
             .setContentTitle("$namePartner • $phonePartner")
-            .setSmallIcon(R.drawable.logo)
+            .setSmallIcon(R.drawable.logo_noti3)
             .setContentText("sent you connection request 👋")
             .setContentIntent(pendingIntent)
             .setAutoCancel(true)

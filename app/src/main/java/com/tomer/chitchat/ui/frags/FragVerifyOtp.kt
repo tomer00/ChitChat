@@ -43,6 +43,16 @@ class FragVerifyOtp : Fragment() {
         _binding = null
     }
 
+    override fun onPause() {
+        super.onPause()
+        val code = StringBuilder()
+        for (i in 0..5) {
+            val child = b.contOtp.getChildAt(i) as EditText
+            code.append(child.text)
+        }
+        viewModel.otpTemp = code.toString()
+    }
+
     //endregion ------lifecycle----->>>
 
     private fun setListener() {
@@ -53,8 +63,8 @@ class FragVerifyOtp : Fragment() {
 
         b.buttonVerify.setOnClickListener {
             var isAnyEmpty = false
-            for (i in 0..5){
-                val child =  b.contOtp.getChildAt(i) as EditText
+            for (i in 0..5) {
+                val child = b.contOtp.getChildAt(i) as EditText
                 if (child.text.isEmpty()) isAnyEmpty = true
             }
             if (isAnyEmpty) {
@@ -62,23 +72,29 @@ class FragVerifyOtp : Fragment() {
                 return@setOnClickListener
             }
             val code = StringBuilder()
-            for (i in 0..5){
-                val child =  b.contOtp.getChildAt(i) as EditText
+            for (i in 0..5) {
+                val child = b.contOtp.getChildAt(i) as EditText
                 code.append(child.text)
             }
             viewModel.setOtp(code.toString())
-
         }
 
 
         viewModel.codeSend.observe(viewLifecycleOwner) {
+            b.buttonVerify.isEnabled = it
+        }
+        viewModel.resendOtpButton.observe(viewLifecycleOwner) {
             if (it) {
-                b.buttonVerify.isEnabled = true
-                b.textResendOTP.isEnabled = true
+                b.textResendOTPTimer.visibility = View.GONE
+                b.textResendOTP.visibility = View.VISIBLE
             } else {
-                b.buttonVerify.isEnabled = true
-                b.textResendOTP.isEnabled = true
+                b.textResendOTPTimer.visibility = View.VISIBLE
+                b.textResendOTP.visibility = View.GONE
             }
+        }
+
+        viewModel.resendOtpTimer.observe(viewLifecycleOwner) { time ->
+            "Resend in $time".also { b.textResendOTPTimer.text = it }
         }
 
         val keyLis = View.OnKeyListener { v, keyCode, event ->
@@ -131,5 +147,21 @@ class FragVerifyOtp : Fragment() {
      * (TextView) textMobile will be received value "user mobile number" */
     private fun setTextMobile() {
         b.textMobile.text = String.format("+91-%s", viewModel.phone.value.toString())
+        if (viewModel.otpTemp.isNotEmpty()) {
+            for (i in viewModel.otpTemp.indices) {
+                val et = b.contOtp.getChildAt(i) as EditText
+                et.setText(viewModel.otpTemp[i].toString())
+            }
+            try {
+                val nextChild = b.contOtp.getChildAt(viewModel.otpTemp.length) as EditText
+                b.root.postDelayed({ nextChild.requestFocus() }, 40)
+            } catch (_: Exception) {
+                val nextChild = b.contOtp.getChildAt(5) as EditText
+                b.root.postDelayed({
+                    nextChild.requestFocus()
+                    nextChild.setSelection(1)
+                }, 40)
+            }
+        }
     }
 }

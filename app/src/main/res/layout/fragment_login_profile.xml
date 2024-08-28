@@ -15,7 +15,7 @@
             android:layout_height="130dp"
             android:layout_marginTop="80dp"
             android:background="@drawable/round_bg"
-            android:backgroundTint="@color/backgroundC"
+            android:backgroundTint="@color/backgroundLight"
             android:padding="20dp"
             android:contentDescription="@string/app_name"
             android:src="@drawable/ic_add_a_photo"/>
@@ -27,7 +27,7 @@
             android:text="@string/profile_info"
             android:textStyle="bold"
             android:textSize="20sp"
-            android:textColor="@color/primary"/>
+            android:textColor="@color/accent"/>
 
         <TextView
             android:layout_width="match_parent"
@@ -51,6 +51,7 @@
             android:inputType="textPersonName"
             android:imeOptions="actionDone"
             android:importantForAutofill="no"
+            android:maxLength="120"
             android:layout_marginTop="20dp"
             android:textColor="@color/fore"
             android:textStyle="bold"
@@ -63,7 +64,8 @@
             android:layout_marginHorizontal="58dp"
             android:background="@color/divider"/>
 
-        <FrameLayout
+        <LinearLayout
+            android:gravity="center"
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
 
@@ -82,9 +84,9 @@
                 android:id="@+id/prog"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_gravity="center"
+                android:layout_margin="30dp"
                 android:visibility="gone"/>
-        </FrameLayout>
+        </LinearLayout>
 
     </LinearLayout>
 

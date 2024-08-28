@@ -1,13 +1,12 @@
 package com.tomer.chitchat.ui.frags
 
 import android.os.Bundle
-import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
+import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
-import com.tomer.chitchat.R
 import com.tomer.chitchat.databinding.FragmentSendOtpBinding
 import com.tomer.chitchat.viewmodals.LoginViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -39,14 +38,30 @@ class FragSendOtp : Fragment() {
         _binding = null
     }
 
+    override fun onPause() {
+        super.onPause()
+        viewModel.setPhone(b.inputMobile.text.toString().trim(),false)
+    }
+
     //endregion ------lifecycle----->>>
-    
-    private fun init(){
+
+    private fun init() {
         b.buttonGetOTP.setOnClickListener {
-            if (b.inputMobile.text.length!=10) Toast.makeText(requireActivity(),
-                "Please enter Valid Phone NO...", Toast.LENGTH_SHORT).show()
-            else viewModel.setPhone(b.inputMobile.text.toString())
+            if (b.inputMobile.text.length != 10) Toast.makeText(
+                requireActivity(),
+                "Please enter Valid Phone NO...", Toast.LENGTH_SHORT
+            ).show()
+            else {
+                viewModel.setPhone(b.inputMobile.text.toString(),true)
+            }
+        }
+
+        viewModel.canAuth.observe(viewLifecycleOwner) {
+            b.buttonGetOTP.isEnabled = it
+        }
+        viewModel.phone.observe(viewLifecycleOwner) {
+            b.inputMobile.setText(viewModel.phone.value ?: "")
         }
     }
-        
+
 }
