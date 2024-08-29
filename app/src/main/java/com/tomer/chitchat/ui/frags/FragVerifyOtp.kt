@@ -145,7 +145,7 @@ class FragVerifyOtp : Fragment() {
 
     /** If Intent() getStringExtra == "mobile" -> startActivity(VerifyActivity),
      * (TextView) textMobile will be received value "user mobile number" */
-    private fun setTextMobile() {
+    fun setTextMobile() {
         b.textMobile.text = String.format("+91-%s", viewModel.phone.value.toString())
         if (viewModel.otpTemp.isNotEmpty()) {
             for (i in viewModel.otpTemp.indices) {

@@ -3,6 +3,7 @@ package com.tomer.chitchat.ui.frags
 import android.Manifest
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -14,12 +15,13 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.karumi.dexter.Dexter
-import com.karumi.dexter.DexterBuilder
-import com.karumi.dexter.DexterBuilder.MultiPermissionListener
 import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
+import com.karumi.dexter.listener.PermissionDeniedResponse
+import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.multi.MultiplePermissionsListener
+import com.karumi.dexter.listener.single.PermissionListener
 import com.tomer.chitchat.R
 import com.tomer.chitchat.databinding.FragmentLoginProfileBinding
 import com.tomer.chitchat.utils.Utils.Companion.getDpLink
@@ -82,23 +84,22 @@ class FragUpdateProfile : Fragment() {
     }
 
     private fun askPermissions() {
-        Dexter.withContext(requireContext())
-            .withPermissions(
-                Manifest.permission.CAMERA,
-                Manifest.permission.READ_EXTERNAL_STORAGE,
-                Manifest.permission.READ_CONTACTS
-            )
-            .withListener(object : MultiplePermissionsListener {
-                override fun onPermissionsChecked(p0: MultiplePermissionsReport) {
-                    if (p0.isAnyPermissionPermanentlyDenied) {
-                        lifecycleScope.launch { viewModel.flowToasts.emit("Please Provide Proper Permissions...") }
-                    }
-                }
 
-                override fun onPermissionRationaleShouldBeShown(p0: MutableList<PermissionRequest>?, p1: PermissionToken?) {
-                }
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) return
+        Dexter.withContext(requireContext()).withPermission(
+            Manifest.permission.READ_EXTERNAL_STORAGE
+        ).withListener(object : PermissionListener {
+            override fun onPermissionGranted(p0: PermissionGrantedResponse?) {
+            }
 
-            }).check()
+            override fun onPermissionDenied(p0: PermissionDeniedResponse?) {
+                lifecycleScope.launch { viewModel.flowToasts.emit("Please Provide Proper Permissions...") }
+            }
+
+            override fun onPermissionRationaleShouldBeShown(p0: PermissionRequest?, p1: PermissionToken?) {
+            }
+
+        }).check()
     }
 
     override fun onDestroyView() {

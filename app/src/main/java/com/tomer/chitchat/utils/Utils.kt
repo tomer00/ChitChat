@@ -2,9 +2,11 @@ package com.tomer.chitchat.utils
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.view.View
 import android.view.inputmethod.InputMethodManager
+import androidx.core.app.ActivityCompat
 import com.tomer.chitchat.room.ModelRoomPersonRelation
 import kotlin.math.min
 import kotlin.math.pow
@@ -61,6 +63,16 @@ class Utils {
             val v = currentFocus ?: View(this)
             imm.hideSoftInputFromWindow(v.windowToken, 0)
         }
+
+        fun Activity.showKeyBoard() {
+            val imm = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
+            val v = currentFocus ?: View(this)
+            imm.showSoftInput(v, 0)
+        }
+
+        fun Activity.isPermissionGranted(name: String) =
+            ActivityCompat.checkSelfPermission(this, name) == PackageManager.PERMISSION_GRANTED
+
     }
 
 }

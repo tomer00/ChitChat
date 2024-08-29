@@ -98,7 +98,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_margin="30dp"
-            android:enabled="true"
+            android:enabled="false"
             android:background="@drawable/background_button"
             android:text="@string/get_otp"
             android:textColor="@color/white"

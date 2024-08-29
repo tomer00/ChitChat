@@ -81,14 +81,14 @@ class LoginViewModel @Inject constructor(
     private var jobTimer: Job = viewModelScope.launch { ; }
 
     init {
-//        viewModelScope.launch {
-//            val cA = try {
-//                retro.canAuth().body().also { Log.d("TAG--", "$it: Can AUTH") }.equals("true")
-//            } catch (e: Exception) {
-//                false
-//            }
-//            _canAuth.postValue(cA)
-//        }
+        viewModelScope.launch {
+            val cA = try {
+                retro.canAuth().body().equals("true")
+            } catch (e: Exception) {
+                false
+            }
+            _canAuth.postValue(cA)
+        }
     }
 
     fun setOtp(otp: String) {
