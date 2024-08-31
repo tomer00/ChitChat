@@ -106,7 +106,6 @@ class ChatViewModal @Inject constructor(
     var isChatActivityVisible = false
 
     init {
-        Log.d("TAG--", "NEW CHAT VM CREATED: ")
         webSocket.openConnection(repoUtils.getToken())
         Utils.myName = repoUtils.getName()
         viewModelScope.launch {

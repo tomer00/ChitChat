@@ -224,7 +224,7 @@ class AssetsViewModel @Inject constructor(
                     builder.setTimeText(ConversionUtils.millisToTimeText(msg.timeMillis))
                     builder.replyMediaFileName(msg.replyMediaFileName)
                     builder.setRepBytes(repBytes)
-                    builder.mediaSize(Utils.humanReadableSize(fileBytes.size).also{ Log.d("TAG--", "handleUploaing: $it")})
+                    builder.mediaSize(Utils.humanReadableSize(fileBytes.size))
 
                     val roomMsg = builder.build()
                     builder.msgText("Uploading")
@@ -236,7 +236,6 @@ class AssetsViewModel @Inject constructor(
                         MsgMediaType.FILE -> file.getName(con)
                         MsgMediaType.VIDEO -> getVideoName(msg.timeMillis)
                     }
-                    Log.d("TAG--", "FILE NAME: $fileName")
                     builder.mediaFileName(fileName)
                     //sending Callback to activity to display img and loading
                     created(MsgsFlowState.ChatMessageFlowState(builder.buildUI(), roomMsg.partnerId, true))
@@ -244,7 +243,6 @@ class AssetsViewModel @Inject constructor(
                     repoStorage.saveBytesToFolder(msg.msgType, fileName, fileBytes)
                     repoMsgs.addMsg(builder.build())
 
-                    Log.d("TAG--", "uploadFile: ${file.encodedPath}")
                     repoMedia.saveMedia(ModalMediaUpload(file.encodedPath.toString(), fileName))
 
                     val thumbBytes = ByteArrayOutputStream()
@@ -394,7 +392,6 @@ class AssetsViewModel @Inject constructor(
     //endregion UTILS
 
     private suspend fun uploadToServer(baos: ByteArray, type: String, uri: String, fileName: String): String? {
-        Log.d("TAG--", "uploadToServer: Actuallly uploading $fileName  -- $uri  -- $type")
         val reqBody = baos
             .toRequestBody(
                 "multipart/form-data".toMediaTypeOrNull(),
@@ -408,8 +405,7 @@ class AssetsViewModel @Inject constructor(
             )
             Log.d("TAG--", "uploadToServer: $res")
             if (res.isSuccessful) res.body() else null
-        } catch (e: Exception) {
-            Log.e("TAG--", "uploadToServer: ", e)
+        } catch (_: Exception) {
             null
         }
     }

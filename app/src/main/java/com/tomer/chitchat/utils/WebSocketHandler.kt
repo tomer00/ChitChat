@@ -95,8 +95,7 @@ class WebSocketHandler(
                 CoroutineScope(Dispatchers.IO).launch {
                     try {
                         msgHandler.handelMsg(toString())
-                    } catch (e: Exception) {
-                        Log.e("TAG--", "onMessage: ", e)
+                    } catch (_: Exception) {
                     }
                 }
                 return
@@ -113,7 +112,6 @@ class WebSocketHandler(
         }
 
         override fun onOpen(webSocket: WebSocket, response: Response) {
-            Log.e("TAG--", "ONOPEN SOCKET: ")
             CoroutineScope(Dispatchers.IO).launch {
                 flowConnection.emit(true)
             }
@@ -130,7 +128,6 @@ class WebSocketHandler(
             retryJob = CoroutineScope(Dispatchers.IO).launch {
                 webSocket = null
                 delay(2000)
-                Log.d("TAG--", "tryReconnectAfter2Sec: ")
                 openConnection(token)
             }
     }
@@ -163,10 +160,7 @@ class WebSocketHandler(
     fun openConnection(token: String) {
         this.token = token
         closedByActivityEnd = false
-        if (webSocket != null) {
-            Log.d("TAG--", "openConnection: AND WEBSOCKET IS NOT NULL")
-            return
-        }
+        if (webSocket != null) return
         webSocket = try {
             val client = OkHttpClient()
             val request = Request.Builder()
@@ -188,7 +182,6 @@ class WebSocketHandler(
         webSocket!!.close(1001, "Closed for activity close")
         pingingJob.cancel()
         retryJob?.cancel()
-        Log.d("TAG--", "closeConnection: ")
     }
 
     //endregion COMMU

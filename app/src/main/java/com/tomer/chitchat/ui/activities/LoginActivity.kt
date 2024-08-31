@@ -175,7 +175,9 @@ class LoginActivity : AppCompatActivity() {
     }
 
     private fun unRegister() {
-        unregisterReceiver(reciverOtp)
+        try{
+            unregisterReceiver(reciverOtp)
+        }catch (_:Exception){}
     }
 
     //endregion SMS BROADCAST RECEIVER

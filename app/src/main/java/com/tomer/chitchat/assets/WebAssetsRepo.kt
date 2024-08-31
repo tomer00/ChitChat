@@ -1,6 +1,8 @@
 package com.tomer.chitchat.assets
 
 import android.content.Context
+import android.os.Build
+import android.os.Environment
 import android.util.Log
 import com.tomer.chitchat.modals.states.UiMsgModal
 import com.tomer.chitchat.modals.states.UiMsgModalBuilder
@@ -23,7 +25,9 @@ class WebAssetsRepo @Inject constructor(
     context: Context
 ) : RepoAssets {
 
-    private val assetsFolder = File(context.getExternalFilesDir("ChitChat"), "assets")
+    private val assetsFolder =
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) File(File(context.getExternalFilesDir("ChitChat"), "assets").absolutePath.replace("Android/data", "Android/media").replace(".chitchat/files",".chitchat"))
+        else File(context.getExternalFilesDir("ChitChat"), "assets")
     private val gifAssets = File(assetsFolder, "gifs")
     private val jsonAssets = File(assetsFolder, "jsons")
 
@@ -33,6 +37,12 @@ class WebAssetsRepo @Inject constructor(
     private val googleJsonFilesBinLink = "https://fonts.gstatic.com/s/e/notoemoji/latest/"
 
     init {
+        assetsFolder.also {
+            Log.d(
+                "TAG--",
+                "${it.absolutePath}: "
+            )
+        }
         if (!gifAssets.exists())
             gifAssets.mkdirs()
 

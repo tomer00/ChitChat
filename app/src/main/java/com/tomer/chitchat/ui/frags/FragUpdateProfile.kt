@@ -1,13 +1,17 @@
 package com.tomer.chitchat.ui.frags
 
 import android.Manifest
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -15,16 +19,15 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.karumi.dexter.Dexter
-import com.karumi.dexter.MultiplePermissionsReport
 import com.karumi.dexter.PermissionToken
 import com.karumi.dexter.listener.PermissionDeniedResponse
 import com.karumi.dexter.listener.PermissionGrantedResponse
 import com.karumi.dexter.listener.PermissionRequest
-import com.karumi.dexter.listener.multi.MultiplePermissionsListener
 import com.karumi.dexter.listener.single.PermissionListener
 import com.tomer.chitchat.R
 import com.tomer.chitchat.databinding.FragmentLoginProfileBinding
 import com.tomer.chitchat.utils.Utils.Companion.getDpLink
+import com.tomer.chitchat.utils.Utils.Companion.isPermissionGranted
 import com.tomer.chitchat.viewmodals.LoginViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
@@ -85,21 +88,73 @@ class FragUpdateProfile : Fragment() {
 
     private fun askPermissions() {
 
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) return
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+            viewModel.setStoragePermission(true)
+            Dexter.withContext(requireContext()).withPermission(
+                Manifest.permission.READ_EXTERNAL_STORAGE
+            ).withListener(object : PermissionListener {
+                override fun onPermissionGranted(p0: PermissionGrantedResponse?) {
+                    viewModel.setStoragePermission(true)
+                }
+
+                override fun onPermissionDenied(p0: PermissionDeniedResponse) {
+                    lifecycleScope.launch { viewModel.flowToasts.emit("Please Provide Proper Permissions...") }
+                    viewModel.setStoragePermission(false)
+                    if (p0.isPermanentlyDenied)
+                        showPermissionDeniedDialog("Notification")
+                }
+
+                override fun onPermissionRationaleShouldBeShown(p0: PermissionRequest?, p1: PermissionToken) {
+                    p1.continuePermissionRequest()
+                }
+
+            }).check()
+            return
+        }
         Dexter.withContext(requireContext()).withPermission(
             Manifest.permission.READ_EXTERNAL_STORAGE
         ).withListener(object : PermissionListener {
             override fun onPermissionGranted(p0: PermissionGrantedResponse?) {
+                viewModel.setStoragePermission(true)
             }
 
-            override fun onPermissionDenied(p0: PermissionDeniedResponse?) {
+            override fun onPermissionDenied(p0: PermissionDeniedResponse) {
                 lifecycleScope.launch { viewModel.flowToasts.emit("Please Provide Proper Permissions...") }
+                viewModel.setStoragePermission(false)
+                if (p0.isPermanentlyDenied)
+                    showPermissionDeniedDialog("Storage")
             }
 
-            override fun onPermissionRationaleShouldBeShown(p0: PermissionRequest?, p1: PermissionToken?) {
+            override fun onPermissionRationaleShouldBeShown(p0: PermissionRequest?, p1: PermissionToken) {
+                p1.continuePermissionRequest()
             }
 
         }).check()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (requireActivity().isPermissionGranted(Manifest.permission.READ_EXTERNAL_STORAGE))
+            viewModel.setStoragePermission(true)
+    }
+
+    private fun showPermissionDeniedDialog(permi:String) {
+        AlertDialog.Builder(requireActivity())
+            .setTitle("Permission Denied")
+            .setMessage("$permi access has been denied permanently. You can enable it in the app settings.")
+            .setPositiveButton("Go to Settings") { _, _ ->
+                openAppSettings()
+            }
+            .setNegativeButton("Cancel", null)
+            .create()
+            .show()
+    }
+
+    private fun openAppSettings() {
+        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+            data = Uri.fromParts("package", "com.tomer.chitchat", null)
+        }
+        startActivity(intent)
     }
 
     override fun onDestroyView() {
@@ -146,6 +201,10 @@ class FragUpdateProfile : Fragment() {
                 b.prog.visibility = View.GONE
                 b.btNext.visibility = View.VISIBLE
             }
+        }
+
+        viewModel.storagePermission.observe(viewLifecycleOwner) {
+            b.btNext.isEnabled = it
         }
     }
 }

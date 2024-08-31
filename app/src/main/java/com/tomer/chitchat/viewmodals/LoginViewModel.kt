@@ -68,6 +68,9 @@ class LoginViewModel @Inject constructor(
     private val _resendOtpButton = MutableLiveData(false)
     val resendOtpButton: LiveData<Boolean> = _resendOtpButton
 
+    private val _storagePermission = MutableLiveData(false)
+    val storagePermission: LiveData<Boolean> = _storagePermission
+
     private val _resendOtpTimer = MutableLiveData(40)
     val resendOtpTimer: LiveData<Int> = _resendOtpTimer
 
@@ -121,6 +124,9 @@ class LoginViewModel @Inject constructor(
     }
     fun setSendOtp(sendOtp: Boolean) {
         _sendOtp.value = sendOtp
+    }
+    fun setStoragePermission(isGiven: Boolean) {
+        _storagePermission.postValue(isGiven)
     }
 
     fun setCurrentFrag(no: Int) {

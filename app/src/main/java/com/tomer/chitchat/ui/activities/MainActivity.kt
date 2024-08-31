@@ -477,7 +477,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                         }
                     }
 
-                    else -> { //todo dkh le ieko
+                    else -> {
                         if (msg.data.msgType == MsgMediaType.FILE) {
                             b.msgType.visibility = View.VISIBLE
                             b.msgType.setImageResource(getDrawableId(msg.data.mediaFileName ?: ""))
