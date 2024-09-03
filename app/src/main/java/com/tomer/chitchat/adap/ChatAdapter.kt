@@ -34,7 +34,7 @@ class ChatAdapter(
     private val options = RequestOptions().apply {
         placeholder(R.drawable.ic_gifs)
         override(400)
-        error(R.drawable.ic_search)
+        error(R.drawable.logo)
         transform(RoundedCorners(12))
     }
 
@@ -120,10 +120,8 @@ class ChatAdapter(
         } else {
             //There is Media File either upload or download
             holder.b.mediaCont.visibility = View.VISIBLE
-            if (mod.msgType == MsgMediaType.GIF) Glide.with(context).load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(true).into(holder.b.mediaImg)
-            else if (mod.msgType == MsgMediaType.IMAGE || mod.msgType == MsgMediaType.VIDEO) Glide.with(context).asBitmap().load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).skipMemoryCache(
-                true
-            ).into(holder.b.mediaImg)
+            if (mod.msgType == MsgMediaType.GIF) Glide.with(context).load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).into(holder.b.mediaImg)
+            else if (mod.msgType == MsgMediaType.IMAGE || mod.msgType == MsgMediaType.VIDEO) Glide.with(context).asBitmap().load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).into(holder.b.mediaImg)
             else holder.b.mediaImg.setImageDrawable(null)
 
             if (mod.msgType == MsgMediaType.FILE) {
@@ -178,7 +176,8 @@ class ChatAdapter(
                 b.layUpload.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.UPLOAD)
                 b.layDownload.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.DOWNLOAD)
                 b.repImgRv.id, b.RepTv.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.REPLY)
-                b.mediaImg.id -> callBack.onImageClick(absoluteAdapterPosition, b.mediaImg)
+                b.msgTv.id, b.imgFileType.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.FILE)
+                b.mediaImg.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.IMAGE)
             }
         }
 
@@ -188,6 +187,9 @@ class ChatAdapter(
             b.layDownload.setOnClickListener(onCli)
             b.repImgRv.setOnClickListener(onCli)
             b.RepTv.setOnClickListener(onCli)
+            b.msgTv.setOnClickListener(onCli)
+            b.imgFileType.setOnClickListener(onCli)
+            b.mediaImg.setOnClickListener(onCli)
             b.root.setOnLongClickListener {
                 callBack.onChatItemLongClicked(absoluteAdapterPosition)
                 true
@@ -206,13 +208,11 @@ class ChatAdapter(
 
 
     enum class ClickEvents {
-        DOWNLOAD, UPLOAD, REPLY, ROOT
+        DOWNLOAD, UPLOAD, REPLY, ROOT, FILE, IMAGE
     }
 
     interface ChatViewEvents {
         fun onChatItemClicked(pos: Int, type: ClickEvents)
         fun onChatItemLongClicked(pos: Int)
-
-        fun onImageClick(pos: Int, imageView: View)
     }
 }

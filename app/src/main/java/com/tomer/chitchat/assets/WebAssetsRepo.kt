@@ -37,12 +37,6 @@ class WebAssetsRepo @Inject constructor(
     private val googleJsonFilesBinLink = "https://fonts.gstatic.com/s/e/notoemoji/latest/"
 
     init {
-        assetsFolder.also {
-            Log.d(
-                "TAG--",
-                "${it.absolutePath}: "
-            )
-        }
         if (!gifAssets.exists())
             gifAssets.mkdirs()
 
@@ -138,7 +132,6 @@ class WebAssetsRepo @Inject constructor(
     }
 
     override suspend fun downLoadBytes(urlString: String): ByteArray? {
-        Log.d("TAG--", "downLoadBytes: REally downloading $urlString")
         var inputStream: InputStream? = null
         var outputStream: ByteArrayOutputStream? = null
         var connection: HttpURLConnection? = null

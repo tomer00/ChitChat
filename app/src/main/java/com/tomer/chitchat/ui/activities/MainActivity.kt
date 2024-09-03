@@ -247,7 +247,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             return
         }
         super.onBackPressed()
-        finishAffinity()
+        b.root.postDelayed({finishAffinity()},400)
     }
 
     override fun onClick(v: View) {

@@ -1,7 +1,6 @@
 package com.tomer.chitchat.viewmodals
 
 import android.util.Log
-import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
@@ -25,7 +24,6 @@ import com.tomer.chitchat.repo.RepoPersons
 import com.tomer.chitchat.repo.RepoRelations
 import com.tomer.chitchat.repo.RepoStorage
 import com.tomer.chitchat.repo.RepoUtils
-import com.tomer.chitchat.retro.Api
 import com.tomer.chitchat.room.ModelRoomMessage
 import com.tomer.chitchat.room.ModelRoomMessageBuilder
 import com.tomer.chitchat.room.ModelRoomPersonRelation
@@ -105,10 +103,12 @@ class ChatViewModal @Inject constructor(
 
     var isChatActivityVisible = false
 
+    var canSendMsg = false
+
     init {
-        webSocket.openConnection(repoUtils.getToken())
         Utils.myName = repoUtils.getName()
         viewModelScope.launch {
+            webSocket.openConnection(repoUtils.getToken())
             webSocket.flowMsgs.collectLatest { msg ->
                 if (Utils.currentPartner?.partnerId.toString() == msg.fromUser) {
                     if (!isChatActivityVisible && msg.type == FlowType.MSG)
@@ -124,6 +124,7 @@ class ChatViewModal @Inject constructor(
                             }
                         }
                     }
+                    if (msg.type == FlowType.REQ_ACCEPTED) canSendMsg = true
                 }
                 flowMsgs.emit(msg)
             }
@@ -137,7 +138,7 @@ class ChatViewModal @Inject constructor(
 
     //<(10)toPhone><(7)MSG_TYPE><DATA>
     fun sendMsg(msg: Message) {
-        webSocket.sendMessage("${Utils.currentPartner?.partnerId}$msg")
+        webSocket.sendMessage("${Utils.currentPartner?.partnerId?:"0000000000"}$msg")
     }
 
     fun sendChatMsg(msg: ModelMsgSocket, replyBytes: ByteArray?) {
@@ -194,6 +195,10 @@ class ChatViewModal @Inject constructor(
     }
 
     //region ACTIVITY COMM
+
+    fun textChanged(){
+        webSocket.typing()
+    }
 
     fun clearUnreadCount() {
         viewModelScope.launch {
@@ -293,12 +298,14 @@ class ChatViewModal @Inject constructor(
     }
 
     fun openChat(phone: String, seletedIds: MutableList<Long>) {
-        if (Utils.currentPartner?.partnerId == phone){
+        if (Utils.currentPartner?.partnerId == phone) {
+            canSendMsg = Utils.currentPartner?.isAccepted ?: false
             viewModelScope.launch { flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone)) }
             return
         }
         seletedIds.sort()
         Utils.currentPartner = repoRelations.getRelation(phone)
+        canSendMsg = Utils.currentPartner?.isAccepted ?: false
         cryptoService.setCurrentPartner(phone)
         viewModelScope.launch {
             try {

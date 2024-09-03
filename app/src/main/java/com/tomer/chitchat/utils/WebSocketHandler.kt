@@ -4,6 +4,8 @@ import android.util.Log
 import com.google.gson.Gson
 import com.tomer.chitchat.crypto.CryptoService
 import com.tomer.chitchat.modals.msgs.BulkReceived
+import com.tomer.chitchat.modals.msgs.NoTyping
+import com.tomer.chitchat.modals.msgs.Typing
 import com.tomer.chitchat.modals.states.FlowType
 import com.tomer.chitchat.modals.states.MsgsFlowState
 import com.tomer.chitchat.notifications.NotificationService
@@ -18,6 +20,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import okhttp3.OkHttpClient
 import okhttp3.Request
 import okhttp3.Response
@@ -33,7 +36,6 @@ class WebSocketHandler(
     private val repoRelations: RepoRelations,
     cryptoService: CryptoService,
 ) {
-
 
     //region HANDEL FLOWS
     val flowMsgs = MutableSharedFlow<MsgsFlowState>()
@@ -114,6 +116,7 @@ class WebSocketHandler(
         override fun onOpen(webSocket: WebSocket, response: Response) {
             CoroutineScope(Dispatchers.IO).launch {
                 flowConnection.emit(true)
+                Log.d("TAG--", "onOpen: ")
             }
         }
     }
@@ -126,6 +129,7 @@ class WebSocketHandler(
 
         if (token.isNotEmpty())
             retryJob = CoroutineScope(Dispatchers.IO).launch {
+                Log.d("TAG--", "tryReconnectAfter2Sec: ")
                 webSocket = null
                 delay(2000)
                 openConnection(token)
@@ -151,29 +155,56 @@ class WebSocketHandler(
 
     //endregion GLOBALS
 
+    //region TYPING JOB
+
+    private var typingJob: Job = CoroutineScope(Dispatchers.IO).launch { delay(100) }
+
+    private fun createNewTypingJob(): Job {
+        return CoroutineScope(Dispatchers.IO).launch {
+            delay(2000)
+            sendMessage((Utils.currentPartner?.partnerId ?: "0000000000") + NoTyping())
+        }
+    }
+
+    fun typing() {
+        if (!typingJob.isActive) {
+            sendMessage((Utils.currentPartner?.partnerId ?: "0000000000") + Typing())
+            typingJob = createNewTypingJob()
+            return
+        }
+        typingJob.cancel()
+        typingJob = createNewTypingJob()
+    }
+    //endregion TYPING JOB
+
     //region COMMU
 
     fun sendMessage(text: String) {
+        if (webSocket == null) {
+            CoroutineScope(Dispatchers.IO).launch { openConnection(token) }
+            return
+        }
         webSocket?.send(text)
     }
 
-    fun openConnection(token: String) {
+    suspend fun openConnection(token: String) {
         this.token = token
         closedByActivityEnd = false
         if (webSocket != null) return
-        webSocket = try {
-            val client = OkHttpClient()
-            val request = Request.Builder()
-                .url(Utils.WEBSOCKET_LINK)
-                .addHeader("Authorization", "Bearer $token")
-                .build()
-            client.newWebSocket(request, webSocketListener)
-        } catch (e: Exception) {
-            null
+        withContext(Dispatchers.IO) {
+            webSocket = try {
+                val client = OkHttpClient()
+                val request = Request.Builder()
+                    .url(Utils.WEBSOCKET_LINK)
+                    .addHeader("Authorization", "Bearer $token")
+                    .build()
+                client.newWebSocket(request, webSocketListener)
+            } catch (e: Exception) {
+                null
+            }
+            pingingJob.cancel()
+            pingingJob = createNewPingingJob()
         }
-
-        pingingJob.cancel()
-        pingingJob = createNewPingingJob()
     }
 
     @Throws(Exception::class)

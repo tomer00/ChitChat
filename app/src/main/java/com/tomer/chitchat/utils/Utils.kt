@@ -3,6 +3,7 @@ package com.tomer.chitchat.utils
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.view.View
 import android.view.inputmethod.InputMethodManager
@@ -72,6 +73,11 @@ class Utils {
 
         fun Activity.isPermissionGranted(name: String) =
             ActivityCompat.checkSelfPermission(this, name) == PackageManager.PERMISSION_GRANTED
+
+        fun Activity.isDarkModeEnabled(): Boolean {
+            val currentNightMode = resources.configuration.uiMode.and(Configuration.UI_MODE_NIGHT_MASK)
+            return currentNightMode == Configuration.UI_MODE_NIGHT_YES
+        }
 
     }
 
