@@ -2,7 +2,6 @@ package com.tomer.chitchat.repo.impl
 
 import android.content.Context
 import android.os.Build
-import android.os.Environment
 import com.tomer.chitchat.repo.RepoStorage
 import com.tomer.chitchat.room.MsgMediaType
 import java.io.File
@@ -16,7 +15,12 @@ class RepoFileStorage @Inject constructor(
 
 
     private val folder =
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) File(File(context.getExternalFilesDir("ChitChat"), "media").absolutePath.replace("Android/data", "Android/media").replace(".chitchat/files",".chitchat"))
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q)
+            File(
+                File(context.getExternalFilesDir("ChitChat"), "media")
+                    .absolutePath.replace("Android/data", "Android/media")
+                    .replace(".chitchat/files", ".chitchat")
+            )
         else File(context.getExternalFilesDir("ChitChat"), "media")
 
     override fun saveBytesToFolder(type: MsgMediaType, fileName: String, data: ByteArray) {

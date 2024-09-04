@@ -913,7 +913,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                         )
 
                         val intent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(uri, "*/*")
+                            setDataAndType(uri, ConversionUtils.mimeTypes.getOrDefault(msg.fileGif.extension, "application/octet-stream"))
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         }
                         startActivity(intent)
@@ -926,19 +926,34 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             FlowType.OPEN_IMAGE, FlowType.OPEN_GIF -> {
                 runOnUiThread {
                     val b = getRvViewIfPossibleForId(msgIdForImageShow) ?: return@runOnUiThread
-                    ImageViewActivity.bytesImage = vm.chatMsgs.find { it.id == msgIdForImageShow }?.bytes
+                    val chatMsg = vm.chatMsgs.find { it.id == msgIdForImageShow } ?: return@runOnUiThread
+                    ImageViewActivity.bytesImage = chatMsg.bytes
                     b.mediaImg.transitionName = msg.fileGif?.name ?: "img"
                     val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, b.mediaImg, msg.fileGif?.name ?: "img")
                     if (ImageViewActivity.bytesImage == null) return@runOnUiThread
-                    startActivity(Intent(this, ImageViewActivity::class.java).apply {
+                    startActivityForResult(Intent(this, ImageViewActivity::class.java).apply {
                         putExtra("file", msg.fileGif?.absolutePath)
                         putExtra("isGif", msg.type == FlowType.OPEN_GIF)
-                    }, options.toBundle())
+                        putExtra("isSent", chatMsg.isSent)
+                        putExtra("time", chatMsg.timeText)
+                    }, 1001, options.toBundle())
                 }
             }
 
             else -> {}
         }
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode != 1001) return
+        if (resultCode != RESULT_OK) return
+        val index = vm.chatMsgs.indexOfFirst { it.id == msgIdForImageShow }
+        if (index == -1) return
+
+        vm.chatMsgs.removeAt(index)
+        adap.notifyItemRemoved(index)
+        vma.delMsg(msgIdForImageShow)
     }
 
     //endregion FLOW EVENTS

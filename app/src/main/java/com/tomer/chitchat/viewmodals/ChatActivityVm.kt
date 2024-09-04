@@ -95,6 +95,39 @@ class ChatActivityVm @Inject constructor(
 
     }
 
+    fun delMsg(msgId: Long) {
+        viewModelScope.launch {
+            val mediaFiles = mutableListOf<Pair<String, MsgMediaType>>()
+            val lastMsg = repoMsg.getLastMsgForPartner(phone)
+            var isNeedToSetLastMsg = false
+            val msgR = repoMsg.getMsg(msgId) ?: return@launch
+
+            msgR.id.also { id ->
+                if (id == lastMsg?.id) isNeedToSetLastMsg = true
+                flowDeleteIds.emit(id)
+                repoMsg.deleteById(id)
+                msgR.mediaFileName?.let { mediaFiles.add(Pair(it, msgR.msgType)) }
+            }
+            withContext(Dispatchers.IO) {
+                if (isNeedToSetLastMsg) {
+                    repoPersons.getPersonByPhone(phone)?.let {
+                        ModelRoomPersons(
+                            phone, it.name,
+                            MsgMediaType.TEXT, "", -1L,
+                            System.currentTimeMillis(),
+                            lastSeenMillis = it.lastSeenMillis,
+                            isSent = false,
+                            msgStatus = MsgStatus.RECEIVED
+                        ).apply { repoPersons.insertPerson(this) }
+                    }
+                }
+                mediaFiles.forEach { pair ->
+                    repoStorage.deleteFile(pair.first, pair.second)
+                }
+            }
+        }
+    }
+
     //endregion SELECTION HANDLING
 
     //region STATES

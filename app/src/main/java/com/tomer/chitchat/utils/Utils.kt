@@ -5,10 +5,13 @@ import android.app.Activity
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Bitmap
+import android.media.MediaScannerConnection
 import android.view.View
 import android.view.inputmethod.InputMethodManager
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.tomer.chitchat.room.ModelRoomPersonRelation
+import java.io.File
 import kotlin.math.min
 import kotlin.math.pow
 

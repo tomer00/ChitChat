@@ -19,6 +19,7 @@
 
     <color name="backgroundLight">#2B2B2B</color>
     <color name="backgroundC">#041016</color>
+    <color name="background50">#80041016</color>
     <color name="backgroundSelBg">#0A212C</color>
 
     <color name="fore">#fff</color>

@@ -346,6 +346,7 @@ class AssetsViewModel @Inject constructor(
                         }
                         handleUploaing(baos.toByteArray(), null)
                     }
+
                     MsgMediaType.VIDEO -> {}
                 }
             }
@@ -391,6 +392,20 @@ class AssetsViewModel @Inject constructor(
     private fun getGifName(millis: Long) = "GIF_${ConversionUtils.millisToFullDateText(millis)}.gif"
     //endregion UTILS
 
+    //region mediaView
+
+    fun openFile(fileName: String) {
+        val file = repoStorage.getFileFromFolder(MsgMediaType.FILE, fileName) ?: return
+        viewModelScope.launch { flowEvents.emit(MsgsFlowState.OpenFileFlowState(file, FlowType.OPEN_FILE)) }
+    }
+
+    fun openImage(fileName: String, isGif: Boolean) {
+        val file = repoStorage.getFileFromFolder(if (fileName.startsWith("GIF")) MsgMediaType.GIF else MsgMediaType.IMAGE, fileName) ?: return
+        viewModelScope.launch { flowEvents.emit(MsgsFlowState.OpenFileFlowState(file, if (isGif) FlowType.OPEN_GIF else FlowType.OPEN_IMAGE)) }
+    }
+
+    //endregion mediaView
+
     private suspend fun uploadToServer(baos: ByteArray, type: String, uri: String, fileName: String): String? {
         val reqBody = baos
             .toRequestBody(
@@ -403,7 +418,6 @@ class AssetsViewModel @Inject constructor(
                     "file", fileName, reqBody
                 ), type, uri
             )
-            Log.d("TAG--", "uploadToServer: $res")
             if (res.isSuccessful) res.body() else null
         } catch (_: Exception) {
             null

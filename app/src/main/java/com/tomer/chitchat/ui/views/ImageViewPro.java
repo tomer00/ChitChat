@@ -1,7 +1,6 @@
 package com.tomer.chitchat.ui.views;
 
 import android.annotation.SuppressLint;
-import android.annotation.TargetApi;
 import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
@@ -11,7 +10,6 @@ import android.graphics.PointF;
 import android.graphics.RectF;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build.VERSION_CODES;
 import android.os.Bundle;
 import android.os.Parcelable;
 import android.util.AttributeSet;
@@ -1174,8 +1172,7 @@ public class ImageViewPro extends ImageView {
         }
     }
 
-    @TargetApi(VERSION_CODES.GINGERBREAD)
-    private class CompatScroller {
+    private static class CompatScroller {
         Scroller scroller;
         OverScroller overScroller;
         boolean isPreGingerbread;
@@ -1235,7 +1232,7 @@ public class ImageViewPro extends ImageView {
         }
     }
 
-    private class ZoomVariables {
+    private static class ZoomVariables {
         public float scale;
         public float focusX;
         public float focusY;

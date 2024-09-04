@@ -27,6 +27,10 @@ enum class FlowType {
     SHOW_BIG_GIF,
     SET_TYPING_GIF,
 
+    OPEN_FILE,
+    OPEN_IMAGE,
+    OPEN_GIF,
+
     SEND_BULK_REC,
     SEND_PR
 }
