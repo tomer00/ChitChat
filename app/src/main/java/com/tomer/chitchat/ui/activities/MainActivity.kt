@@ -4,7 +4,6 @@ import android.Manifest
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
@@ -49,6 +48,7 @@ import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.EmojisHashingUtils
 import com.tomer.chitchat.utils.Utils
+import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
 import com.tomer.chitchat.viewmodals.AssetsViewModel
 import com.tomer.chitchat.viewmodals.MainViewModal
 import dagger.hilt.android.AndroidEntryPoint
@@ -72,12 +72,6 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     private val callback by lazy { callBack() }
 
     private var activityLife = false
-
-    // Method to check if dark mode is enabled
-    private fun isDarkModeEnabled(): Boolean {
-        val currentNightMode = resources.configuration.uiMode.and(Configuration.UI_MODE_NIGHT_MASK)
-        return currentNightMode == Configuration.UI_MODE_NIGHT_YES
-    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -107,6 +101,9 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
             btDel.setOnClickListener(this@MainActivity)
             btBack.setOnClickListener(this@MainActivity)
+
+            btSearch.setOnClickListener(this@MainActivity)
+            btProfile.setOnClickListener(this@MainActivity)
         }
 
         ll = LinearLayoutManager(this@MainActivity)
@@ -316,6 +313,10 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             }
 
             b.btDel.id -> viewModal.delSelected(true, adapter.currentList)
+            b.btProfile.id -> startActivity(Intent(this, SettingsActivity::class.java))
+            b.btSearch.id -> {
+                //todo apply search impl
+            }
         }
     }
 

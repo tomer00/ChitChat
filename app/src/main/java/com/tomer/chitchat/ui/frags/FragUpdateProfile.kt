@@ -11,7 +11,6 @@ import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
@@ -26,6 +25,7 @@ import com.karumi.dexter.listener.PermissionRequest
 import com.karumi.dexter.listener.single.PermissionListener
 import com.tomer.chitchat.R
 import com.tomer.chitchat.databinding.FragmentLoginProfileBinding
+import com.tomer.chitchat.utils.AlertDialogBuilder
 import com.tomer.chitchat.utils.Utils.Companion.getDpLink
 import com.tomer.chitchat.utils.Utils.Companion.isPermissionGranted
 import com.tomer.chitchat.viewmodals.LoginViewModel
@@ -138,15 +138,13 @@ class FragUpdateProfile : Fragment() {
             viewModel.setStoragePermission(true)
     }
 
-    private fun showPermissionDeniedDialog(permi:String) {
-        AlertDialog.Builder(requireActivity())
+    private fun showPermissionDeniedDialog(permi: String) {
+        AlertDialogBuilder(requireActivity())
             .setTitle("Permission Denied")
-            .setMessage("$permi access has been denied permanently. You can enable it in the app settings.")
-            .setPositiveButton("Go to Settings") { _, _ ->
+            .setDescription("$permi access has been denied permanently. You can enable it in the app settings.")
+            .setPositiveButton("Go to Settings") {
                 openAppSettings()
             }
-            .setNegativeButton("Cancel", null)
-            .create()
             .show()
     }
 
