@@ -169,7 +169,8 @@ class FragUpdateProfile : Fragment() {
                 Glide.with(this@FragUpdateProfile)
                     .asBitmap()
                     .load(it)
-                    .override(600)
+                    .override(720)
+                    .centerCrop()
                     .into(
                         object : CustomTarget<Bitmap>() {
                             override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {

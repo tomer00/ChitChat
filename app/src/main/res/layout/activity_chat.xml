@@ -18,8 +18,8 @@
         <androidx.constraintlayout.widget.ConstraintLayout
             android:id="@+id/layMainHead"
             android:layout_width="match_parent"
-            android:animateLayoutChanges="true"
             android:layout_height="match_parent"
+            android:animateLayoutChanges="true"
             android:padding="4dp"
             android:visibility="visible">
 
@@ -70,35 +70,43 @@
 
             </androidx.cardview.widget.CardView>
 
-            <TextView
-                android:id="@+id/tvPartnerName"
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:id="@+id/layDetail"
+                android:foreground="?attr/selectableItemBackground"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:fontFamily="@font/nunito_bold"
-                android:textColor="@color/fore"
-                android:textSize="20sp"
-                app:layout_constraintStart_toEndOf="@id/cardFlipper"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:layout_height="match_parent"
+                android:paddingHorizontal="8dp"
+                app:layout_constraintEnd_toStartOf="@id/btMenu"
+                app:layout_constraintStart_toEndOf="@id/cardFlipper">
 
-            <TextView
-                android:id="@+id/tvDetails"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="8dp"
-                android:fontFamily="@font/nunito_medium"
-                android:textColor="@color/hintCol"
-                app:layout_constraintStart_toEndOf="@id/cardFlipper"
-                app:layout_constraintBottom_toBottomOf="@id/cardFlipper" />
+                <TextView
+                    android:id="@+id/tvPartnerName"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/nunito_bold"
+                    android:textColor="@color/fore"
+                    android:textSize="20sp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent" />
+
+                <TextView
+                    android:id="@+id/tvDetails"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:fontFamily="@font/nunito_medium"
+                    android:textColor="@color/hintCol"
+                    app:layout_constraintBottom_toBottomOf="parent"
+                    app:layout_constraintStart_toStartOf="parent" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <ImageView
                 android:id="@+id/btMenu"
                 android:layout_width="28dp"
                 android:layout_height="28dp"
                 android:contentDescription="@string/app_name"
-                android:visibility="gone"
                 android:padding="4dp"
                 android:src="@drawable/ic_three_dots"
+                android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
@@ -161,7 +169,6 @@
         android:alpha=".4"
         android:contentDescription="@string/app_name"
         android:scaleType="centerCrop"
-        android:src="@drawable/bg_light"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="@id/rvMsg"
         app:layout_constraintStart_toStartOf="@id/rvMsg"
@@ -297,11 +304,11 @@
                     android:id="@+id/tvRep"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
-                    android:maxLines="2"
                     android:ellipsize="marquee"
-                    android:paddingEnd="4dp"
-                    android:paddingStart="8dp"
+                    android:maxLines="2"
                     android:paddingVertical="4dp"
+                    android:paddingStart="8dp"
+                    android:paddingEnd="4dp"
                     android:textColor="@color/white"
                     android:textSize="18sp"
                     android:visibility="visible"

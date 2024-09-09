@@ -122,9 +122,11 @@ class LoginViewModel @Inject constructor(
         _reSend.value = reSend
         _loginProg.value = true
     }
+
     fun setSendOtp(sendOtp: Boolean) {
         _sendOtp.value = sendOtp
     }
+
     fun setStoragePermission(isGiven: Boolean) {
         _storagePermission.postValue(isGiven)
     }
@@ -135,7 +137,14 @@ class LoginViewModel @Inject constructor(
 
     fun setPhone(phone: String, viaClick: Boolean) {
         _phone.value = phone
-        if (viaClick) _sendOtp.postValue(true)
+        if (viaClick) {
+            _sendOtp.postValue(true)
+            repo.savePhone(phone)
+        }
+    }
+
+    init {
+        setPhone(repo.getPhone(), false)
     }
 
     lateinit var resendingToken: PhoneAuthProvider.ForceResendingToken

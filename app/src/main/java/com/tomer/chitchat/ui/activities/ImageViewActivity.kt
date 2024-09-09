@@ -189,7 +189,7 @@ class ImageViewActivity : AppCompatActivity() {
                     b.root.post { Toast.makeText(this, "File saved to Gallery...", Toast.LENGTH_SHORT).show() }
                 }
             }
-            b.tvPartnerName.text = Utils.currentPartner?.partnerName
+            b.tvPartnerName.text = (Utils.currentPartner?.partnerName ?: "").ifEmpty { Utils.currentPartner?.partnerId }
         }
         b.btSaveToGallery.visibility = if (isSent) View.GONE else View.VISIBLE
         val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")

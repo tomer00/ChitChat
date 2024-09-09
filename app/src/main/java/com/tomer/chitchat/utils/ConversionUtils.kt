@@ -2,7 +2,6 @@ package com.tomer.chitchat.utils
 
 import android.graphics.Bitmap
 import android.icu.text.SimpleDateFormat
-import com.tomer.chitchat.utils.Utils.Companion.centerCropBitmap
 import java.io.ByteArrayOutputStream
 import java.net.URLDecoder
 import java.net.URLEncoder
@@ -30,9 +29,7 @@ object ConversionUtils {
 
     fun convertToWebp(bmp: Bitmap): ByteArray {
         val baos = ByteArrayOutputStream()
-        bmp
-            .centerCropBitmap()
-            .compress(Bitmap.CompressFormat.WEBP, 80, baos)
+        bmp.compress(Bitmap.CompressFormat.WEBP, 80, baos)
         return baos.toByteArray()
     }
 

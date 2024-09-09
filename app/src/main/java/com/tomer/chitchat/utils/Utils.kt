@@ -4,15 +4,12 @@ import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.pm.PackageManager
 import android.content.res.Configuration
-import android.graphics.Bitmap
-import android.media.MediaScannerConnection
+import android.content.res.Resources
+import android.util.TypedValue
 import android.view.View
 import android.view.inputmethod.InputMethodManager
-import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.tomer.chitchat.room.ModelRoomPersonRelation
-import java.io.File
-import kotlin.math.min
 import kotlin.math.pow
 
 class Utils {
@@ -48,19 +45,10 @@ class Utils {
             }
         }
 
-        fun Bitmap.centerCropBitmap(): Bitmap {
-            val originalWidth = this.width
-            val originalHeight = this.height
+        fun Number.toPX(resources: Resources) = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), resources.displayMetrics
+        )
 
-            val width = min(originalWidth, originalHeight)
-
-            // Calculate the cropping coordinates
-            val x = (originalWidth - width) / 2
-            val y = (originalHeight - width) / 2
-
-            // Create a new Bitmap by cropping the original Bitmap
-            return Bitmap.createBitmap(this, x, y, width, width)
-        }
 
         fun Activity.hideKeyBoard() {
             val imm = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager

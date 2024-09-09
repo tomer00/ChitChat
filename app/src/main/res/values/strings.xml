@@ -18,4 +18,8 @@
     <string name="type_mobile_no">Type Mobile No…</string>
     <string name="retry">Retry</string>
     <string name="resend_in_40">Resend in 40</string>
+    <string name="profile">Profile</string>
+    <string name="name">Name</string>
+    <string name="about">About</string>
+    <string name="phone">Phone No</string>
 </resources>

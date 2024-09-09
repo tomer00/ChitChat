@@ -51,7 +51,7 @@
                 android:layout_marginHorizontal="24dp"
                 android:contentDescription="@string/app_name"
                 android:src="@drawable/ic_avatar"
-                app:tint="@color/fore"
+                android:transitionName="avatar"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />

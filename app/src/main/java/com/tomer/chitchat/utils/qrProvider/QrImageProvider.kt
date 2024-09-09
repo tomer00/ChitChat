@@ -12,26 +12,24 @@ import android.graphics.Point
 import android.graphics.Rect
 import android.graphics.RectF
 import android.graphics.Shader
+import android.graphics.drawable.Drawable
 import android.graphics.drawable.VectorDrawable
-import android.util.Log
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.graphics.toRect
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.EncodeHintType
-import com.google.zxing.WriterException
 import com.google.zxing.common.BitMatrix
 import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import com.tomer.chitchat.R
+import com.tomer.chitchat.utils.Utils.Companion.toPX
 import kotlin.math.cos
 import kotlin.math.sin
 
-
 object QrImageProvider {
 
-
-    private fun bmpFromSVG(dr: VectorDrawable, dimen: Int, rot: Int): Bitmap {
+    private fun bmpFromSVG(dr: Drawable, dimen: Int, rot: Int): Bitmap {
         val bmp = Bitmap.createBitmap(dimen, dimen, Bitmap.Config.ARGB_8888)
         val c = Canvas(bmp)
         c.rotate(rot.toFloat(), dimen / 2f, dimen / 2f)
@@ -72,7 +70,7 @@ object QrImageProvider {
         val trailTop: Bitmap = bmpFromSVG(trailVec, unit, 0)
         val trailRight: Bitmap = bmpFromSVG(trailVec, unit, 90)
         val trailBottom: Bitmap = bmpFromSVG(trailVec, unit, 180)
-        val trailleft: Bitmap = bmpFromSVG(trailVec, unit, 270)
+        val trailLeft: Bitmap = bmpFromSVG(trailVec, unit, 270)
 
 
         val cornerTopLeft: Bitmap = bmpFromSVG(cornerVec, unit, 90)
@@ -119,7 +117,7 @@ object QrImageProvider {
                     }
                 } else {
                     if (right) {
-                        c.drawBitmap(trailleft, mainRect.left, mainRect.top, null)
+                        c.drawBitmap(trailLeft, mainRect.left, mainRect.top, null)
                     } else {
                         aloneVec.bounds = mainRect.toRect()
                         aloneVec.draw(c)
@@ -191,15 +189,17 @@ object QrImageProvider {
 
     }
 
-    //    private fun drawLogo() {
-//        val d: Int = (dimen - (unit shl 2)) shr 1
-//
-//        val destR = Rect(d, d, d + (unit shl 2), d + (unit shl 2))
-//        val b: Bitmap = makeLogo()
-//        val sorc = Rect(0, 0, b.height, b.width)
-//        c.drawBitmap(b, sorc, destR, Paint())
-//
-//    }
+    private fun drawLogo(bmp: Bitmap, unit: Int, con: Context) {
+        try {
+            val sizeLogo: Int = unit * 5
+            val offSet = (unit * 10f) + unit.times(.66f)
+            val bmpLogo = bmpFromSVG(ContextCompat.getDrawable(con, R.drawable.logo_noti2)!!, sizeLogo, 0)
+            val c = Canvas(bmp)
+            val rect = RectF(offSet, offSet, offSet + sizeLogo - unit, offSet + sizeLogo - unit)
+            c.drawBitmap(bmpLogo, null, rect, Paint(Paint.ANTI_ALIAS_FLAG))
+        } catch (_: Exception) {
+        }
+    }
 
     private fun createLinearGradient(
         width: Int, height: Int,
@@ -286,7 +286,6 @@ object QrImageProvider {
         data: String, bodyType: Int, gradType: Int, con: Context,
         width: Int, height: Int, name: String, isDark: Boolean, bgAsset: Int
     ): Bitmap {
-        Log.d("TAG--", "onCreate: $gradType")
         val grad = AssetsProvider.gradType.getOrDefault(gradType, listOf(45, Color.parseColor("#cb356b"), Color.parseColor("#bd3f32")))
         val mainBmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
         if (isDark)
@@ -295,9 +294,19 @@ object QrImageProvider {
             drawBgLight(bgAsset, grad, mainBmp, con)
 
         val c = Canvas(mainBmp)
-        val unit = 20
-        val mat = getMATRIX(data)
+        val mat = getMATRIX(data) ?: return mainBmp
 
+        val h80 = height.times(.8f)
+        val h10 = height.times(.1f)
+        val h5 = height.times(.05f)
+
+        val textPaint = Paint().apply {
+            isAntiAlias = true
+            textSize = 26f.toPX(con.resources)
+            typeface = ResourcesCompat.getFont(con, R.font.nunito_bold)
+        }
+        val lineHeight = textPaint.fontMetrics.descent - textPaint.fontMetrics.ascent
+        val unit = (h80 - lineHeight - h10).div(mat.size).toInt()
 
         val size = mat.size * unit
         val p = Paint()
@@ -305,50 +314,41 @@ object QrImageProvider {
         p.color = Color.WHITE
         p.style = Paint.Style.FILL
 
-        val h80 = height.times(.8f)
-        val h10 = height.times(.1f)
-
         val cen = width shr 1
-        c.drawRoundRect(cen - size.div(2f) - 60f, h10, cen + size.div(2f) + 60f, h80 + h10, 32f, 32f, p)
-
+        c.drawRoundRect(cen - size.div(2f) - h5, h10, cen + size.div(2f) + h5, h80 + h10, h5, h5, p)
 
         val bodyData = AssetsProvider.bodyType.getOrDefault(bodyType, listOf(1, 1, 5, 4))
         val body = getBodyBmp(mat, unit, mat.size, bodyData[2], bodyData[0], bodyData[1], con)
         drawEyes(body, bodyData[3], unit, mat.size, con)
+        drawLogo(body, unit, con)
         shadeQR(grad, body, size.toFloat())
 
-        c.drawBitmap(body, cen - size.div(2f), h10 + 60f, null)
+        c.drawBitmap(body, cen - size.div(2f), h10 + h5, null)
         val shader: Shader = createLinearGradient(width, height, grad[0], grad[1], grad[2])
-        val textPaint = Paint().apply {
-            isAntiAlias = true
-            setShader(shader)
-            textSize = 68f
-            typeface = ResourcesCompat.getFont(con, R.font.nunito_bold)
-        }
+        textPaint.setShader(shader)
 
         val textWidth = textPaint.measureText(name)
         val xt = (width - textWidth).div(2)
 
-        c.drawText(name, xt, h80 + 16, textPaint)
-
+        c.drawText(name, xt, h80 + h5, textPaint)
         return mainBmp
     }
 
-    private fun genQr(data: String): BitMatrix {
+    private fun genQr(data: String): BitMatrix? {
         val r = QRCodeWriter()
         val b: BitMatrix
         val err: MutableMap<EncodeHintType, ErrorCorrectionLevel?> = HashMap(1)
         err[EncodeHintType.ERROR_CORRECTION] = ErrorCorrectionLevel.M
         b = try {
             r.encode(data, BarcodeFormat.QR_CODE, 120, 120, err)
-        } catch (e: WriterException) {
-            BitMatrix(4)
+        } catch (e: Exception) {
+            return null
         }
         return b
     }
 
-    private fun getMATRIX(data: String): Array<BooleanArray> {
-        val bmp = genQr(data)
+    private fun getMATRIX(data: String): Array<BooleanArray>? {
+        val bmp = genQr(data) ?: return null
         val bmpDimen = bmp.width
         val unit: Int
         val topPoint: Int
@@ -394,13 +394,14 @@ object QrImageProvider {
         //remove eyeTopRight
         for (k in 0..6) for (l in x - 7 until x) ret[l][k] = false
 
-
         //remove  eyeTopLeft
         for (k in 0..6) for (l in 0..6) ret[l][k] = false
 
-
         //remove eyeBottomLeft
         for (k in x - 7 until x) for (l in 0..6) ret[l][k] = false
+
+        //remove center
+        for (k in 9..14) for (j in 9..14) ret[j][k] = false
 
         return ret
     }
