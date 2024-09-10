@@ -4,11 +4,13 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tomer.chitchat.modals.prefs.MyPrefs
 import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.modals.states.UiMsgModal
 import com.tomer.chitchat.repo.RepoMessages
 import com.tomer.chitchat.repo.RepoPersons
 import com.tomer.chitchat.repo.RepoStorage
+import com.tomer.chitchat.repo.RepoUtils
 import com.tomer.chitchat.room.ModelRoomPersons
 import com.tomer.chitchat.room.MsgMediaType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -23,6 +25,7 @@ class ChatActivityVm @Inject constructor(
     private val repoPersons: RepoPersons,
     private val repoStorage: RepoStorage,
     private val repoMsg: RepoMessages,
+    private val repoUtils: RepoUtils,
 ) : ViewModel() {
 
     //region SELECTION HANDLING
@@ -155,6 +158,7 @@ class ChatActivityVm @Inject constructor(
     //endregion STATES
 
     var phone = ""
+    val myPref: MyPrefs = repoUtils.getPrefs()
 
     fun setPartnerNo(phone: String) {
         this.phone = phone

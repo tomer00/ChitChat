@@ -106,7 +106,6 @@ class ChatViewModal @Inject constructor(
     var canSendMsg = false
 
     init {
-        Utils.myName = repoUtils.getName()
         viewModelScope.launch {
             webSocket.openConnection(repoUtils.getToken())
             webSocket.flowMsgs.collectLatest { msg ->

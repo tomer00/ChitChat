@@ -22,4 +22,6 @@
     <string name="name">Name</string>
     <string name="about">About</string>
     <string name="phone">Phone No</string>
+    <string name="message_corners">Message corners</string>
+    <string name="message_text_size">Message text size</string>
 </resources>

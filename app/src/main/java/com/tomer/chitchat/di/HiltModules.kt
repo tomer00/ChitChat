@@ -1,7 +1,6 @@
 package com.tomer.chitchat.di
 
 import android.content.Context
-import android.util.Log
 import androidx.room.Room
 import com.google.gson.Gson
 import com.tomer.chitchat.assets.RepoAssets
@@ -109,7 +108,7 @@ class HiltModules {
 
     @Provides
     @Singleton
-    fun provideRepoUtils(@ApplicationContext appContext: Context): RepoUtils = RepoUtilImpl(appContext)
+    fun provideRepoUtils(@ApplicationContext appContext: Context,gson: Gson): RepoUtils = RepoUtilImpl(appContext,gson)
 
     @Provides
     @Singleton

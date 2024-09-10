@@ -14,6 +14,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.PhoneAuthCredential
 import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.messaging.FirebaseMessaging
+import com.tomer.chitchat.modals.prefs.MyPrefs
 import com.tomer.chitchat.repo.RepoUtils
 import com.tomer.chitchat.retro.Api
 import com.tomer.chitchat.utils.ConversionUtils
@@ -195,7 +196,7 @@ class LoginViewModel @Inject constructor(
 
     fun login(name: String, bmp: Bitmap?) {
         _loginProg.postValue(true)
-        repo.saveName(name)
+        repo.savePrefs(MyPrefs(phone.value.toString(), name, "", 12f, 1f, 0))
         Utils.myName = name
         viewModelScope.launch {
             val res1 = async {

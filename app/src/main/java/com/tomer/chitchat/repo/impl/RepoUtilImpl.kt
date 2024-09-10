@@ -1,12 +1,18 @@
 package com.tomer.chitchat.repo.impl
 
 import android.content.Context
+import android.util.Log
+import com.google.gson.Gson
+import com.tomer.chitchat.modals.prefs.MyPrefs
 import com.tomer.chitchat.repo.RepoUtils
+import com.tomer.chitchat.utils.Utils
 
 class RepoUtilImpl(
-    private val context: Context
+    private val context: Context,
+    private val gson: Gson
 ) : RepoUtils {
 
+    private val myPrefMod by lazy { loadMyPref() }
     private val prefUtils by lazy { context.getSharedPreferences("utils", Context.MODE_PRIVATE) }
 
     override fun getToken(): String =
@@ -16,12 +22,33 @@ class RepoUtilImpl(
         prefUtils.edit().putString("token", token).apply()
     }
 
-    override fun getName() =
-        prefUtils.getString("userName", "").toString()
+    override fun getPrefs() = myPrefMod
 
-    override fun saveName(name: String) {
-        prefUtils.edit().putString("userName", name).apply()
+    private fun loadMyPref(): MyPrefs {
+        Log.d("TAG--", "loadMyPref: LOadig FROM STORAGE")
+        return try {
+            gson.fromJson(
+                prefUtils.getString("myPrefs", null) ?: throw Exception(),
+                MyPrefs::class.java
+            )
+        } catch (e: Exception) {
+            MyPrefs(Utils.myPhone, "", "", 12f, 18f, 0)
+        }
     }
+
+    override fun savePrefs(mod: MyPrefs) {
+        myPrefMod.name = mod.name
+        myPrefMod.about = mod.about
+        myPrefMod.msgItemCorners = mod.msgItemCorners
+        myPrefMod.textSize = mod.textSize
+        myPrefMod.dpNo = mod.dpNo
+        prefUtils.edit().putString("myPrefs", gson.toJson(myPrefMod)).apply()
+    }
+
+    override fun getPhone() = prefUtils.getString("phone", "").toString()
+
+    override fun savePhone(phone: String) =
+        prefUtils.edit().putString("phone", phone).apply()
 
     override fun getTempId(): Long {
         val tempId = prefUtils.getLong("tempId", 0L)

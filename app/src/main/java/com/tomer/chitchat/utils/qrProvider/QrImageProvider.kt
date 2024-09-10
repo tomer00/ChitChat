@@ -5,7 +5,6 @@ import android.graphics.Bitmap
 import android.graphics.BlendMode
 import android.graphics.Canvas
 import android.graphics.Color
-import android.graphics.LinearGradient
 import android.graphics.Matrix
 import android.graphics.Paint
 import android.graphics.Point
@@ -24,8 +23,6 @@ import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import com.tomer.chitchat.R
 import com.tomer.chitchat.utils.Utils.Companion.toPX
-import kotlin.math.cos
-import kotlin.math.sin
 
 object QrImageProvider {
 
@@ -34,15 +31,6 @@ object QrImageProvider {
         val c = Canvas(bmp)
         c.rotate(rot.toFloat(), dimen / 2f, dimen / 2f)
         dr.setBounds(0, 0, dimen, dimen)
-        dr.draw(c)
-        return bmp
-    }
-
-    private fun bmpFromBgAsset(bgAsset: Int, con: Context): Bitmap {
-        val bmp = Bitmap.createBitmap(1125, 2436, Bitmap.Config.ARGB_8888)
-        val c = Canvas(bmp)
-        val dr = ContextCompat.getDrawable(con, bgAsset)!!
-        dr.setBounds(0, 0, 1125, 2436)
         dr.draw(c)
         return bmp
     }
@@ -176,8 +164,8 @@ object QrImageProvider {
         c.drawBitmap(Bitmap.createBitmap(b, 0, 0, b.width, b.width, m, true), null, eye, null)
     }
 
-    private fun shadeQR(grad: List<Int>, bmp: Bitmap, dimen: Float) {
-        val shader: Shader = createLinearGradient(bmp.width, bmp.height, grad[0], grad[1], grad[2])
+    private fun shadeQR(grad: GradModel, bmp: Bitmap, dimen: Float) {
+        val shader: Shader = BackgroundProvider.createLinearGradient(Point(bmp.width, bmp.height), grad)
         val paint = Paint()
         paint.isDither = true
         paint.isAntiAlias = true
@@ -201,97 +189,12 @@ object QrImageProvider {
         }
     }
 
-    private fun createLinearGradient(
-        width: Int, height: Int,
-        angleDegrees: Int,
-        startColor: Int, endColor: Int
-    ): LinearGradient {
-
-        // Convert angle from degrees to radians
-        val angleRadians = Math.toRadians((angleDegrees.mod(360)).toDouble())
-
-        // Calculate the start and end points based on the angle
-        val x0 = (width / 2 + width / 2 * cos(angleRadians)).toFloat()
-        val y0 = (height / 2 - height / 2 * sin(angleRadians)).toFloat()
-        val x1 = (width / 2 - width / 2 * cos(angleRadians)).toFloat()
-        val y1 = (height / 2 + height / 2 * sin(angleRadians)).toFloat()
-
-        // Create and return the LinearGradient
-        return LinearGradient(
-            x0, y0, x1, y1,
-            startColor, endColor,
-            Shader.TileMode.CLAMP
-        )
-    }
-
-    private fun genTintedPattern(bgAsset: Int, shader: Shader, dimen: Point, con: Context): Bitmap {
-        val tBmp = Bitmap.createBitmap(dimen.x, dimen.y, Bitmap.Config.ARGB_8888)
-        val bgmp = bmpFromBgAsset(bgAsset, con)
-
-        val paint = Paint().apply {
-            isAntiAlias = true
-            setShader(shader)
-            blendMode = BlendMode.SRC_ATOP
-        }
-
-        val adjustedWidth = 900f.times(con.resources.displayMetrics.densityDpi / 440)
-        val adjustedHeight = 1948.8f.times(con.resources.displayMetrics.densityDpi / 440)
-
-        val cM = Canvas(tBmp)
-        val w = dimen.x / adjustedWidth.toInt()
-        val h = dimen.y / adjustedHeight.toInt()
-
-        val widthExt = adjustedWidth * (w + 1)
-        val heightExt = adjustedHeight * (h + 1)
-
-        val xM = (widthExt - dimen.x).toInt() shr 1
-        val yM = (heightExt - dimen.y).toInt() shr 1
-
-
-        val pT = Paint(Paint.ANTI_ALIAS_FLAG)
-        val destR = RectF(0f, 0f, adjustedWidth, adjustedHeight)
-        for (i in 0..w)
-            for (j in 0..h) {
-                destR.set((adjustedWidth * i) - xM, (adjustedHeight * j) - yM, (adjustedWidth * (i + 1)) - xM, (adjustedHeight * (j + 1) - yM))
-                cM.drawBitmap(bgmp, null, destR, pT)
-            }
-        cM.drawRect(0f, 0f, dimen.x.toFloat(), dimen.y.toFloat(), paint)
-        return tBmp
-    }
-
-    private fun drawBgDark(bgAsset: Int, grad: List<Int>, bmp: Bitmap, con: Context) {
-        val shader: Shader = createLinearGradient(bmp.width, bmp.height, grad[0] + 180, grad[1], grad[2])
-
-        val c = Canvas(bmp)
-        c.drawColor(Color.BLACK)
-        c.drawBitmap(genTintedPattern(bgAsset, shader, Point(bmp.width, bmp.height), con), 0f, 0f, null)
-    }
-
-    private fun drawBgLight(bgAsset: Int, grad: List<Int>, bmp: Bitmap, con: Context) {
-        val rectF = RectF(0f, 0f, bmp.width.toFloat(), bmp.height.toFloat())
-        val shader: Shader = createLinearGradient(bmp.width, bmp.height, grad[0] + 180, grad[1], grad[2])
-
-        val c = Canvas(bmp)
-        c.drawColor(Color.WHITE)
-        c.drawRect(rectF, Paint().apply {
-            isAntiAlias = true
-            setShader(shader)
-            alpha = 110
-        })
-        c.drawBitmap(genTintedPattern(bgAsset, shader, Point(bmp.width, bmp.height), con), 0f, 0f, null)
-
-    }
-
     fun getQRBMP(
         data: String, bodyType: Int, gradType: Int, con: Context,
         width: Int, height: Int, name: String, isDark: Boolean, bgAsset: Int
     ): Bitmap {
-        val grad = AssetsProvider.gradType.getOrDefault(gradType, listOf(45, Color.parseColor("#cb356b"), Color.parseColor("#bd3f32")))
-        val mainBmp = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-        if (isDark)
-            drawBgDark(bgAsset, grad, mainBmp, con)
-        else
-            drawBgLight(bgAsset, grad, mainBmp, con)
+        val grad = AssetsProvider.gradType.getOrDefault(gradType, GradModel(45, Color.parseColor("#cb356b"), Color.parseColor("#bd3f32")))
+        val mainBmp = BackgroundProvider.getBackground(bgAsset, Point(width, height), isDark, con, Color.BLACK, grad)
 
         val c = Canvas(mainBmp)
         val mat = getMATRIX(data) ?: return mainBmp
@@ -324,7 +227,7 @@ object QrImageProvider {
         shadeQR(grad, body, size.toFloat())
 
         c.drawBitmap(body, cen - size.div(2f), h10 + h5, null)
-        val shader: Shader = createLinearGradient(width, height, grad[0], grad[1], grad[2])
+        val shader: Shader = BackgroundProvider.createLinearGradient(Point(width, height), grad)
         textPaint.setShader(shader)
 
         val textWidth = textPaint.measureText(name)

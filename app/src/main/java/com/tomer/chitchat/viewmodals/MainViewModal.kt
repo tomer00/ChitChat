@@ -139,6 +139,7 @@ class MainViewModal @Inject constructor(
     val flowMsgs = MutableSharedFlow<MsgsFlowState>()
 
     init {
+        Utils.myName = repoUtils.getPrefs().name
         viewModelScope.launch {
             webSocket.openConnection(repoUtils.getToken())
             webSocket.flowMsgs.collectLatest { msg ->

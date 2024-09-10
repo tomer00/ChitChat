@@ -2,8 +2,8 @@ package com.tomer.chitchat.adap
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
@@ -20,6 +20,7 @@ import com.tomer.chitchat.databinding.MsgItemBinding
 import com.tomer.chitchat.modals.states.UiMsgModal
 import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.Utils
+import com.tomer.chitchat.utils.qrProvider.GradModel
 import java.util.LinkedList
 
 
@@ -29,6 +30,10 @@ class ChatAdapter(
     private val chatItems: LinkedList<UiMsgModal>
 ) : RecyclerView.Adapter<ChatAdapter.ChatViewHolder>() {
 
+    private var textSize: Float = 18f
+    private var corners: Float = 12f
+    private var partnerGrad = GradModel(0, 0, 0)
+    private var myGrad = GradModel(0, ContextCompat.getColor(context, R.color.softBg), ContextCompat.getColor(context, R.color.softBg))
 
     @SuppressLint("CheckResult")
     private val options = RequestOptions().apply {
@@ -59,21 +64,23 @@ class ChatAdapter(
             holder.b.msgLay.setLayoutParams(params)
             holder.b.innerLay.gravity = Gravity.END
             holder.b.msgLay.gravity = Gravity.END
-            holder.b.innerLay.background = ContextCompat.getDrawable(context, R.drawable.msg_sent)
+            holder.b.msgBg.foreground = ContextCompat.getDrawable(context, R.drawable.msg_sent)
             holder.b.RepTv.setGravity(Gravity.END)
             holder.b.msgTv.setTextColor(ContextCompat.getColor(context, R.color.fore))
             holder.b.contTime.gravity = Gravity.END
             holder.b.imgMsgStatus.visibility = View.VISIBLE
+            holder.b.msgBg.setData(mod.isSent, myGrad, corners)
         } else {
             params.horizontalBias = 0f
             holder.b.msgLay.setLayoutParams(params)
             holder.b.innerLay.gravity = Gravity.START
             holder.b.msgLay.gravity = Gravity.START
-            holder.b.innerLay.background = ContextCompat.getDrawable(context, R.drawable.msg_rec)
+            holder.b.msgBg.foreground = ContextCompat.getDrawable(context, R.drawable.msg_rec)
             holder.b.RepTv.setGravity(Gravity.START)
             holder.b.msgTv.setTextColor(ContextCompat.getColor(context, R.color.white))
             holder.b.contTime.gravity = Gravity.START
             holder.b.imgMsgStatus.visibility = View.GONE
+            holder.b.msgBg.setData(mod.isSent, partnerGrad, corners)
         }
 
         if (mod.isSelected) holder.b.root.setBackgroundColor(ContextCompat.getColor(context, R.color.selected))
@@ -105,12 +112,14 @@ class ChatAdapter(
             if (mod.replyType == MsgMediaType.FILE) holder.b.RepTv.text = mod.replyMediaFileName ?: "FILE"
         }
 
+        holder.b.msgTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize)
+        holder.b.RepTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize.times(.86f))
 
         if (mod.bytes == null) {
             holder.b.mediaCont.visibility = View.GONE
             holder.b.imgFileType.visibility = View.GONE
             if (mod.isEmojiOnly) {
-                holder.b.innerLay.background = ColorDrawable(ContextCompat.getColor(context, R.color.trans))
+                holder.b.msgBg.hideBg()
                 holder.b.msgTv.visibility = View.GONE
                 holder.b.emojiTv.visibility = View.VISIBLE
             } else {
@@ -121,7 +130,9 @@ class ChatAdapter(
             //There is Media File either upload or download
             holder.b.mediaCont.visibility = View.VISIBLE
             if (mod.msgType == MsgMediaType.GIF) Glide.with(context).load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).into(holder.b.mediaImg)
-            else if (mod.msgType == MsgMediaType.IMAGE || mod.msgType == MsgMediaType.VIDEO) Glide.with(context).asBitmap().load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).into(holder.b.mediaImg)
+            else if (mod.msgType == MsgMediaType.IMAGE || mod.msgType == MsgMediaType.VIDEO) Glide.with(context).asBitmap().load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).into(
+                holder.b.mediaImg
+            )
             else holder.b.mediaImg.setImageDrawable(null)
 
             if (mod.msgType == MsgMediaType.FILE) {
@@ -142,7 +153,7 @@ class ChatAdapter(
                 holder.b.layUpload.visibility = View.GONE
                 holder.b.layDownload.visibility = View.GONE
             } else {
-                if (mod.isUploaded && mod.isDownloaded){
+                if (mod.isUploaded && mod.isDownloaded) {
                     holder.b.layMediaRoot.visibility = View.GONE
                     return
                 }
@@ -202,6 +213,12 @@ class ChatAdapter(
     fun addItem(msg: UiMsgModal) {
         chatItems.addFirst(msg)
         notifyItemInserted(0)
+    }
+
+    fun setValues(textSize: Float, corners: Float, gradModel: GradModel) {
+        this.textSize = textSize
+        this.corners = corners
+        this.partnerGrad = gradModel
     }
 
     //endregion COMMU

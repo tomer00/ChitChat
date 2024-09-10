@@ -5,21 +5,29 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
+import android.os.Build
 import android.os.Bundle
 import android.util.Log
 import android.view.View
 import android.view.ViewAnimationUtils
+import android.view.WindowInsets
 import android.view.animation.LinearInterpolator
 import android.widget.Toast
+import androidx.activity.SystemBarStyle
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.animation.doOnEnd
+import androidx.core.app.ActivityOptionsCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.text.isDigitsOnly
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
@@ -49,6 +57,7 @@ import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.EmojisHashingUtils
 import com.tomer.chitchat.utils.Utils
 import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
+import com.tomer.chitchat.utils.Utils.Companion.isLandscapeOrientation
 import com.tomer.chitchat.viewmodals.AssetsViewModel
 import com.tomer.chitchat.viewmodals.MainViewModal
 import dagger.hilt.android.AndroidEntryPoint
@@ -76,7 +85,21 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
+        enableEdgeToEdge(SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { this.isDarkModeEnabled() })
         setContentView(b.root)
+        if (isLandscapeOrientation()) {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+                window.insetsController?.hide(WindowInsets.Type.statusBars())
+                return
+            }
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            actionBar?.hide()
+        } else
+            ViewCompat.setOnApplyWindowInsetsListener(b.root) { v, insets ->
+                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+                insets
+            }
 
         if (FirebaseAuth.getInstance().currentUser == null) {
             startActivity(Intent(this, LoginActivity::class.java))
@@ -92,7 +115,14 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         }
         Utils.myPhone = FirebaseAuth.getInstance().currentUser?.phoneNumber?.substring(3) ?: ""
         if (isDarkModeEnabled()) b.tvAppName.setTextColor(ContextCompat.getColor(this, R.color.white))
-
+//        Glide.with(this)
+//            .asBitmap()
+//            .circleCrop()
+//            .override(100)
+//            .placeholder(R.drawable.ic_avatar)
+//            .error(R.drawable.ic_avatar)
+//            .load(viewModal.phone.getDpLink())
+//            .into(b.btProfile)
         b.apply {
             btConnect.setOnClickListener(this@MainActivity)
             imgBarcode.setOnClickListener(this@MainActivity)
@@ -244,7 +274,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             return
         }
         super.onBackPressed()
-        b.root.postDelayed({finishAffinity()},400)
+        b.root.postDelayed({ finishAffinity() }, 400)
     }
 
     override fun onClick(v: View) {
@@ -313,7 +343,11 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             }
 
             b.btDel.id -> viewModal.delSelected(true, adapter.currentList)
-            b.btProfile.id -> startActivity(Intent(this, SettingsActivity::class.java))
+            b.btProfile.id -> {
+                val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, b.btProfile, "avatar")
+                startActivity(Intent(this, SettingsActivity::class.java), options.toBundle())
+            }
+
             b.btSearch.id -> {
                 //todo apply search impl
             }

@@ -52,14 +52,14 @@ object AssetsProvider {
     //angle,start,end
     val gradType by lazy {
         mapOf(
-            1 to listOf(120,Color.parseColor("#a6c0fe"),Color.parseColor("#f68084")),
-            2 to listOf(0,Color.parseColor("#43e97b"),Color.parseColor("#38f9d7")),
-            3 to listOf(90,Color.parseColor("#642b73"),Color.parseColor("#c6426e")),
-            4 to listOf(45,Color.parseColor("#cb356b"),Color.parseColor("#bd3f32")),
-            5 to listOf(125,Color.parseColor("#283c86"),Color.parseColor("#45a247")),
-            6 to listOf(15,Color.parseColor("#ff0844"),Color.parseColor("#ffb199")),
-            7 to listOf(235,Color.parseColor("#0fd850"),Color.parseColor("#f9f047")),
-            8 to listOf(180,Color.parseColor("#9be15d"),Color.parseColor("#00e3ae")),
+            1 to GradModel(120,Color.parseColor("#a6c0fe"),Color.parseColor("#f68084")),
+            2 to GradModel(30,Color.parseColor("#43e97b"),Color.parseColor("#38f9d7")),
+            3 to GradModel(90,Color.parseColor("#642b73"),Color.parseColor("#c6426e")),
+            4 to GradModel(45,Color.parseColor("#cb356b"),Color.parseColor("#bd3f32")),
+            5 to GradModel(125,Color.parseColor("#283c86"),Color.parseColor("#45a247")),
+            6 to GradModel(15,Color.parseColor("#ff0844"),Color.parseColor("#ffb199")),
+            7 to GradModel(235,Color.parseColor("#0fd850"),Color.parseColor("#f9f047")),
+            8 to GradModel(180,Color.parseColor("#9be15d"),Color.parseColor("#00e3ae")),
         )
     }
 }

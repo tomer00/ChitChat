@@ -49,6 +49,10 @@ class Utils {
             TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), resources.displayMetrics
         )
 
+        fun Number.toSP(resources: Resources) = TypedValue.applyDimension(
+            TypedValue.COMPLEX_UNIT_SP, this.toFloat(), resources.displayMetrics
+        )
+
 
         fun Activity.hideKeyBoard() {
             val imm = getSystemService(Activity.INPUT_METHOD_SERVICE) as InputMethodManager
@@ -70,6 +74,7 @@ class Utils {
             return currentNightMode == Configuration.UI_MODE_NIGHT_YES
         }
 
+        fun Activity.isLandscapeOrientation() = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     }
 
 }

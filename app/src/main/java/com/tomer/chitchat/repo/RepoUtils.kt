@@ -1,10 +1,16 @@
 package com.tomer.chitchat.repo
 
-interface RepoUtils {
-    fun getToken():String
-    fun saveToken(token:String)
+import com.tomer.chitchat.modals.prefs.MyPrefs
 
-    fun getName():String
-    fun saveName(name:String)
-    fun getTempId():Long
+interface RepoUtils {
+    fun getToken(): String
+    fun saveToken(token: String)
+
+    fun getPrefs(): MyPrefs
+    fun savePrefs(mod: MyPrefs)
+
+    fun getPhone(): String
+    fun savePhone(phone: String)
+
+    fun getTempId(): Long
 }

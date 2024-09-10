@@ -63,7 +63,7 @@ class ViewOnlineIndi : View {
         canvas.drawCircle(half + eighth, half, fourth, pBlur)
     }
 
-    fun setImmidiateStatus(isOnline: Boolean) {
+    fun setImmediateStatus(isOnline: Boolean) {
         scaleFactor = if (isOnline) 1f else 0f
         postInvalidate()
         if (isOnline) {

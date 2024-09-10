@@ -15,169 +15,186 @@
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintWidth_percent="0.8">
 
-
-        <LinearLayout
-            android:id="@+id/inner_lay"
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/msg_rec"
-            android:orientation="vertical">
+            android:layout_height="wrap_content">
 
-            <TextView
-                android:id="@+id/Rep_tv"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginHorizontal="4dp"
-                android:layout_marginTop="4dp"
-                android:background="@drawable/rep_bg"
-                android:backgroundTint="@color/backgroundC"
-                android:fontFamily="@font/nunito_medium"
-                android:maxLines="4"
-                android:paddingHorizontal="12dp"
-                android:paddingVertical="4dp"
-                android:textColor="@color/fore"
-                android:textSize="18sp"
-                android:visibility="visible" />
-
-            <ImageView
-                android:id="@+id/repImgRv"
-                android:layout_width="wrap_content"
-                android:layout_height="42dp"
-                android:layout_marginHorizontal="8dp"
-                android:layout_marginTop="4dp"
-                android:adjustViewBounds="true"
-                android:contentDescription="@string/app_name" />
-
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:gravity="center_vertical"
-                android:layout_height="wrap_content">
-
-                <ImageView
-                    android:id="@+id/imgFileType"
-                    android:layout_width="32dp"
-                    android:adjustViewBounds="true"
-                    android:src="@drawable/ic_file"
-                    android:layout_height="32dp"
-                    android:contentDescription="@string/app_name" />
-
-                <TextView
-                    android:id="@+id/msg_tv"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:fontFamily="@font/nunito_medium"
-                    android:padding="8dp"
-                    android:textColor="@color/fore"
-                    android:textSize="18sp"
-                    app:layout_constraintBottom_toBottomOf="parent"
-                    app:layout_constraintEnd_toEndOf="parent"
-                    app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent" />
-            </LinearLayout>
-
-
-            <TextView
-                android:id="@+id/emoji_tv"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:textColor="@color/fore"
-                android:textSize="48dp"
+            <com.tomer.chitchat.ui.views.MsgBackground
+                android:id="@+id/msgBg"
+                android:layout_width="0dp"
+                android:clickable="true"
+                android:layout_height="0dp"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent" />
 
-            <androidx.constraintlayout.widget.ConstraintLayout
-                android:id="@+id/mediaCont"
-                android:layout_width="240dp"
+            <LinearLayout
+                android:id="@+id/inner_lay"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_margin="4dp">
+                android:background="@drawable/msg_rec"
+                android:orientation="vertical"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent">
 
-                <ImageView
-                    android:id="@+id/media_img"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:adjustViewBounds="true"
-                    android:scaleType="fitXY"
-                    app:layout_constraintTop_toTopOf="parent" />
-
-                <LinearLayout
-                    android:id="@+id/layMediaRoot"
+                <TextView
+                    android:id="@+id/Rep_tv"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:animateLayoutChanges="true"
-                    android:background="@drawable/round_bg"
-                    android:backgroundTint="#66000000"
-                    android:padding="8dp"
+                    android:layout_marginHorizontal="4dp"
+                    android:layout_marginTop="4dp"
+                    android:background="@drawable/rep_bg"
+                    android:backgroundTint="@color/backgroundC"
+                    android:fontFamily="@font/nunito_medium"
+                    android:maxLines="4"
+                    android:paddingHorizontal="12dp"
+                    android:paddingVertical="4dp"
+                    android:textColor="@color/fore"
+                    android:textSize="18sp"
+                    android:visibility="visible" />
+
+                <ImageView
+                    android:id="@+id/repImgRv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="42dp"
+                    android:layout_marginHorizontal="8dp"
+                    android:layout_marginTop="4dp"
+                    android:adjustViewBounds="true"
+                    android:contentDescription="@string/app_name" />
+
+                <LinearLayout
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:gravity="center_vertical">
+
+                    <ImageView
+                        android:id="@+id/imgFileType"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:adjustViewBounds="true"
+                        android:contentDescription="@string/app_name"
+                        android:src="@drawable/ic_file" />
+
+                    <TextView
+                        android:id="@+id/msg_tv"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:fontFamily="@font/nunito_medium"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="4dp"
+                        android:textColor="@color/fore"
+                        android:textSize="18sp"
+                        app:layout_constraintBottom_toBottomOf="parent"
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent" />
+                </LinearLayout>
+
+
+                <TextView
+                    android:id="@+id/emoji_tv"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textColor="@color/fore"
+                    android:textSize="48sp"
                     app:layout_constraintBottom_toBottomOf="parent"
                     app:layout_constraintEnd_toEndOf="parent"
                     app:layout_constraintStart_toStartOf="parent"
-                    app:layout_constraintTop_toTopOf="parent">
+                    app:layout_constraintTop_toTopOf="parent" />
 
-                    <ProgressBar
-                        android:id="@+id/rvProg"
-                        android:layout_width="32dp"
-                        android:layout_height="32dp"
+                <androidx.constraintlayout.widget.ConstraintLayout
+                    android:id="@+id/mediaCont"
+                    android:layout_width="240dp"
+                    android:layout_height="wrap_content"
+                    android:layout_margin="4dp">
+
+                    <ImageView
+                        android:id="@+id/media_img"
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:adjustViewBounds="true"
+                        android:scaleType="fitXY"
+                        app:layout_constraintTop_toTopOf="parent" />
+
+                    <LinearLayout
+                        android:id="@+id/layMediaRoot"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:animateLayoutChanges="true"
                         android:background="@drawable/round_bg"
                         android:backgroundTint="#66000000"
-                        android:visibility="gone"
+                        android:padding="8dp"
                         app:layout_constraintBottom_toBottomOf="parent"
-                        app:layout_constraintEnd_toEndOf="parent" />
+                        app:layout_constraintEnd_toEndOf="parent"
+                        app:layout_constraintStart_toStartOf="parent"
+                        app:layout_constraintTop_toTopOf="parent">
 
-                    <LinearLayout
-                        android:id="@+id/layUpload"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:gravity="center">
-
-                        <ImageView
-                            android:layout_width="26dp"
-                            android:layout_height="26dp"
-                            android:contentDescription="@string/app_name"
-                            android:padding="2dp"
-                            android:rotation="-90"
-                            android:src="@drawable/ic_baseline_double_arrow_24"
+                        <ProgressBar
+                            android:id="@+id/rvProg"
+                            android:layout_width="32dp"
+                            android:layout_height="32dp"
+                            android:background="@drawable/round_bg"
+                            android:backgroundTint="#66000000"
+                            android:visibility="gone"
                             app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:tint="@color/white" />
+                            app:layout_constraintEnd_toEndOf="parent" />
 
-                        <TextView
+                        <LinearLayout
+                            android:id="@+id/layUpload"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="@string/retry"
-                            android:textColor="@color/white" />
-                    </LinearLayout>
+                            android:gravity="center">
 
-                    <LinearLayout
-                        android:id="@+id/layDownload"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:gravity="center">
+                            <ImageView
+                                android:layout_width="26dp"
+                                android:layout_height="26dp"
+                                android:contentDescription="@string/app_name"
+                                android:padding="2dp"
+                                android:rotation="-90"
+                                android:src="@drawable/ic_baseline_double_arrow_24"
+                                app:layout_constraintBottom_toBottomOf="parent"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:tint="@color/white" />
 
-                        <ImageView
-                            android:layout_width="26dp"
-                            android:layout_height="26dp"
-                            android:contentDescription="@string/app_name"
-                            android:padding="2dp"
-                            android:rotation="90"
-                            android:src="@drawable/ic_baseline_double_arrow_24"
-                            app:layout_constraintBottom_toBottomOf="parent"
-                            app:layout_constraintEnd_toEndOf="parent"
-                            app:tint="@color/white" />
+                            <TextView
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="@string/retry"
+                                android:textColor="@color/white" />
+                        </LinearLayout>
 
-                        <TextView
-                            android:id="@+id/tvDownBytes"
+                        <LinearLayout
+                            android:id="@+id/layDownload"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="98 kB"
-                            android:textColor="@color/white" />
+                            android:gravity="center">
+
+                            <ImageView
+                                android:layout_width="26dp"
+                                android:layout_height="26dp"
+                                android:contentDescription="@string/app_name"
+                                android:padding="2dp"
+                                android:rotation="90"
+                                android:src="@drawable/ic_baseline_double_arrow_24"
+                                app:layout_constraintBottom_toBottomOf="parent"
+                                app:layout_constraintEnd_toEndOf="parent"
+                                app:tint="@color/white" />
+
+                            <TextView
+                                android:id="@+id/tvDownBytes"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="98 kB"
+                                android:textColor="@color/white" />
+                        </LinearLayout>
+
                     </LinearLayout>
 
-                </LinearLayout>
+                </androidx.constraintlayout.widget.ConstraintLayout>
 
-            </androidx.constraintlayout.widget.ConstraintLayout>
-
-        </LinearLayout>
+            </LinearLayout>
+        </androidx.constraintlayout.widget.ConstraintLayout>
 
         <LinearLayout
             android:id="@+id/contTime"
