@@ -8,6 +8,7 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.annotation.ColorInt
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.RecyclerView
@@ -32,15 +33,20 @@ class ChatAdapter(
 
     private var textSize: Float = 18f
     private var corners: Float = 12f
-    private var partnerGrad = GradModel(0, 0, 0)
-    private var myGrad = GradModel(0, ContextCompat.getColor(context, R.color.softBg), ContextCompat.getColor(context, R.color.softBg))
+    private var partnerGrad: GradModel? = null
+
+    @ColorInt
+    private var partnerColor: Int = 0
+
+    @ColorInt
+    private var myColor = ContextCompat.getColor(context, R.color.softBg)
 
     @SuppressLint("CheckResult")
     private val options = RequestOptions().apply {
         placeholder(R.drawable.ic_gifs)
         override(400)
         error(R.drawable.logo)
-        transform(RoundedCorners(12))
+        transform(RoundedCorners(corners.toInt()))
     }
 
     private val statusDrawables: List<Drawable> = listOf(
@@ -69,7 +75,7 @@ class ChatAdapter(
             holder.b.msgTv.setTextColor(ContextCompat.getColor(context, R.color.fore))
             holder.b.contTime.gravity = Gravity.END
             holder.b.imgMsgStatus.visibility = View.VISIBLE
-            holder.b.msgBg.setData(mod.isSent, myGrad, corners)
+            holder.b.msgBg.setData(mod.isSent, corners, myColor)
         } else {
             params.horizontalBias = 0f
             holder.b.msgLay.setLayoutParams(params)
@@ -80,7 +86,9 @@ class ChatAdapter(
             holder.b.msgTv.setTextColor(ContextCompat.getColor(context, R.color.white))
             holder.b.contTime.gravity = Gravity.START
             holder.b.imgMsgStatus.visibility = View.GONE
-            holder.b.msgBg.setData(mod.isSent, partnerGrad, corners)
+            if (partnerGrad == null)
+                holder.b.msgBg.setData(mod.isSent, corners, partnerColor)
+            else holder.b.msgBg.setData(mod.isSent, corners, partnerGrad!!)
         }
 
         if (mod.isSelected) holder.b.root.setBackgroundColor(ContextCompat.getColor(context, R.color.selected))
@@ -219,6 +227,13 @@ class ChatAdapter(
         this.textSize = textSize
         this.corners = corners
         this.partnerGrad = gradModel
+    }
+
+    fun setValues(textSize: Float, corners: Float, @ColorInt color: Int) {
+        this.textSize = textSize
+        this.corners = corners
+        this.partnerGrad = null
+        this.partnerColor = color
     }
 
     //endregion COMMU

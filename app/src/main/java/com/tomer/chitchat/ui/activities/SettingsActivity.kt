@@ -1,7 +1,6 @@
 package com.tomer.chitchat.ui.activities
 
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
@@ -16,8 +15,6 @@ import android.view.animation.LinearInterpolator
 import android.view.inputmethod.EditorInfo
 import android.widget.TextView.OnEditorActionListener
 import android.widget.Toast
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -25,8 +22,6 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withCreated
 import com.bumptech.glide.Glide
@@ -39,10 +34,9 @@ import com.tomer.chitchat.modals.prefs.MyPrefs
 import com.tomer.chitchat.utils.Utils.Companion.hideKeyBoard
 import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
 import com.tomer.chitchat.utils.Utils.Companion.isLandscapeOrientation
+import com.tomer.chitchat.utils.Utils.Companion.px
 import com.tomer.chitchat.utils.Utils.Companion.showKeyBoard
-import com.tomer.chitchat.utils.Utils.Companion.toPX
 import com.tomer.chitchat.utils.qrProvider.AssetsProvider
-import com.tomer.chitchat.utils.qrProvider.GradModel
 import com.tomer.chitchat.utils.qrProvider.QrImageProvider
 import com.tomer.chitchat.viewmodals.SettingsMyPrefViewModel
 import dagger.hilt.android.AndroidEntryPoint
@@ -107,7 +101,6 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge(SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { this.isDarkModeEnabled() })
         setContentView(b.root)
         if (isLandscapeOrientation()) {
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
@@ -116,12 +109,7 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener {
             }
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             actionBar?.hide()
-        } else
-            ViewCompat.setOnApplyWindowInsetsListener(b.root) { v, insets ->
-                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-                insets
-            }
+        }
 
         window.sharedElementEnterTransition.addListener(
             object : TransitionListener {
@@ -251,11 +239,9 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener {
             val b1 = b.item1
             val b2 = b.item2
 
-            val colSoft = ContextCompat.getColor(this, R.color.softBg)
-            b2.msgBg.setData(false, GradModel(0, colSoft, colSoft), it.toPX(resources))
+            b2.msgBg.setData(true, it.px, ContextCompat.getColor(this, R.color.softBg))
 
-            val colPri = ContextCompat.getColor(this, R.color.primary)
-            b1.msgBg.setData(false, GradModel(0, colPri, colPri), it.toPX(resources))
+            b1.msgBg.setData(false, it.px, ContextCompat.getColor(this, R.color.primary))
         }
 
         lifecycleScope.launch {
@@ -403,8 +389,7 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener {
         b1.msgTv.setTextColor(ContextCompat.getColor(this, R.color.white))
         b1.contTime.gravity = Gravity.START
         b1.imgMsgStatus.visibility = View.GONE
-        val colPri = ContextCompat.getColor(this, R.color.primary)
-        b1.msgBg.setData(false, GradModel(0, colPri, colPri), 12f.toPX(resources))
+        b1.msgBg.setData(false, 12f.px,ContextCompat.getColor(this, R.color.primary))
 
         "Slide to change text size".also { b1.msgTv.text = it }
         b1.emojiTv.visibility = View.GONE
@@ -423,8 +408,8 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener {
         b2.msgTv.setTextColor(ContextCompat.getColor(this, R.color.fore))
         b2.contTime.gravity = Gravity.END
         b2.imgMsgStatus.visibility = View.GONE
-        val colSoft = ContextCompat.getColor(this, R.color.softBg)
-        b2.msgBg.setData(false, GradModel(0, colSoft, colSoft), 12f.toPX(resources))
+        val colSoft =
+        b2.msgBg.setData(false, 12f.px,ContextCompat.getColor(this, R.color.softBg))
 
         "Adjust corner radius".also { b2.msgTv.text = it }
         b2.emojiTv.visibility = View.GONE
@@ -439,7 +424,7 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener {
         b2.imgFileType.visibility = View.GONE
         b2.imgFileType.visibility = View.GONE
 
-        b.imgBg.setData(this@SettingsActivity.isDarkModeEnabled(), 200, vm.qrAss[Random.nextInt(vm.qrAss.size)], gradModel = AssetsProvider.gradType[Random.nextInt(1..5)])
+        b.imgBg.setData(this@SettingsActivity.isDarkModeEnabled(), .8f, vm.qrAss[Random.nextInt(vm.qrAss.size)], gradModel = AssetsProvider.gradType[Random.nextInt(1..5)])
     }
 
     //endregion UI MSGS

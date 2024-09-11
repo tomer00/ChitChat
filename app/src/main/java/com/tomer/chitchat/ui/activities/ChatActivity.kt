@@ -19,8 +19,6 @@ import android.view.animation.AccelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.Toast
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -31,8 +29,6 @@ import androidx.core.animation.doOnEnd
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -61,10 +57,9 @@ import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.EmojisHashingUtils
 import com.tomer.chitchat.utils.Utils
 import com.tomer.chitchat.utils.Utils.Companion.getDpLink
-import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
 import com.tomer.chitchat.utils.Utils.Companion.isLandscapeOrientation
+import com.tomer.chitchat.utils.Utils.Companion.px
 import com.tomer.chitchat.utils.Utils.Companion.showKeyBoard
-import com.tomer.chitchat.utils.Utils.Companion.toPX
 import com.tomer.chitchat.utils.qrProvider.GradModel
 import com.tomer.chitchat.viewmodals.AssetsViewModel
 import com.tomer.chitchat.viewmodals.ChatActivityVm
@@ -198,7 +193,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             finish()
             return
         }
-        enableEdgeToEdge(SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { this.isDarkModeEnabled() })
         setContentView(b.root)
         if (isLandscapeOrientation()) {
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
@@ -207,12 +201,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             }
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             actionBar?.hide()
-        } else
-            ViewCompat.setOnApplyWindowInsetsListener(b.root) { v, insets ->
-                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-                insets
-            }
+        }
         vm.openChat(intent.getStringExtra("phone")!!, vma.selectedMsgIds)
         vma.setPartnerNo(intent.getStringExtra("phone")!!)
         b.root.post {
@@ -250,7 +239,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         }
 
         adap = ChatAdapter(this, this, vm.chatMsgs)
-        adap.setValues(vma.myPref.textSize,vma.myPref.msgItemCorners.toPX(resources), GradModel(0,ContextCompat.getColor(this,R.color.primary),ContextCompat.getColor(this,R.color.primary_dark)))
+        adap.setValues(vma.myPref.textSize,vma.myPref.msgItemCorners.px, GradModel(0,ContextCompat.getColor(this,R.color.primary),ContextCompat.getColor(this,R.color.primary_dark)))
         b.rvMsg.adapter = adap
 
         ll = LinearLayoutManager(this)

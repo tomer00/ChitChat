@@ -5,7 +5,6 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
-import android.graphics.Color
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -16,8 +15,6 @@ import android.view.ViewAnimationUtils
 import android.view.WindowInsets
 import android.view.animation.LinearInterpolator
 import android.widget.Toast
-import androidx.activity.SystemBarStyle
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -26,8 +23,6 @@ import androidx.core.app.ActivityOptionsCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.text.isDigitsOnly
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
@@ -56,6 +51,7 @@ import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.EmojisHashingUtils
 import com.tomer.chitchat.utils.Utils
+import com.tomer.chitchat.utils.Utils.Companion.hideKeyBoard
 import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
 import com.tomer.chitchat.utils.Utils.Companion.isLandscapeOrientation
 import com.tomer.chitchat.viewmodals.AssetsViewModel
@@ -85,7 +81,6 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
-        enableEdgeToEdge(SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { this.isDarkModeEnabled() })
         setContentView(b.root)
         if (isLandscapeOrientation()) {
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
@@ -94,13 +89,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             }
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             actionBar?.hide()
-        } else
-            ViewCompat.setOnApplyWindowInsetsListener(b.root) { v, insets ->
-                val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-                insets
-            }
-
+        }
         if (FirebaseAuth.getInstance().currentUser == null) {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
@@ -231,6 +220,24 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             }
         }
 
+        viewModal.fabView.observe(this@MainActivity) {
+            if (it) {
+                b.layNewNumber.visibility = View.VISIBLE
+                b.imgBarcode.playAnimation()
+                b.imgFab.visibility = View.GONE
+                b.etNewNumber.requestFocus()
+                return@observe
+            }
+
+            b.layNewNumber.visibility = View.GONE
+            b.imgBarcode.pauseAnimation()
+            b.imgFab.visibility = View.VISIBLE
+            b.root.postDelayed({
+                this.hideKeyBoard()
+                b.etNewNumber.clearFocus()
+            }, 100)
+        }
+
         val notiMan by lazy { NotificationManagerCompat.from(this) }
         notiMan.cancelAll()
     }
@@ -280,6 +287,8 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     override fun onClick(v: View) {
         when (v.id) {
             b.imgBarcode.id -> {
+                b.etNewNumber.clearFocus()
+                hideKeyBoard()
                 if (checkPermission()) {
                     qrDia.show()
                     barcodeView.resume()
@@ -308,9 +317,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             }
 
             b.imgFab.id -> {
-                b.layNewNumber.visibility = View.VISIBLE
-                b.imgBarcode.playAnimation()
-                b.imgFab.visibility = View.GONE
+                viewModal.setFab(true)
             }
 
             b.btConnect.id -> {
@@ -322,15 +329,11 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                     return
                 }
                 viewModal.connectNew(b.etNewNumber.text.toString(), true, false)
-                b.layNewNumber.visibility = View.GONE
-                b.imgBarcode.pauseAnimation()
-                b.imgFab.visibility = View.VISIBLE
+                viewModal.setFab(false)
             }
 
             b.btCross.id -> {
-                b.layNewNumber.visibility = View.GONE
-                b.imgBarcode.pauseAnimation()
-                b.imgFab.visibility = View.VISIBLE
+                viewModal.setFab(false)
             }
 
             b.btBack.id -> {

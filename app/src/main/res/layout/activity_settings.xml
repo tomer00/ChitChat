@@ -92,7 +92,6 @@
                         android:background="@drawable/round_bg"
                         android:backgroundTint="@color/primary"
                         android:contentDescription="@string/app_name"
-                        android:foreground="?attr/selectableItemBackground"
                         android:padding="14dp"
                         android:src="@drawable/ic_add_a_photo"
                         app:layout_constraintBottom_toBottomOf="@+id/imgSelectDp"

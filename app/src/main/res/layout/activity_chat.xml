@@ -139,7 +139,6 @@
                 android:layout_height="wrap_content"
                 android:layout_marginStart="12dp"
                 android:fontFamily="@font/galindo"
-                android:text="1"
                 android:textColor="@color/fore"
                 android:textSize="24sp"
                 app:layout_constraintBottom_toBottomOf="parent"
@@ -162,13 +161,11 @@
     </androidx.constraintlayout.widget.ConstraintLayout>
 
 
-    <ImageView
+    <com.tomer.chitchat.ui.views.DoodleView
         android:id="@+id/imgBg"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:alpha=".4"
         android:contentDescription="@string/app_name"
-        android:scaleType="centerCrop"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="@id/rvMsg"
         app:layout_constraintStart_toStartOf="@id/rvMsg"

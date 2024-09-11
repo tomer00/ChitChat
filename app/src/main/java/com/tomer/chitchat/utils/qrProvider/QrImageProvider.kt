@@ -22,7 +22,7 @@ import com.google.zxing.common.BitMatrix
 import com.google.zxing.qrcode.QRCodeWriter
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import com.tomer.chitchat.R
-import com.tomer.chitchat.utils.Utils.Companion.toPX
+import com.tomer.chitchat.utils.Utils.Companion.px
 
 object QrImageProvider {
 
@@ -205,7 +205,7 @@ object QrImageProvider {
 
         val textPaint = Paint().apply {
             isAntiAlias = true
-            textSize = 26f.toPX(con.resources)
+            textSize = 26.px
             typeface = ResourcesCompat.getFont(con, R.font.nunito_bold)
         }
         val lineHeight = textPaint.fontMetrics.descent - textPaint.fontMetrics.ascent

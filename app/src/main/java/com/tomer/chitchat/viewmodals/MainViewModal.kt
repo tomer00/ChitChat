@@ -155,6 +155,10 @@ class MainViewModal @Inject constructor(
 
     //region SELECTION HANDLING
 
+    private val _fabView = MutableLiveData<Boolean>()
+    val fabView: LiveData<Boolean> = _fabView
+    fun setFab(show: Boolean) = _fabView.postValue(show)
+
     private val _headMenu = MutableLiveData<Boolean>()
     val headMenu: LiveData<Boolean> = _headMenu
 

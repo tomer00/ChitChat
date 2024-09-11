@@ -42,7 +42,7 @@ class AdapPerson(
             holder.b.root.setBackgroundColor(selCol)
         else holder.b.root.setBackgroundColor(deSelCol)
 
-        holder.b.onlineIndi.setImmidiateStatus(model.isOnline)
+        holder.b.onlineIndi.setImmediateStatus(model.isOnline)
 
         Glide.with(holder.b.imgProfile)
             .asBitmap()

@@ -45,9 +45,10 @@ class Utils {
             }
         }
 
-        fun Number.toPX(resources: Resources) = TypedValue.applyDimension(
-            TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), resources.displayMetrics
-        )
+        val Number.px: Float
+            get() = TypedValue.applyDimension(
+                TypedValue.COMPLEX_UNIT_DIP, this.toFloat(), Resources.getSystem().displayMetrics
+            )
 
         fun Number.toSP(resources: Resources) = TypedValue.applyDimension(
             TypedValue.COMPLEX_UNIT_SP, this.toFloat(), resources.displayMetrics
