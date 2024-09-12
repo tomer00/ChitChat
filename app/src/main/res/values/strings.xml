@@ -24,4 +24,5 @@
     <string name="phone">Phone No</string>
     <string name="message_corners">Message corners</string>
     <string name="message_text_size">Message text size</string>
+    <string name="background_parallax_factor">Background parallax factor</string>
 </resources>

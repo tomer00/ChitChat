@@ -16,6 +16,7 @@ import com.tomer.chitchat.utils.qrProvider.AssetsProvider
 import com.tomer.chitchat.utils.qrProvider.BackgroundProvider
 import com.tomer.chitchat.utils.qrProvider.GradModel
 import kotlin.concurrent.thread
+import kotlin.math.roundToInt
 
 class DoodleView : View {
 
@@ -45,13 +46,23 @@ class DoodleView : View {
         isAntiAlias = true
     }
 
+    private var parallaxFactor = 4f
+    private var parallaxFactorMax = 6f
+    private var parallaxMaxBounds = 100f
+
+    private var initialX = 100f
+    private var initialY = 100f
+
+    private var actualX = 100f
+    private var actualY = 100f
+
     //endregion GLOBALS-->>>
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         if (w > bmpBg.width || h > bmpBg.height) {
-            thread {
-                val bmp = BackgroundProvider.getBackground(bgAsset, Point(w, h), isDark, context, color, gradModel)
+            thread(start = true, name = "Renderer", priority = Thread.MAX_PRIORITY) {
+                val bmp = BackgroundProvider.getBackground(bgAsset, Point(w + 200, h + 200), isDark, context, color, gradModel)
                 bmpBg.recycle()
                 bmpBg = bmp
                 postInvalidate()
@@ -61,18 +72,43 @@ class DoodleView : View {
     }
 
     override fun onDraw(canvas: Canvas) {
-        canvas.drawBitmap(bmpBg, 0f, 0f, paint)
+        canvas.drawBitmap(bmpBg, -actualX, -actualY, paint)
     }
 
     //region COMMU
 
-    fun setData(isDark: Boolean, @FloatRange(0.0, 1.0) alpha: Float, @DrawableRes bgAsset: Int, @ColorInt color: Int = Color.BLACK, gradModel: GradModel? = null) {
-        paint.alpha = 255f.times(alpha).toInt()
+    fun setData(
+        isDark: Boolean, @FloatRange(0.0, 1.0) alpha: Float, @DrawableRes bgAsset: Int,
+        @ColorInt color: Int = Color.BLACK, gradModel: GradModel? = null
+    ) {
+        paint.alpha = 255f.times(alpha).roundToInt()
         this.isDark = isDark
         this.bgAsset = bgAsset
         this.color = color
         this.gradModel = gradModel
         postInvalidate()
+    }
+
+    fun setParallaxFactor(fac: Float) {
+        parallaxFactor = fac
+        parallaxFactorMax = fac.times(1.5f)
+        parallaxMaxBounds = fac.times(25f).coerceAtMost(200f)
+        initialX = parallaxMaxBounds.times(.5f).also { actualX = it }
+        initialY = parallaxMaxBounds.times(.5f).also { actualY = it }
+    }
+
+    fun onSensorEvent(x: Float, y: Float) {
+        val tempActualX = initialX - (x * parallaxFactor)
+        val tempActualY = initialY + (y * parallaxFactor)
+
+        val addX = (tempActualX - actualX).coerceAtMost(parallaxFactorMax).coerceAtLeast(-parallaxFactorMax)
+        val addY = (tempActualY - actualY).coerceAtMost(parallaxFactorMax).coerceAtLeast(-parallaxFactorMax)
+
+        actualX = (addX + actualX).coerceAtMost(parallaxMaxBounds).coerceAtLeast(0f)
+        actualY = (addY + actualY).coerceAtMost(parallaxMaxBounds).coerceAtLeast(0f)
+
+        postInvalidate()
+
     }
 
     //endregion COMMU

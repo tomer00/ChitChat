@@ -2,6 +2,7 @@ package com.tomer.chitchat.repo.impl
 
 import com.tomer.chitchat.repo.RepoPersons
 import com.tomer.chitchat.room.Dao
+import com.tomer.chitchat.room.ModelPartnerPref
 import com.tomer.chitchat.room.ModelRoomPersons
 
 class RepoPersonRoom(
@@ -27,4 +28,7 @@ class RepoPersonRoom(
     override suspend fun getPersonByPhone(phoneNo: String): ModelRoomPersons? =
         room.getPerson(phoneNo)
 
+    override suspend fun getPersonPref(phoneNo: String) = room.getPersonPref(phoneNo).firstOrNull()
+
+    override suspend fun insertPersonPref(model: ModelPartnerPref) = room.insertPartnerPrefs(model)
 }

@@ -28,6 +28,7 @@ class SettingsMyPrefViewModel @Inject constructor(
     private val repoStorage: RepoStorage,
 ) : ViewModel() {
 
+    val pref = repoUtils.getPrefs()
     val phone: String = Utils.myPhone
 
     //region CURRENT PREF
@@ -36,7 +37,7 @@ class SettingsMyPrefViewModel @Inject constructor(
     val myPrefs: LiveData<MyPrefs> = _myPrefs
     fun setName(name: String) {
         viewModelScope.launch {
-            if (name.isEmpty()){
+            if (name.isEmpty()) {
                 flowEvents.emit(SettingEvents.ERROR_NAME to "")
                 return@launch
             }
@@ -44,10 +45,10 @@ class SettingsMyPrefViewModel @Inject constructor(
             if (isUpdated) {
                 _myPrefs.value?.name = name
                 repoUtils.savePrefs(repoUtils.getPrefs().also { it.name = name })
-                flowEvents.emit(Pair(SettingEvents.SHOW_TOAST,"Name updated..."))
+                flowEvents.emit(Pair(SettingEvents.SHOW_TOAST, "Name updated..."))
             } else {
-                flowEvents.emit(Pair(SettingEvents.UPDATE_PREF,""))
-                flowEvents.emit(Pair(SettingEvents.SHOW_TOAST,"Connection error"))
+                flowEvents.emit(Pair(SettingEvents.UPDATE_PREF, ""))
+                flowEvents.emit(Pair(SettingEvents.SHOW_TOAST, "Connection error"))
             }
 
         }
@@ -55,18 +56,18 @@ class SettingsMyPrefViewModel @Inject constructor(
 
     fun setAbout(about: String) {
         viewModelScope.launch {
-            if (about.isEmpty()){
+            if (about.isEmpty()) {
                 flowEvents.emit(SettingEvents.ERROR_ABOUT to "")
                 return@launch
             }
-            val isUpdated = retro.updateName(about).body().toString() == "Updated"
+            val isUpdated = retro.updateAbout(about).body().toString() == "Updated"
             if (isUpdated) {
                 _myPrefs.value?.about = about
                 repoUtils.savePrefs(repoUtils.getPrefs().also { it.about = about })
-                flowEvents.emit(Pair(SettingEvents.SHOW_TOAST,"About updated..."))
+                flowEvents.emit(Pair(SettingEvents.SHOW_TOAST, "About updated..."))
             } else {
-                flowEvents.emit(Pair(SettingEvents.UPDATE_PREF,""))
-                flowEvents.emit(Pair(SettingEvents.SHOW_TOAST,"Connection error"))
+                flowEvents.emit(Pair(SettingEvents.UPDATE_PREF, ""))
+                flowEvents.emit(Pair(SettingEvents.SHOW_TOAST, "Connection error"))
             }
 
         }
@@ -98,6 +99,11 @@ class SettingsMyPrefViewModel @Inject constructor(
     val corners: LiveData<Float> = _corners
     fun setProgCorners(value: Float) =
         _corners.postValue(value).also { repoUtils.savePrefs(repoUtils.getPrefs().also { it.msgItemCorners = value }) }
+
+    private val _parallax = MutableLiveData(pref.parallaxFactor)
+    val parallax: LiveData<Float> = _parallax
+    fun setParallax(value: Float) =
+        _parallax.postValue(value).also { repoUtils.savePrefs(repoUtils.getPrefs().also { it.parallaxFactor = value }) }
 
 
     //endregion PROGRESS
@@ -133,7 +139,6 @@ class SettingsMyPrefViewModel @Inject constructor(
     val flowEvents = MutableSharedFlow<Pair<SettingEvents, String>>()
 
     init {
-        val pref = repoUtils.getPrefs()
         _myPrefs.postValue(pref)
         _corners.postValue(pref.msgItemCorners)
         _textSize.postValue(pref.textSize)

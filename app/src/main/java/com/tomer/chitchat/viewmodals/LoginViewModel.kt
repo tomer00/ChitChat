@@ -2,7 +2,6 @@ package com.tomer.chitchat.viewmodals
 
 import android.graphics.Bitmap
 import android.net.Uri
-import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -171,7 +170,6 @@ class LoginViewModel @Inject constructor(
             }
 
             override fun onVerificationFailed(p0: FirebaseException) {
-                Log.e("TAG--", "onVerificationFailed: ", p0)
                 _codeSend.value = false
                 _loginProg.value = false
                 viewModelScope.launch { flowToasts.emit("Something went wrong...") }
@@ -196,14 +194,14 @@ class LoginViewModel @Inject constructor(
 
     fun login(name: String, bmp: Bitmap?) {
         _loginProg.postValue(true)
-        repo.savePrefs(MyPrefs(phone.value.toString(), name, "", 12f, 1f, 0))
         Utils.myName = name
         viewModelScope.launch {
             val res1 = async {
-                retro.updateName(name)
+                retro.updateName(name).body().toString()
             }
             if (bmp == null) {
                 res1.await()
+                repo.savePrefs(MyPrefs(phone.value.toString(), name, "", 12f, 18f, 0, 4f))
                 _loginProg.value = false
                 _done.postValue(true)
                 return@launch
@@ -213,6 +211,7 @@ class LoginViewModel @Inject constructor(
             }
             res2.await()
             res1.await()
+            repo.savePrefs(MyPrefs(phone.value.toString(), name, "", 12f, 18f, 0, 4f))
             _loginProg.postValue(false)
             _done.postValue(true)
         }
@@ -245,7 +244,6 @@ class LoginViewModel @Inject constructor(
                                     _loginProg.postValue(false)
                                 }
                             } catch (e: Exception) {
-                                Log.e("TAG--", "signInWithPhoneAuthCredential: ", e)
                                 _loginProg.postValue(false)
                             }
                         }

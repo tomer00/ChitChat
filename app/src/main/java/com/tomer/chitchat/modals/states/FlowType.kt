@@ -7,6 +7,7 @@ enum class FlowType {
     DOWNLOAD_SUCCESS,
     DOWNLOAD_FAILS,
     RELOAD_RV,
+    SET_PREFS,
 
     SERVER_REC,
     PARTNER_REC,

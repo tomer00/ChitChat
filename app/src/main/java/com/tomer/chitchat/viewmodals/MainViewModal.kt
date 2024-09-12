@@ -1,6 +1,5 @@
 package com.tomer.chitchat.viewmodals
 
-import android.util.Log
 import androidx.core.text.isDigitsOnly
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -295,7 +294,6 @@ class MainViewModal @Inject constructor(
         viewModelScope.launch {
             val needTobeDownload = mutableListOf<Pair<Int, String>>()
             val per = repoPersons.getAllPersons().map { it.toUi(oldList, needTobeDownload) }
-            Log.d("TAG--", "loadPersons: $per")
             _persons.postValue(per)
             for (i in needTobeDownload) {
                 async {
@@ -309,5 +307,8 @@ class MainViewModal @Inject constructor(
             }
         }
     }
+
+    fun isNameSet() = repoUtils.getPrefs().name.isEmpty()
+
     //endregion LOAD PERSON DATA
 }

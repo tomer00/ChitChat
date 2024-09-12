@@ -1,5 +1,6 @@
 package com.tomer.chitchat.repo
 
+import com.tomer.chitchat.room.ModelPartnerPref
 import com.tomer.chitchat.room.ModelRoomPersons
 
 interface RepoPersons {
@@ -9,5 +10,9 @@ interface RepoPersons {
     suspend fun deletePersonById(phoneNo: String)
     suspend fun updatePerson(personRoom: ModelRoomPersons)
     suspend fun getPersonByPhone(phoneNo:String) : ModelRoomPersons?
+
+
+    suspend fun getPersonPref(phoneNo: String) : ModelPartnerPref?
+    suspend fun insertPersonPref(model: ModelPartnerPref)
 
 }

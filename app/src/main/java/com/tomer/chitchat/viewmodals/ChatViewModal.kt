@@ -24,6 +24,7 @@ import com.tomer.chitchat.repo.RepoPersons
 import com.tomer.chitchat.repo.RepoRelations
 import com.tomer.chitchat.repo.RepoStorage
 import com.tomer.chitchat.repo.RepoUtils
+import com.tomer.chitchat.room.ModelPartnerPref
 import com.tomer.chitchat.room.ModelRoomMessage
 import com.tomer.chitchat.room.ModelRoomMessageBuilder
 import com.tomer.chitchat.room.ModelRoomPersonRelation
@@ -137,7 +138,7 @@ class ChatViewModal @Inject constructor(
 
     //<(10)toPhone><(7)MSG_TYPE><DATA>
     fun sendMsg(msg: Message) {
-        webSocket.sendMessage("${Utils.currentPartner?.partnerId?:"0000000000"}$msg")
+        webSocket.sendMessage("${Utils.currentPartner?.partnerId ?: "0000000000"}$msg")
     }
 
     fun sendChatMsg(msg: ModelMsgSocket, replyBytes: ByteArray?) {
@@ -195,7 +196,7 @@ class ChatViewModal @Inject constructor(
 
     //region ACTIVITY COMM
 
-    fun textChanged(){
+    fun textChanged() {
         webSocket.typing()
     }
 
@@ -296,13 +297,19 @@ class ChatViewModal @Inject constructor(
         return builder.build()
     }
 
-    fun openChat(phone: String, seletedIds: MutableList<Long>) {
+    var partnerPref: ModelPartnerPref? = null
+
+    fun openChat(phone: String, selectedIds: MutableList<Long>) {
+        viewModelScope.launch {
+            partnerPref = repoPersons.getPersonPref(phone)
+            flowMsgs.emit(MsgsFlowState.ChangeGif(typeF = FlowType.SET_PREFS, phone = phone))
+        }
         if (Utils.currentPartner?.partnerId == phone) {
             canSendMsg = Utils.currentPartner?.isAccepted ?: false
             viewModelScope.launch { flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone)) }
             return
         }
-        seletedIds.sort()
+        selectedIds.sort()
         Utils.currentPartner = repoRelations.getRelation(phone)
         canSendMsg = Utils.currentPartner?.isAccepted ?: false
         cryptoService.setCurrentPartner(phone)
@@ -323,14 +330,14 @@ class ChatViewModal @Inject constructor(
                     }
                 }
                 job.join()
-                if (seletedIds.isEmpty())
+                if (selectedIds.isEmpty())
                     for (a in arrUI) {
                         if (a != null)
                             chatMsgs.add(a)
                     }
                 else for (a in arrUI) {
                     if (a == null) continue
-                    val pos = seletedIds.binarySearch(a.id)
+                    val pos = selectedIds.binarySearch(a.id)
                     if (pos > -1) a.isSelected = true
                     chatMsgs.add(a)
                 }

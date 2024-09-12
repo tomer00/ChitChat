@@ -6,6 +6,10 @@ import android.animation.ValueAnimator
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Color
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
@@ -57,6 +61,7 @@ import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.EmojisHashingUtils
 import com.tomer.chitchat.utils.Utils
 import com.tomer.chitchat.utils.Utils.Companion.getDpLink
+import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
 import com.tomer.chitchat.utils.Utils.Companion.isLandscapeOrientation
 import com.tomer.chitchat.utils.Utils.Companion.px
 import com.tomer.chitchat.utils.Utils.Companion.showKeyBoard
@@ -73,7 +78,7 @@ import java.util.LinkedList
 
 @SuppressLint("CheckResult")
 @AndroidEntryPoint
-class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, View.OnClickListener {
+class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, View.OnClickListener, SensorEventListener {
 
     private val b by lazy { ActivityChatBinding.inflate(layoutInflater) }
     private val vma: ChatActivityVm by viewModels()
@@ -111,6 +116,24 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
     }
     private var lastSeenMillis = -1L
 
+    //region PARALLAX SENSOR
+
+    private val sensorManager by lazy { getSystemService(SENSOR_SERVICE) as SensorManager }
+    private val accelerometer by lazy { sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) }
+
+    override fun onSensorChanged(event: SensorEvent) {
+        if (event.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
+            val x = event.values[0] // Tilt on the X-axis
+            val y = event.values[1] // Tilt on the Y-axis
+            b.imgBg.onSensorEvent(x, y)
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+    }
+
+    //endregion PARALLAX SENSOR
+
     //region MEDIA IO
 
 
@@ -142,12 +165,16 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         super.onResume()
         vm.isChatActivityVisible = true
         vm.clearUnreadCount()
+        if (vma.myPref.parallaxFactor > 0f)
+            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
     }
 
     override fun onPause() {
         super.onPause()
         vm.isChatActivityVisible = false
         vma.scrollPosition.postValue(ll.findFirstVisibleItemPosition())
+        if (vma.myPref.parallaxFactor > 0f)
+            sensorManager.unregisterListener(this)
     }
 
     override fun onBackPressed() {
@@ -231,6 +258,10 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 //        if (this.isDarkModeEnabled()) b.imgBg.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.bg_dark)).also {
 //            b.imgBg.alpha = 0.1f
 //        }
+        b.imgBg.run {
+            if (vma.myPref.parallaxFactor > 0f)
+                setParallaxFactor(vma.myPref.parallaxFactor)
+        }
 
         b.etMsg.setKeyboardInputCall { info ->
             if (!vm.canSendMsg) return@setKeyboardInputCall
@@ -239,7 +270,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         }
 
         adap = ChatAdapter(this, this, vm.chatMsgs)
-        adap.setValues(vma.myPref.textSize,vma.myPref.msgItemCorners.px, GradModel(0,ContextCompat.getColor(this,R.color.primary),ContextCompat.getColor(this,R.color.primary_dark)))
+        adap.setValues(vma.myPref.textSize, vma.myPref.msgItemCorners.px, GradModel(0, ContextCompat.getColor(this, R.color.primary), ContextCompat.getColor(this, R.color.primary_dark)))
         b.rvMsg.adapter = adap
 
         ll = LinearLayoutManager(this)
@@ -620,8 +651,9 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                     .setDuration(220)
                     .start()
             }
-            b.layDetail.id->{
-                startActivity(Intent(this,PartnerPrefActivity::class.java))
+
+            b.layDetail.id -> {
+                startActivity(Intent(this, PartnerPrefActivity::class.java))
             }
         }
     }
@@ -835,6 +867,13 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             FlowType.RELOAD_RV -> {
                 adap.notifyDataSetChanged()
                 if (vm.chatMsgs.isNotEmpty()) showEmojiViaFlow(vm.chatMsgs.first)
+            }
+
+            FlowType.SET_PREFS -> {
+                b.imgBg.run {
+                    val mod = vm.partnerPref ?: return
+                    setData(isDarkModeEnabled(), mod.background.alpha, mod.backgroundAsset, mod.background.color, mod.background.grad)
+                }
             }
 
             FlowType.SEND_NEW_CONNECTION_REQUEST -> {

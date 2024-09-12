@@ -99,4 +99,14 @@ interface Dao {
     fun insertMedia(media: ModalMediaUpload)
 
     //endregion TABLE MEDIA
+
+    //region PARTNER_PREFS
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    fun insertPartnerPrefs(personPref: ModelPartnerPref)
+
+    @Query("select * from partner_prefs where phone=:phoneNo")
+    fun getPersonPref(phoneNo: String): List<ModelPartnerPref>
+
+    //endregion PARTNER_PREFS
 }

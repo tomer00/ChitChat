@@ -2,10 +2,15 @@ package com.tomer.chitchat.ui.activities
 
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.transition.Transition.TransitionListener
+import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -51,7 +56,7 @@ import kotlin.random.Random
 import kotlin.random.nextInt
 
 @AndroidEntryPoint
-class SettingsActivity : AppCompatActivity(), View.OnClickListener {
+class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventListener {
 
     private val b by lazy { ActivitySettingsBinding.inflate(layoutInflater) }
     private val vm: SettingsMyPrefViewModel by viewModels()
@@ -79,7 +84,43 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener {
         true
     }
 
+    //region PARALAX SENSOR
+
+    private var isSensorRegisterd = false
+    private val sensorManager by lazy { getSystemService(SENSOR_SERVICE) as SensorManager }
+    private val accelerometer by lazy { sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) }
+
+    override fun onSensorChanged(event: SensorEvent) {
+        if (event.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
+            val x = event.values[0] // Tilt on the X-axis
+            val y = event.values[1] // Tilt on the Y-axis
+            b.imgBg.onSensorEvent(x, y)
+        }
+    }
+
+    override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {
+    }
+
+    //endregion PARALAX SENSOR
+
     //region LIFECYCLE
+
+    private fun registerLis() {
+        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
+        isSensorRegisterd = true
+    }
+
+    override fun onResume() {
+        super.onResume()
+        if (vm.pref.parallaxFactor > 0f)
+            registerLis()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(this)
+        isSensorRegisterd = false
+    }
 
     override fun onBackPressed() {
 
@@ -142,7 +183,6 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener {
 
             }
         )
-
         b.apply {
             btBack.setOnClickListener(this@SettingsActivity)
             btShowQr.setOnClickListener(this@SettingsActivity)
@@ -161,6 +201,9 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener {
             }
             sliderCorners.addOnChangeListener { _, value, _ ->
                 vm.setProgCorners(value)
+            }
+            sliderParallax.addOnChangeListener { _, value, _ ->
+                vm.setParallax(value)
             }
         }
 
@@ -242,6 +285,24 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener {
             b2.msgBg.setData(true, it.px, ContextCompat.getColor(this, R.color.softBg))
 
             b1.msgBg.setData(false, it.px, ContextCompat.getColor(this, R.color.primary))
+        }
+
+        b.switchParallax.setOnCheckedChangeListener { _, isChecked -> vm.setParallax(if (isChecked) 4f else 0f) }
+        vm.parallax.observe(this) { fac ->
+            if (fac == 0f) {
+                b.switchParallax.isChecked = false
+                b.sliderParallax.isEnabled = false
+                sensorManager.unregisterListener(this)
+                isSensorRegisterd = false
+                return@observe
+            }
+
+            if (!isSensorRegisterd)
+                registerLis()
+            b.switchParallax.isChecked = true
+            b.sliderParallax.isEnabled = true
+            b.sliderParallax.value = fac.also { Log.d("TAG--", "onCreate: ${it.toString()}") }
+            b.imgBg.setParallaxFactor(fac)
         }
 
         lifecycleScope.launch {
@@ -389,7 +450,7 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener {
         b1.msgTv.setTextColor(ContextCompat.getColor(this, R.color.white))
         b1.contTime.gravity = Gravity.START
         b1.imgMsgStatus.visibility = View.GONE
-        b1.msgBg.setData(false, 12f.px,ContextCompat.getColor(this, R.color.primary))
+        b1.msgBg.setData(false, 12f.px, ContextCompat.getColor(this, R.color.primary))
 
         "Slide to change text size".also { b1.msgTv.text = it }
         b1.emojiTv.visibility = View.GONE
@@ -408,8 +469,7 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener {
         b2.msgTv.setTextColor(ContextCompat.getColor(this, R.color.fore))
         b2.contTime.gravity = Gravity.END
         b2.imgMsgStatus.visibility = View.GONE
-        val colSoft =
-        b2.msgBg.setData(false, 12f.px,ContextCompat.getColor(this, R.color.softBg))
+        b2.msgBg.setData(false, 12f.px, ContextCompat.getColor(this, R.color.softBg))
 
         "Adjust corner radius".also { b2.msgTv.text = it }
         b2.emojiTv.visibility = View.GONE
