@@ -327,7 +327,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             btMenu.setOnClickListener(this@ChatActivity)
             cardFlipper.setOnClickListener(this@ChatActivity)
             layDetail.setOnClickListener(this@ChatActivity)
-            tvPartnerName.text = Utils.currentPartner!!.partnerName.ifEmpty { Utils.currentPartner!!.partnerId }
+            tvPartnerName.text = (vm.partnerPref?.name ?: "").ifEmpty { vma.phone }
             Glide.with(this@ChatActivity)
                 .asBitmap()
                 .apply(roundOptions)
@@ -346,7 +346,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                 .error(R.drawable.def_avatar)
                 .load(Utils.currentPartner!!.partnerId.getDpLink())
                 .into(imgDpCard)
-            tvPartnerNameCard.text = Utils.currentPartner!!.partnerName.ifEmpty { Utils.currentPartner!!.partnerId }
+            tvPartnerNameCard.text = (vm.partnerPref?.name ?: "").ifEmpty { vma.phone }
 
             if (Utils.currentPartner!!.isConnSent) {
 
@@ -896,7 +896,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                             .circleCrop()
                             .load(Utils.currentPartner!!.partnerId.getDpLink())
                             .into(imgDpCard)
-                        tvPartnerNameCard.text = Utils.currentPartner!!.partnerName.ifEmpty { Utils.currentPartner!!.partnerId }
+                        tvPartnerNameCard.text = (vm.partnerPref?.name ?: "").ifEmpty { vma.phone }
 
                         "sending you connection request\nDo you also want to connect?"
                             .also { tvStatusCard.text = it }
@@ -991,7 +991,10 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                         putExtra("file", msg.fileGif?.absolutePath)
                         putExtra("isGif", msg.type == FlowType.OPEN_GIF)
                         putExtra("isSent", chatMsg.isSent)
-                        putExtra("time", chatMsg.timeText)
+                        if (msg.msgId == -1L)
+                            putExtra("timeText", chatMsg.timeText)
+                        else putExtra("timeMillis", msg.msgId)
+                        putExtra("partnerName", (vm.partnerPref?.name ?: "").ifEmpty { vma.phone })
                     }, 1001, options.toBundle())
                 }
             }
@@ -1078,7 +1081,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         }
         val mod = vm.chatMsgs.getOrNull(pos) ?: return
         msgIdForImageShow = mod.id
-        vmAssets.openImage(mod.mediaFileName ?: "img", mod.msgType == MsgMediaType.GIF)
+        vmAssets.openImage(mod.mediaFileName ?: "img", mod.msgType == MsgMediaType.GIF, mod.id)
     }
 
     private fun openFileInAssociatedApp(pos: Int) {

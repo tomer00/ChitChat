@@ -120,6 +120,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="20dp"
+        android:clickable="true"
+        android:background="@drawable/ripple_round_bg"
         android:contentDescription="@string/app_name"
         app:cardBackgroundColor="@color/primary"
         app:cardCornerRadius="30dp"

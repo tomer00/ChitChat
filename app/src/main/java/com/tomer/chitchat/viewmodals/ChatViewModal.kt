@@ -112,7 +112,7 @@ class ChatViewModal @Inject constructor(
             webSocket.flowMsgs.collectLatest { msg ->
                 if (Utils.currentPartner?.partnerId.toString() == msg.fromUser) {
                     if (!isChatActivityVisible && msg.type == FlowType.MSG)
-                        notificationService.showNewMessageNotification(msg.data, msg.fromUser, repoRelations.getRelation(msg.fromUser)?.partnerName ?: msg.fromUser)
+                        notificationService.showNewMessageNotification(msg.data, msg.fromUser, repoPersons.getPersonPref(msg.fromUser)?.name ?: msg.fromUser)
                     if (isChatActivityVisible && msg.type == FlowType.MSG)
                         clearUnreadCount()
 
@@ -300,14 +300,17 @@ class ChatViewModal @Inject constructor(
     var partnerPref: ModelPartnerPref? = null
 
     fun openChat(phone: String, selectedIds: MutableList<Long>) {
+        if (Utils.currentPartner?.partnerId == phone) {
+            canSendMsg = Utils.currentPartner?.isAccepted ?: false
+            viewModelScope.launch {
+                flowMsgs.emit(MsgsFlowState.ChangeGif(typeF = FlowType.SET_PREFS, phone = phone))
+                flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone))
+            }
+            return
+        }
         viewModelScope.launch {
             partnerPref = repoPersons.getPersonPref(phone)
             flowMsgs.emit(MsgsFlowState.ChangeGif(typeF = FlowType.SET_PREFS, phone = phone))
-        }
-        if (Utils.currentPartner?.partnerId == phone) {
-            canSendMsg = Utils.currentPartner?.isAccepted ?: false
-            viewModelScope.launch { flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone)) }
-            return
         }
         selectedIds.sort()
         Utils.currentPartner = repoRelations.getRelation(phone)
@@ -381,7 +384,7 @@ class ChatViewModal @Inject constructor(
                         BigInteger(cryptoService.checkForKeyAndGenerateIfNot(Utils.currentPartner!!.partnerId).tempKeyMy, 16), CipherUtils.P
                     ).toString(16)
                 )
-            )
+            ).also { canSendMsg = true }
         else sendMsg(RejectConnection())
 
         viewModelScope.launch {

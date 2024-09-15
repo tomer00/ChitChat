@@ -24,7 +24,8 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.tomer.chitchat.databinding.ActivityImageViewBinding
-import com.tomer.chitchat.utils.Utils
+import com.tomer.chitchat.utils.AlertDialogBuilder
+import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
@@ -172,11 +173,24 @@ class ImageViewActivity : AppCompatActivity() {
         val isSent = intent.getBooleanExtra("isSent", false)
         val file = File(intent.getStringExtra("file") ?: "")
 
-        b.tvDetails.text = "${intent.getStringExtra("time")}"
+        if (intent.hasExtra("timeText"))
+            b.tvDetails.text = intent.getStringExtra("timeText")
+        else {
+            val time = intent.getLongExtra("timeMillis", System.currentTimeMillis())
+            val dayDate = ConversionUtils.getRelativeTime(time).takeIf { !it.contains(':') } ?: "Today"
+            val timeToday = ConversionUtils.millisToTimeText(time)
+            "$dayDate • $timeToday".also { b.tvDetails.text = it }
+        }
 
         b.btDelete.setOnClickListener {
-            onBackPressed()
-            setResult(RESULT_OK)
+            AlertDialogBuilder(this)
+                .setTitle("Delete file?")
+                .setDescription("Do you really want to delete this file?")
+                .setPositiveButton("Delete for me") {
+                    onBackPressed()
+                    setResult(RESULT_OK)
+                }
+                .show()
         }
         b.btBack.setOnClickListener {
             onBackPressed()
@@ -189,7 +203,7 @@ class ImageViewActivity : AppCompatActivity() {
                     b.root.post { Toast.makeText(this, "File saved to Gallery...", Toast.LENGTH_SHORT).show() }
                 }
             }
-            b.tvPartnerName.text = (Utils.currentPartner?.partnerName ?: "").ifEmpty { Utils.currentPartner?.partnerId }
+            b.tvPartnerName.text = intent.getStringExtra("partnerName").toString()
         }
         b.btSaveToGallery.visibility = if (isSent) View.GONE else View.VISIBLE
         val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")

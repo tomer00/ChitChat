@@ -79,16 +79,6 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
-        setContentView(b.root)
-        if (isLandscapeOrientation()) {
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
-                window.insetsController?.hide(WindowInsets.Type.statusBars())
-                return
-            }
-            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            actionBar?.hide()
-        }
         if (FirebaseAuth.getInstance().currentUser == null) {
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
@@ -100,8 +90,24 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             finish()
             return
         }
+        window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
+        setContentView(b.root)
+        if (isLandscapeOrientation()) {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+                window.insetsController?.hide(WindowInsets.Type.statusBars())
+                return
+            }
+            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+            actionBar?.hide()
+        }
         Utils.myPhone = FirebaseAuth.getInstance().currentUser?.phoneNumber?.substring(3) ?: ""
         if (isDarkModeEnabled()) b.tvAppName.setTextColor(ContextCompat.getColor(this, R.color.white))
+        if (intent.action == Intent.ACTION_VIEW) {
+            val uri = intent.data
+            if (uri != null)
+                b.root.post { connectFromQrData(uri.toString()) }
+        }
+
 //        Glide.with(this)
 //            .asBitmap()
 //            .circleCrop()
@@ -407,8 +413,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     private fun callBack() = BarcodeCallback { result ->
         barcodeView.pause()
         qrDia.dismiss()
-        if (!result.text.isDigitsOnly()) return@BarcodeCallback
-        viewModal.connectNew(result.text, true, false)
+        connectFromQrData(result.text.toString())
         b.layNewNumber.visibility = View.GONE
         b.imgBarcode.pauseAnimation()
         b.imgFab.visibility = View.VISIBLE
@@ -421,6 +426,13 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
     //endregion BARCODE CALLBACK
 
+    private fun connectFromQrData(data: String) {
+        Log.d("TAG--", "connectFromQrData: $data")
+        if (data.length != 17) return
+        val phoneNo = data.substring(7)
+        if (!phoneNo.isDigitsOnly()) return
+        viewModal.connectNew(phoneNo, openNextActivity = true, mandatoryConnect = false)
+    }
 
     //region Handel FLOW MSGS
 

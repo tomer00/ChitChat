@@ -9,6 +9,7 @@ import com.tomer.chitchat.assets.RepoAssets
 import com.tomer.chitchat.crypto.CipherUtils
 import com.tomer.chitchat.crypto.CryptoService
 import com.tomer.chitchat.modals.msgs.NewConnection
+import com.tomer.chitchat.modals.prefs.PartnerPrefBuilder
 import com.tomer.chitchat.modals.rv.PersonModel
 import com.tomer.chitchat.modals.states.FlowType
 import com.tomer.chitchat.modals.states.MsgStatus
@@ -50,7 +51,7 @@ class MainViewModal @Inject constructor(
     private val webSocket: WebSocketHandler
 ) : ViewModel() {
 
-    //region WEBSOCK FLOW
+    //region WEBSOCKET FLOW
 
     fun closeWebSocket() {
         try {
@@ -63,13 +64,13 @@ class MainViewModal @Inject constructor(
         if (!mandatoryConnect) {
             viewModelScope.launch {
                 if (!phone.isDigitsOnly()) return@launch
-                val oldRel = repoRelations.getRelation(phone)
-                if (oldRel == null) connectNew(phone, openNextActivity, true)
+                if (repoRelations.getRelation(phone) == null) connectNew(phone, openNextActivity, true)
                 else {
                     val oldPersons = repoPersons.getPersonByPhone(phone)
+                    val oldPerf = repoPersons.getPersonPref(phone)
                     if (oldPersons == null)
                         ModelRoomPersons(
-                            phone, oldRel.partnerName,
+                            phone, oldPerf?.name ?: "",
                             MsgMediaType.TEXT, "", -1L,
                             System.currentTimeMillis(),
                             lastSeenMillis = System.currentTimeMillis(),
@@ -84,8 +85,7 @@ class MainViewModal @Inject constructor(
         }
         viewModelScope.launch {
             if (!phone.isDigitsOnly()) return@launch
-            var oldRel = repoRelations.getRelation(phone)
-            val relation = ModelRoomPersonRelation(phone, oldRel?.partnerName ?: phone, isConnSent = true, isAccepted = false, isRejected = false)
+            val relation = ModelRoomPersonRelation(phone, isConnSent = true, isAccepted = false, isRejected = false)
             Utils.currentPartner = relation
             cryptoService.setCurrentPartner(phone)
 
@@ -94,20 +94,17 @@ class MainViewModal @Inject constructor(
                 flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.OPEN_NEW_CONNECTION_ACTIVITY, phone))
             else flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.INCOMING_NEW_CONNECTION_REQUEST, phone))
 
+            val oldPref = repoPersons.getPersonPref(phone) ?: PartnerPrefBuilder(phone, phone).build()
             //getting Name from server
-            oldRel = relation
-            val name = if (oldRel.partnerName == oldRel.partnerId) {
+            val name = if (oldPref.name == phone) {
                 try {
-                    retro.getName(phone).body() ?: phone
+                    retro.getName(phone).body() ?: throw Exception()
                 } catch (e: Exception) {
                     phone
                 }
-            } else oldRel.partnerName
-            val olRel = repoRelations.getRelation(phone)
-            if (olRel != null) {
-                olRel.partnerName = name
-                repoRelations.saveRelation(olRel)
-            }
+            } else oldPref.name
+            oldPref.name = name
+            repoPersons.insertPersonPref(oldPref)
             ModelRoomPersons(
                 phone, name,
                 MsgMediaType.TEXT, "Connection request sent...", -1L,
@@ -147,7 +144,7 @@ class MainViewModal @Inject constructor(
         }
     }
 
-    //endregion WEBSOCK FLOW
+    //endregion WEBSOCKET FLOW
 
     private val _persons = MutableLiveData<List<PersonModel>>()
     val persons: LiveData<List<PersonModel>> = _persons

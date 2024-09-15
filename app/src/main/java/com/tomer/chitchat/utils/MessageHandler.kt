@@ -4,6 +4,7 @@ import android.util.Log
 import com.google.gson.Gson
 import com.tomer.chitchat.crypto.CryptoService
 import com.tomer.chitchat.modals.msgs.ModelMsgSocket
+import com.tomer.chitchat.modals.prefs.PartnerPrefBuilder
 import com.tomer.chitchat.modals.states.FlowType
 import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.modals.states.MsgsFlowState
@@ -24,7 +25,7 @@ class MessageHandler(
     private val repoMsg: RepoMessages,
     private val repoPersons: RepoPersons,
     private val crypto: CryptoService,
-    private val notiService: NotificationService,
+    private val notificationService: NotificationService,
     private val repoRelation: RepoRelations,
     private val repoStorage: RepoStorage,
     private val callBack: (msg: MsgsFlowState) -> Unit
@@ -50,8 +51,7 @@ class MessageHandler(
                     val currentId = ConversionUtils.fromBase64(text.substring(17, 29))
                     callBack(MsgsFlowState.IOFlowState(currentId, FlowType.SEND_PR, fromUser))
                     handleMsgCombine(fromUser, currentId, mod, true)
-                } catch (e: Exception) {
-                    Log.e("TAG--", "handelMsg: ", e)
+                } catch (_: Exception) {
                 }
             }
 
@@ -132,7 +132,7 @@ class MessageHandler(
             }
 
             "*MSG-B*" -> {
-                val msgs = text.substring(17).split(",-,")
+                val messages = text.substring(17).split(",-,")
                     .parallelStream()
                     .map { item ->
                         val id = ConversionUtils.fromBase64(item.substring(0, 12))
@@ -140,7 +140,7 @@ class MessageHandler(
                         Pair(id, gson.fromJson(actualDecData, ModelMsgSocket::class.java))
                     }.collect(Collectors.toList())
                 var isNeedToSendNewConn = false
-                for (i in msgs) {
+                for (i in messages) {
                     if (i.second == null) {
                         isNeedToSendNewConn = true
                         break
@@ -149,7 +149,7 @@ class MessageHandler(
                 if (isNeedToSendNewConn) {
                     callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.SEND_NEW_CONNECTION_REQUEST, fromUser))
                     val sb = StringBuilder()
-                    msgs.forEach {
+                    messages.forEach {
                         sb.append(it.first)
                         sb.append(',')
                     }
@@ -160,9 +160,9 @@ class MessageHandler(
                     return
                 }
 
-                msgs.sortWith { o1, o2 -> o1.second.timeMillis.compareTo(o2.second.timeMillis) }
+                messages.sortWith { o1, o2 -> o1.second.timeMillis.compareTo(o2.second.timeMillis) }
                 val sb = StringBuilder()
-                msgs.forEach {
+                messages.forEach {
                     sb.append(it.first)
                     sb.append(',')
                 }
@@ -171,9 +171,9 @@ class MessageHandler(
                 uiB.setMsg(sb.toString())
                 callBack(MsgsFlowState.IOFlowState(0L, FlowType.SEND_BULK_REC, fromUser, uiB.build()))
 
-                for (i in 0..msgs.size - 2) handleMsgCombine(fromUser, msgs[i].first, msgs[i].second, false)
-                handleMsgCombine(fromUser, msgs[msgs.lastIndex].first, msgs[msgs.lastIndex].second, true)
-                Log.d("TAG--", "Handeling BULK MSg: $msgs")
+                for (i in 0..messages.size - 2) handleMsgCombine(fromUser, messages[i].first, messages[i].second, false)
+                handleMsgCombine(fromUser, messages[messages.lastIndex].first, messages[messages.lastIndex].second, true)
+                Log.d("TAG--", "Handling BULK MSg: $messages")
             }
 
             "ACK-PRB" -> {
@@ -204,12 +204,13 @@ class MessageHandler(
             "*-NEW-*" -> {
                 val sts = text.substring(17).split(",-,".toRegex(), 2)
                 crypto.updateKeyAndGenerateFullKey(sts[0], fromUser)
-                notiService.showNewUserNotification(fromUser, sts[1])
+                notificationService.showNewUserNotification(fromUser, sts[1])
                 repoRelation.saveRelation(
                     ModelRoomPersonRelation(
-                        fromUser, sts[1], isConnSent = false, isAccepted = false, isRejected = false
+                        fromUser, isConnSent = false, isAccepted = false, isRejected = false
                     )
                 )
+                repoPersons.getPersonPref(fromUser) ?: PartnerPrefBuilder(fromUser, sts[1]).build().also { repoPersons.insertPersonPref(it) }
                 repoPersons.insertPerson(
                     ModelRoomPersons(
                         fromUser, sts[1],
@@ -234,12 +235,13 @@ class MessageHandler(
                 crypto.updateKeyAndGenerateFullKey(sts[0], fromUser)
                 repoRelation.saveRelation(
                     ModelRoomPersonRelation(
-                        fromUser, sts[1], isConnSent = true, isAccepted = true, isRejected = false
+                        fromUser, isConnSent = true, isAccepted = true, isRejected = false
                     )
                 )
+                val oldPer = repoPersons.getPersonPref(fromUser) ?: PartnerPrefBuilder(fromUser, sts[1]).build().also { repoPersons.insertPersonPref(it) }
                 repoPersons.insertPerson(
                     ModelRoomPersons(
-                        fromUser, sts[1],
+                        fromUser, oldPer.name,
                         MsgMediaType.TEXT, "Request accepted...", -1L,
                         System.currentTimeMillis(),
                         lastSeenMillis = System.currentTimeMillis(),
@@ -252,10 +254,9 @@ class MessageHandler(
             "*F-REJ*" -> {
                 callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.REQ_REJECTED, fromUser))
                 val oldPer = repoPersons.getPersonByPhone(fromUser)
-                val name = repoRelation.getRelation(fromUser)?.partnerName ?: fromUser
                 if (oldPer != null)
                     ModelRoomPersons(
-                        fromUser, name,
+                        fromUser, oldPer.name,
                         MsgMediaType.TEXT, "Request rejected...", -1L,
                         System.currentTimeMillis(),
                         lastSeenMillis = oldPer.lastSeenMillis,
@@ -264,7 +265,7 @@ class MessageHandler(
                     ).also { repoPersons.insertPerson(it) }
                 repoRelation.saveRelation(
                     ModelRoomPersonRelation(
-                        fromUser, name, isConnSent = true, isAccepted = false, isRejected = true
+                        fromUser, isConnSent = true, isAccepted = false, isRejected = true
                     )
                 )
             }
@@ -312,7 +313,6 @@ class MessageHandler(
 
                         }
                     } catch (_: Exception) {
-
                     }
 
             }
@@ -331,6 +331,7 @@ class MessageHandler(
                         builderRoom.setBytes(ByteArray(2))
                     }
                 }
+
                 MsgMediaType.FILE -> builderRoom.setBytes(ByteArray(2))
                 else -> {}
             }
@@ -346,7 +347,7 @@ class MessageHandler(
             }
             val per = repoPersons.getPersonByPhone(fromUser) ?: ModelRoomPersons(
                 phoneNo = fromUser,
-                name = repoRelation.getRelation(fromUser)?.partnerName ?: fromUser,
+                name = repoPersons.getPersonPref(fromUser)?.name ?: fromUser,
                 mediaType = mod.msgType,
                 lastMsg = lastMsg,
                 lastMsgId = id,
@@ -370,8 +371,7 @@ class MessageHandler(
                 msgStatus = MsgStatus.RECEIVED
             ).also { repoPersons.insertPerson(it) }
             callBack(MsgsFlowState.ChatMessageFlowState(builderRoom.buildUI(), fromUser, true))
-        } catch (e: Exception) {
-            Log.e("TAG--", "handelMsg: ", e)
+        } catch (_: Exception) {
         }
     }
 }

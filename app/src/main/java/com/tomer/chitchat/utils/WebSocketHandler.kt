@@ -45,7 +45,10 @@ class WebSocketHandler(
             flowMsgs.emit(msg)
         }
         if (msg.type == FlowType.MSG && Utils.currentPartner?.partnerId.toString() != msg.fromUser) {
-            notificationService.showNewMessageNotification(msg.data, msg.fromUser, repoRelations.getRelation(msg.fromUser)?.partnerName ?: msg.fromUser)
+            CoroutineScope(Dispatchers.IO).launch {
+                val name = repoPersons.getPersonPref(msg.fromUser)?.name ?: msg.fromUser
+                notificationService.showNewMessageNotification(msg.data, msg.fromUser, name)
+            }
         } else if (msg.type == FlowType.SEND_PR)
             sendMessage("${msg.fromUser}*ACK-PR${msg.msgId}")
         else if (msg.type == FlowType.SEND_BULK_REC)

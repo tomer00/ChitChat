@@ -62,8 +62,9 @@ class FirebaseNotificationReceiver : FirebaseMessagingService() {
             MessageHandler(gson, repoMsgs, repoPersons, cryptoService, notificationService, repoRelations, repoStorage) { msg ->
                 Log.d("TAG--", "NOTIFICATION MANAGER: $msg")
                 if (msg.type == FlowType.MSG) {
-                    val msgmod = msg.data ?: return@MessageHandler
-                    notificationService.showNewMessageNotification(msgmod, msg.fromUser, repoRelations.getRelation(msg.fromUser)?.partnerName ?: msg.fromUser)
+                    val messageModel = msg.data ?: return@MessageHandler
+                    val name = repoPersons.getPersonPref(msg.fromUser)?.name ?: msg.fromUser
+                    notificationService.showNewMessageNotification(messageModel, msg.fromUser, name)
                 } else if (msg.type == FlowType.SEND_PR) {
                     CoroutineScope(Dispatchers.IO).launch {
                         try {

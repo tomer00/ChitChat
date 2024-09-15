@@ -10,7 +10,6 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.transition.Transition.TransitionListener
-import android.util.Log
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.View
@@ -301,7 +300,7 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
                 registerLis()
             b.switchParallax.isChecked = true
             b.sliderParallax.isEnabled = true
-            b.sliderParallax.value = fac.also { Log.d("TAG--", "onCreate: ${it.toString()}") }
+            b.sliderParallax.value = fac
             b.imgBg.setParallaxFactor(fac)
         }
 

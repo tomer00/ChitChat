@@ -47,7 +47,6 @@ class DoodleView : View {
     }
 
     private var parallaxFactor = 4f
-    private var parallaxFactorMax = 6f
     private var parallaxMaxBounds = 100f
 
     private var initialX = 100f
@@ -91,7 +90,6 @@ class DoodleView : View {
 
     fun setParallaxFactor(fac: Float) {
         parallaxFactor = fac
-        parallaxFactorMax = fac.times(1.5f)
         parallaxMaxBounds = fac.times(25f).coerceAtMost(200f)
         initialX = parallaxMaxBounds.times(.5f).also { actualX = it }
         initialY = parallaxMaxBounds.times(.5f).also { actualY = it }
@@ -101,8 +99,8 @@ class DoodleView : View {
         val tempActualX = initialX - (x * parallaxFactor)
         val tempActualY = initialY + (y * parallaxFactor)
 
-        val addX = (tempActualX - actualX).coerceAtMost(parallaxFactorMax).coerceAtLeast(-parallaxFactorMax)
-        val addY = (tempActualY - actualY).coerceAtMost(parallaxFactorMax).coerceAtLeast(-parallaxFactorMax)
+        val addX = (tempActualX - actualX).coerceAtMost(parallaxFactor).coerceAtLeast(-parallaxFactor)
+        val addY = (tempActualY - actualY).coerceAtMost(parallaxFactor).coerceAtLeast(-parallaxFactor)
 
         actualX = (addX + actualX).coerceAtMost(parallaxMaxBounds).coerceAtLeast(0f)
         actualY = (addY + actualY).coerceAtMost(parallaxMaxBounds).coerceAtLeast(0f)

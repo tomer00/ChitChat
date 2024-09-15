@@ -396,12 +396,15 @@ class AssetsViewModel @Inject constructor(
 
     fun openFile(fileName: String) {
         val file = repoStorage.getFileFromFolder(MsgMediaType.FILE, fileName) ?: return
-        viewModelScope.launch { flowEvents.emit(MsgsFlowState.OpenFileFlowState(file, FlowType.OPEN_FILE)) }
+        viewModelScope.launch { flowEvents.emit(MsgsFlowState.OpenFileFlowState(file, FlowType.OPEN_FILE, 0L)) }
     }
 
-    fun openImage(fileName: String, isGif: Boolean) {
+    fun openImage(fileName: String, isGif: Boolean, msgId: Long) {
         val file = repoStorage.getFileFromFolder(if (fileName.startsWith("GIF")) MsgMediaType.GIF else MsgMediaType.IMAGE, fileName) ?: return
-        viewModelScope.launch { flowEvents.emit(MsgsFlowState.OpenFileFlowState(file, if (isGif) FlowType.OPEN_GIF else FlowType.OPEN_IMAGE)) }
+        viewModelScope.launch {
+            val msgTime = repoMsgs.getMsg(msgId)?.timeMillis ?: -1L
+            flowEvents.emit(MsgsFlowState.OpenFileFlowState(file, if (isGif) FlowType.OPEN_GIF else FlowType.OPEN_IMAGE, msgTime))
+        }
     }
 
     //endregion mediaView

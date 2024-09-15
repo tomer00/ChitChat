@@ -26,7 +26,6 @@ class CryptoCipher(
     }
 
     override fun setCurrentPartner(phone: String): Boolean {
-
         sectKeySpec = null
         val mod = repoCipher.getKey(phone) ?: return false
         try {

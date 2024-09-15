@@ -88,10 +88,10 @@ class FragUpdateProfile : Fragment() {
 
     private fun askPermissions() {
 
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
             viewModel.setStoragePermission(true)
             Dexter.withContext(requireContext()).withPermission(
-                Manifest.permission.READ_EXTERNAL_STORAGE
+                Manifest.permission.POST_NOTIFICATIONS
             ).withListener(object : PermissionListener {
                 override fun onPermissionGranted(p0: PermissionGrantedResponse?) {
                     viewModel.setStoragePermission(true)
@@ -134,8 +134,12 @@ class FragUpdateProfile : Fragment() {
 
     override fun onResume() {
         super.onResume()
-        if (requireActivity().isPermissionGranted(Manifest.permission.READ_EXTERNAL_STORAGE))
-            viewModel.setStoragePermission(true)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (requireActivity().isPermissionGranted(Manifest.permission.POST_NOTIFICATIONS))
+                viewModel.setStoragePermission(true)
+        } else if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.Q)
+            if (requireActivity().isPermissionGranted(Manifest.permission.READ_EXTERNAL_STORAGE))
+                viewModel.setStoragePermission(true)
     }
 
     private fun showPermissionDeniedDialog(permi: String) {
