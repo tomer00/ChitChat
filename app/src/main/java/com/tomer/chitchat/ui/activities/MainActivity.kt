@@ -64,6 +64,7 @@ import kotlinx.coroutines.launch
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClickListener {
 
+    private val REQ_CODE_PROILE_CHANGE = 1020
     private val b by lazy { ActivityMainBinding.inflate(layoutInflater) }
     private val viewModal: MainViewModal by viewModels()
     private val assetsVM: AssetsViewModel by viewModels()
@@ -107,15 +108,6 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             if (uri != null)
                 b.root.post { connectFromQrData(uri.toString()) }
         }
-
-//        Glide.with(this)
-//            .asBitmap()
-//            .circleCrop()
-//            .override(100)
-//            .placeholder(R.drawable.ic_avatar)
-//            .error(R.drawable.ic_avatar)
-//            .load(viewModal.phone.getDpLink())
-//            .into(b.btProfile)
         b.apply {
             btConnect.setOnClickListener(this@MainActivity)
             imgBarcode.setOnClickListener(this@MainActivity)
@@ -244,6 +236,8 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
         val notiMan by lazy { NotificationManagerCompat.from(this) }
         notiMan.cancelAll()
+
+        viewModal.loadMyDp()
     }
 
     private fun getRvViewIfVisible(phone: String): RowPersonBinding? {
@@ -352,7 +346,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             b.btDel.id -> viewModal.delSelected(true, adapter.currentList)
             b.btProfile.id -> {
                 val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, b.btProfile, "avatar")
-                startActivity(Intent(this, SettingsActivity::class.java), options.toBundle())
+                startActivityForResult(Intent(this, SettingsActivity::class.java), REQ_CODE_PROILE_CHANGE, options.toBundle())
             }
 
             b.btSearch.id -> {
@@ -361,6 +355,11 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         }
     }
 
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == REQ_CODE_PROILE_CHANGE && resultCode == RESULT_OK)
+            viewModal.loadMyDp()
+    }
 
     override fun onClick(pos: Int) {
         if (viewModal.headMenu.value == true) {
@@ -437,7 +436,6 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     //region Handel FLOW MSGS
 
     private fun handelFlowMsg(msg: MsgsFlowState) {
-        Log.d("TAG--", "Main Activity Handle msg : $msg")
         when (msg.type) {
             FlowType.MSG -> if (activityLife && msg.data != null) {
 
@@ -586,6 +584,32 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                         putExtra("phone", msg.fromUser)
                     }
             )
+
+            FlowType.SET_DP -> {
+                if (msg.fromUser == Utils.myPhone) { //for my profile
+                    Glide.with(this)
+                        .asBitmap()
+                        .load(msg.fileGif)
+                        .circleCrop()
+                        .override(100)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .placeholder(R.drawable.ic_avatar)
+                        .error(R.drawable.ic_avatar)
+                        .into(b.btProfile)
+                    return
+                }
+                //for RV Items
+                val b1 = getRvViewIfVisible(msg.fromUser) ?: return
+                Glide.with(this)
+                    .asBitmap()
+                    .load(msg.fileGif)
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .circleCrop()
+                    .override(200)
+                    .placeholder(R.drawable.def_avatar)
+                    .error(R.drawable.def_avatar)
+                    .into(b1.imgProfile)
+            }
 
             else -> {}
         }

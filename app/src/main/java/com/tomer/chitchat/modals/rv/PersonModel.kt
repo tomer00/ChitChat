@@ -18,7 +18,8 @@ data class PersonModel(
     val jsonText: String,
     val jsonName: String,
     val isSent: Boolean,
-    var msgStatus: MsgStatus
+    var msgStatus: MsgStatus,
+    var fileDp: File?
 ) {
     class Builder {
         private var lastMsgId: Long = -1L
@@ -35,6 +36,7 @@ data class PersonModel(
         private var jsonName: String = ""
         private var isSent: Boolean = false
         private var msgStatus: MsgStatus = MsgStatus.RECEIVED
+        private var fileDp: File? = null
 
 
         fun phoneNumber(phoneNumber: String) = apply { this.phoneNumber = phoneNumber }
@@ -51,6 +53,7 @@ data class PersonModel(
         fun lastMsgId(lastMsgId: Long) = apply { this.lastMsgId = lastMsgId }
         fun isSent(isSent: Boolean) = apply { this.isSent = isSent }
         fun msgStatus(msgStatus: MsgStatus) = apply { this.msgStatus = msgStatus }
+        fun fileDp(fileDp: File?) = apply { this.fileDp = fileDp }
 
         fun build() = PersonModel(
             lastMsgId,
@@ -66,7 +69,8 @@ data class PersonModel(
             jsonText = jsonText,
             jsonName = jsonName,
             isSent = isSent,
-            msgStatus = msgStatus
+            msgStatus = msgStatus,
+            fileDp = fileDp,
         )
     }
 }

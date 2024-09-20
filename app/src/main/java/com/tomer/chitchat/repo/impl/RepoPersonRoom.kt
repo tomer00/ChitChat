@@ -28,7 +28,7 @@ class RepoPersonRoom(
     override suspend fun getPersonByPhone(phoneNo: String): ModelRoomPersons? =
         room.getPerson(phoneNo)
 
-    override suspend fun getPersonPref(phoneNo: String) = room.getPersonPref(phoneNo).firstOrNull()
+    override fun getPersonPref(phoneNo: String) = room.getPersonPref(phoneNo).firstOrNull()
 
     override suspend fun insertPersonPref(model: ModelPartnerPref) = room.insertPartnerPrefs(model)
 }

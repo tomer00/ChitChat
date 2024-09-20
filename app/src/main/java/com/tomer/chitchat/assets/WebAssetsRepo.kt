@@ -2,21 +2,16 @@ package com.tomer.chitchat.assets
 
 import android.content.Context
 import android.os.Build
-import android.os.Environment
-import android.util.Log
 import com.tomer.chitchat.modals.states.UiMsgModal
 import com.tomer.chitchat.modals.states.UiMsgModalBuilder
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.EmojisHashingUtils
+import com.tomer.chitchat.utils.NetworkUtils
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.io.InputStream
-import java.net.HttpURLConnection
-import java.net.URL
 import java.nio.charset.Charset
 import javax.inject.Inject
 import kotlin.random.Random
@@ -26,7 +21,12 @@ class WebAssetsRepo @Inject constructor(
 ) : RepoAssets {
 
     private val assetsFolder =
-        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) File(File(context.getExternalFilesDir("ChitChat"), "assets").absolutePath.replace("Android/data", "Android/media").replace(".chitchat/files",".chitchat"))
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) File(
+            File(context.getExternalFilesDir("ChitChat"), "assets").absolutePath.replace("Android/data", "Android/media").replace(
+                ".chitchat/files",
+                ".chitchat"
+            )
+        )
         else File(context.getExternalFilesDir("ChitChat"), "assets")
     private val gifAssets = File(assetsFolder, "gifs")
     private val jsonAssets = File(assetsFolder, "jsons")
@@ -49,7 +49,7 @@ class WebAssetsRepo @Inject constructor(
         if (f.exists()) return readJson(f)
         if (sync) return null
 
-        val bytes = downLoadBytes("$jsonFilesBinLink$name?alt=media") ?: return null
+        val bytes = NetworkUtils.downloadBytes("$jsonFilesBinLink$name?alt=media") ?: return null
         withContext(Dispatchers.IO) {
             FileOutputStream(f).use {
                 it.write(bytes)
@@ -64,7 +64,7 @@ class WebAssetsRepo @Inject constructor(
         if (f.exists()) return readJson(f)
         if (sync) return null
 
-        val bytes = downLoadBytes("$googleJsonFilesBinLink$nameJson/lottie.json") ?: return null
+        val bytes = NetworkUtils.downloadBytes("$googleJsonFilesBinLink$nameJson/lottie.json") ?: return null
         withContext(Dispatchers.IO) {
             FileOutputStream(f).use {
                 it.write(bytes)
@@ -79,30 +79,18 @@ class WebAssetsRepo @Inject constructor(
         if (f.exists()) return f
         if (sync) return null
 
-        val bytes = downLoadBytes("$gifFilesBinLink$name.gif?alt=media") ?: return null
-        withContext(Dispatchers.IO) {
-            FileOutputStream(f).use {
-                it.write(bytes)
-                it.flush()
-            }
-        }
-        return f
+        return if (NetworkUtils.downloadBytesToFile("$gifFilesBinLink$name.gif?alt=media", f))
+            f else null
     }
 
     override suspend fun getGifTelemoji(name: String, sync: Boolean): File? {
         val f = File(gifAssets, name)
         if (f.exists()) return f
         if (sync) return null
-        val bytes = downLoadBytes("$telemojiFilesBinLink${ConversionUtils.decode(name)}.webp") ?: return null
-        withContext(Dispatchers.IO) {
-            FileOutputStream(f).use {
-                it.write(bytes)
-                it.flush()
-            }
-        }
-        return f
-    }
 
+        return if (NetworkUtils.downloadBytesToFile("$telemojiFilesBinLink${ConversionUtils.decode(name)}.webp", f))
+            f else null
+    }
 
     override suspend fun getRandomJson(): UiMsgModal {
         val b = UiMsgModalBuilder()
@@ -131,56 +119,10 @@ class WebAssetsRepo @Inject constructor(
         return selectedEntry
     }
 
-    override suspend fun downLoadBytes(urlString: String): ByteArray? {
-        var inputStream: InputStream? = null
-        var outputStream: ByteArrayOutputStream? = null
-        var connection: HttpURLConnection? = null
-
-        return try {
-            val url = URL(urlString)
-            connection = withContext(Dispatchers.IO) {
-                url.openConnection()
-            } as HttpURLConnection
-            connection.requestMethod = "GET"
-            withContext(Dispatchers.IO) {
-                connection.connect()
-            }
-
-            withContext(Dispatchers.IO) {
-                if (connection.responseCode != HttpURLConnection.HTTP_OK) {
-                    throw Exception("HTTP error code: ${connection.responseCode}")
-                }
-            }
-
-            inputStream = connection.inputStream
-            outputStream = ByteArrayOutputStream()
-
-            val buffer = ByteArray(1024)
-            var bytesRead: Int
-
-            while (withContext(Dispatchers.IO) {
-                    inputStream.read(buffer)
-                }.also { bytesRead = it } != -1) {
-                outputStream.write(buffer, 0, bytesRead)
-            }
-
-            outputStream.toByteArray()
-        } catch (e: Exception) {
-            null
-        } finally {
-            withContext(Dispatchers.IO) {
-                inputStream?.close()
-                outputStream?.close()
-            }
-            connection?.disconnect()
-        }
-    }
-
     private fun readJson(file: File): String {
         FileInputStream(file).use {
             return String(it.readBytes(), Charset.defaultCharset())
         }
     }
-
 
 }

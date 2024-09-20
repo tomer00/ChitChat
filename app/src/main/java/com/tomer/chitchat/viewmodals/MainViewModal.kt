@@ -149,6 +149,12 @@ class MainViewModal @Inject constructor(
     private val _persons = MutableLiveData<List<PersonModel>>()
     val persons: LiveData<List<PersonModel>> = _persons
 
+    fun loadMyDp() {
+        viewModelScope.launch {
+            flowMsgs.emit(MsgsFlowState.ChangeGif(repoStorage.getDP(Utils.myPhone, false), typeF = FlowType.SET_DP, phone = Utils.myPhone))
+        }
+    }
+
     //region SELECTION HANDLING
 
     private val _fabView = MutableLiveData<Boolean>()
@@ -233,6 +239,7 @@ class MainViewModal @Inject constructor(
 
         val old = oldList.find { it.lastMsgId == lastMsgId }
         if (old != null) {
+            builder.fileDp(old.fileDp)
             builder.lastMessageFile(old.fileGifImg)
             builder.jsonText(old.jsonText)
             builder.jsonName(old.jsonName)
@@ -283,7 +290,7 @@ class MainViewModal @Inject constructor(
             else builder.lastMessageFile(file)
 
         }
-
+        builder.fileDp(repoStorage.getDP(phoneNo, true).also { if (it == null) needTobeDownload.add(5 to phoneNo) })
         return builder.build()
     }
 
@@ -298,7 +305,11 @@ class MainViewModal @Inject constructor(
                         0 -> repoAssets.getGoogleLottieJson(i.second)
                         1 -> repoAssets.getLottieJson(i.second)
                         2 -> repoAssets.getGifFile(i.second)
-                        else -> repoAssets.getGifTelemoji(i.second)
+                        3 -> repoAssets.getGifTelemoji(i.second)
+
+                        else -> {
+                            flowMsgs.emit(MsgsFlowState.ChangeGif(repoStorage.getDP(i.second, false), typeF = FlowType.SET_DP, phone = i.second))
+                        }
                     }
                 }
             }

@@ -12,7 +12,7 @@ interface RepoPersons {
     suspend fun getPersonByPhone(phoneNo:String) : ModelRoomPersons?
 
 
-    suspend fun getPersonPref(phoneNo: String) : ModelPartnerPref?
+    fun getPersonPref(phoneNo: String) : ModelPartnerPref?
     suspend fun insertPersonPref(model: ModelPartnerPref)
 
 }

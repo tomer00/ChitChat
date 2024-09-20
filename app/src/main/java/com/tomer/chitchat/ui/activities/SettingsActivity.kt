@@ -1,5 +1,6 @@
 package com.tomer.chitchat.ui.activities
 
+import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.drawable.Drawable
 import android.hardware.Sensor
@@ -29,6 +30,7 @@ import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withCreated
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.google.gson.Gson
@@ -128,7 +130,7 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
             return
         }
 
-        b.btAddDp.animate().apply {
+        b.layAddDp.animate().apply {
             scaleX(0f)
             scaleY(0f)
             duration = 80
@@ -155,13 +157,13 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
             object : TransitionListener {
                 override fun onTransitionStart(transition: android.transition.Transition?) {
                     b.apply {
-                        b.btAddDp.scaleX = 0f
-                        b.btAddDp.scaleY = 0f
+                        b.layAddDp.scaleX = 0f
+                        b.layAddDp.scaleY = 0f
                     }
                 }
 
                 override fun onTransitionEnd(transition: android.transition.Transition?) {
-                    b.btAddDp.animate().apply {
+                    b.layAddDp.animate().apply {
                         scaleX(1f)
                         scaleY(1f)
                         duration = 120
@@ -244,13 +246,30 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
                 }
             }
         }
+        vm.dpUploadProg.observe(this) {
+            if (it) {
+                b.apply {
+                    btAddDp.visibility = View.GONE
+                    progUploadDp.visibility = View.VISIBLE
+                }
+                return@observe
+            }
+            b.apply {
+                btAddDp.visibility = View.VISIBLE
+                progUploadDp.visibility = View.GONE
+            }
+        }
         vm.dpFile.observe(this) {
-            if (it == null) return@observe
+            if (it == null) {
+                b.imgSelectDp.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_avatar))
+                return@observe
+            }
             lifecycleScope.launch {
                 Glide.with(this@SettingsActivity)
                     .asBitmap()
                     .load(it)
                     .circleCrop()
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .error(R.drawable.ic_avatar)
                     .into(object : CustomTarget<Bitmap>() {
                         override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
@@ -336,6 +355,10 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
                     b.tvAbout.requestFocus()
                     showKeyBoard()
                 }, 100)
+            }
+
+            SettingsMyPrefViewModel.SettingEvents.DP_UPLOADED -> {
+                setResult(RESULT_OK, Intent().apply { putExtra("dpPath", data.second) })
             }
 
             else -> {}

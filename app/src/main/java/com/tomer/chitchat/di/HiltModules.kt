@@ -61,11 +61,10 @@ class HiltModules {
                     try {
                         chain.proceed(authenticatedRequest)
                     } catch (e: Exception) {
-                        Response.Builder().
-                            request(chain.request())
+                        Response.Builder().request(chain.request())
                             .protocol(Protocol.HTTP_1_0)
                             .message(e.message.toString())
-                            .code(400).body(ResponseBody.Companion.create(null,"")).build()
+                            .code(400).body(ResponseBody.Companion.create(null, "")).build()
                     }
                 }
                 .build())
@@ -84,7 +83,7 @@ class HiltModules {
         repoRelations: RepoRelations,
         cryptoService: CryptoService,
     ): WebSocketHandler {
-        return WebSocketHandler(repoMsgs,repoStorage,repoPersons,gson,notificationService,repoRelations,cryptoService)
+        return WebSocketHandler(repoMsgs, repoStorage, repoPersons, gson, notificationService, repoRelations, cryptoService)
     }
 
     @Provides
@@ -108,7 +107,7 @@ class HiltModules {
 
     @Provides
     @Singleton
-    fun provideRepoUtils(@ApplicationContext appContext: Context,gson: Gson): RepoUtils = RepoUtilImpl(appContext,gson)
+    fun provideRepoUtils(@ApplicationContext appContext: Context, gson: Gson): RepoUtils = RepoUtilImpl(appContext, gson)
 
     @Provides
     @Singleton
@@ -116,7 +115,7 @@ class HiltModules {
 
     @Provides
     @Singleton
-    fun provideRepoStorage(@ApplicationContext appContext: Context): RepoStorage = RepoFileStorage(appContext)
+    fun provideRepoStorage(@ApplicationContext appContext: Context, dao: Dao): RepoStorage = RepoFileStorage(appContext, dao)
 
     @Provides
     @Singleton

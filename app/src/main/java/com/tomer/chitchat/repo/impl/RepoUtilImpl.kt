@@ -1,7 +1,6 @@
 package com.tomer.chitchat.repo.impl
 
 import android.content.Context
-import android.util.Log
 import com.google.gson.Gson
 import com.tomer.chitchat.modals.prefs.MyPrefs
 import com.tomer.chitchat.repo.RepoUtils
@@ -25,14 +24,13 @@ class RepoUtilImpl(
     override fun getPrefs() = myPrefMod
 
     private fun loadMyPref(): MyPrefs {
-        Log.d("TAG--", "loadMyPref: LOadig FROM STORAGE")
         return try {
             gson.fromJson(
                 prefUtils.getString("myPrefs", null) ?: throw Exception(),
                 MyPrefs::class.java
             )
         } catch (e: Exception) {
-            MyPrefs(Utils.myPhone, "", "", 12f, 18f, 0)
+            MyPrefs(Utils.myPhone, "", "", 12f, 18f, 0,4f)
         }
     }
 
