@@ -15,7 +15,11 @@ import com.tomer.chitchat.R
 import com.tomer.chitchat.utils.qrProvider.AssetsProvider
 import com.tomer.chitchat.utils.qrProvider.BackgroundProvider
 import com.tomer.chitchat.utils.qrProvider.GradModel
-import kotlin.concurrent.thread
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.yield
 import kotlin.math.roundToInt
 
 class DoodleView : View {
@@ -55,19 +59,24 @@ class DoodleView : View {
     private var actualX = 100f
     private var actualY = 100f
 
+    private var jobBitmap: Job? = null
+
     //endregion GLOBALS-->>>
 
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         if (w > bmpBg.width || h > bmpBg.height) {
-            thread(start = true, name = "Renderer", priority = Thread.MAX_PRIORITY) {
+            if (jobBitmap != null && jobBitmap!!.isActive)
+                jobBitmap!!.cancel()
+
+            jobBitmap = CoroutineScope(Dispatchers.Default).launch {
                 val bmp = BackgroundProvider.getBackground(bgAsset, Point(w + 200, h + 200), isDark, context, color, gradModel)
+                yield()
                 bmpBg.recycle()
                 bmpBg = bmp
                 postInvalidate()
             }
         }
-
     }
 
     override fun onDraw(canvas: Canvas) {
@@ -85,6 +94,19 @@ class DoodleView : View {
         this.bgAsset = bgAsset
         this.color = color
         this.gradModel = gradModel
+
+        if (width > 0) {
+            if (jobBitmap != null && jobBitmap!!.isActive)
+                jobBitmap!!.cancel()
+
+            jobBitmap = CoroutineScope(Dispatchers.Default).launch {
+                val bmp = BackgroundProvider.getBackground(bgAsset, Point(width + 200, height + 200), isDark, context, color, gradModel)
+                yield()
+                bmpBg.recycle()
+                bmpBg = bmp
+                postInvalidate()
+            }
+        }
         postInvalidate()
     }
 

@@ -110,10 +110,14 @@ class SettingsMyPrefViewModel @Inject constructor(
 
     //region DP
 
-    private val _dpFile = MutableLiveData(File(""))
+    private val _dpFile = MutableLiveData<File>(null)
     val dpFile: LiveData<File> = _dpFile
 
+    private val _dpUploadProg = MutableLiveData(false)
+    val dpUploadProg: LiveData<Boolean> = _dpUploadProg
+
     fun uploadDp(dp: Bitmap) {
+        _dpUploadProg.postValue(true)
         viewModelScope.launch {
             val bytes = ConversionUtils.convertToWebp(dp)
             val reqBody = bytes
@@ -127,9 +131,29 @@ class SettingsMyPrefViewModel @Inject constructor(
                         "file", Utils.myPhone, reqBody
                     )
                 ).body().toString()
-                if (res == "Uploaded") repoStorage.saveDP(phone, bytes)
+                if (res.startsWith("Uploaded")) {
+                    repoStorage.deleteDP(phone)
+                    _dpFile.postValue(
+                        repoStorage.saveDP(
+                            phone,
+                            try {
+                                res.split('-')[1].toInt()
+                            } catch (_: Exception) {
+                                1
+                            }, bytes
+                        ).also {
+                            _dpUploadProg.postValue(false)
+                            flowEvents.emit(Pair(SettingEvents.SHOW_TOAST, "File uploaded successfully"))
+                            flowEvents.emit(Pair(SettingEvents.DP_UPLOADED, it.absolutePath))
+                        }
+                    )
+                }
             } catch (_: Exception) {
-                viewModelScope.launch { flowEvents.emit(Pair(SettingEvents.SHOW_TOAST, "Failed to upload Network error...")) }
+                viewModelScope.launch {
+                    _dpUploadProg.postValue(false)
+                    flowEvents.emit(Pair(SettingEvents.SHOW_TOAST, "Failed to upload Network error..."))
+                    _dpFile.postValue(repoStorage.getDP(phone, sync = true))
+                }
             }
         }
     }
@@ -142,13 +166,13 @@ class SettingsMyPrefViewModel @Inject constructor(
         _myPrefs.postValue(pref)
         _corners.postValue(pref.msgItemCorners)
         _textSize.postValue(pref.textSize)
-        repoStorage.getDP(phone)?.let {
-            _dpFile.postValue(it)
+        viewModelScope.launch {
+            _dpFile.postValue(repoStorage.getDP(phone, sync = true))
         }
     }
 
 
     enum class SettingEvents {
-        UPDATE_PREF, SHOW_TOAST, ERROR_NAME, ERROR_ABOUT
+        UPDATE_PREF, SHOW_TOAST, ERROR_NAME, ERROR_ABOUT, DP_UPLOADED
     }
 }

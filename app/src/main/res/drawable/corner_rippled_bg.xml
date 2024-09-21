@@ -3,7 +3,7 @@
     android:color="#80FFFFFF">
     <item>
         <shape>
-            <solid android:color="@color/trans" />
+            <solid android:color="@color/backgroundC" />
             <corners android:radius="16dp" />
             <stroke android:color="@color/bmi_tint"  android:width="2dp"/>
         </shape>

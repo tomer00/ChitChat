@@ -46,7 +46,7 @@ class ChatAdapter(
         placeholder(R.drawable.ic_gifs)
         override(400)
         error(R.drawable.logo)
-        transform(RoundedCorners(corners.toInt()))
+        transform(RoundedCorners(12))
     }
 
     private val statusDrawables: List<Drawable> = listOf(
@@ -137,10 +137,9 @@ class ChatAdapter(
         } else {
             //There is Media File either upload or download
             holder.b.mediaCont.visibility = View.VISIBLE
-            if (mod.msgType == MsgMediaType.GIF) Glide.with(context).load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).into(holder.b.mediaImg)
-            else if (mod.msgType == MsgMediaType.IMAGE || mod.msgType == MsgMediaType.VIDEO) Glide.with(context).asBitmap().load(mod.bytes).apply(options).diskCacheStrategy(DiskCacheStrategy.NONE).into(
-                holder.b.mediaImg
-            )
+            if (mod.msgType == MsgMediaType.GIF || mod.msgType == MsgMediaType.IMAGE || mod.msgType == MsgMediaType.VIDEO) Glide.with(context).load(mod.bytes).apply(options).diskCacheStrategy(
+                DiskCacheStrategy.NONE
+            ).into(holder.b.mediaImg)
             else holder.b.mediaImg.setImageDrawable(null)
 
             if (mod.msgType == MsgMediaType.FILE) {

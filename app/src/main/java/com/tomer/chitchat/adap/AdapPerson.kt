@@ -17,7 +17,6 @@ import com.tomer.chitchat.modals.rv.PersonModel
 import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
-import com.tomer.chitchat.utils.Utils.Companion.getDpLink
 
 class AdapPerson(
     private val clickLis: CallbackClick,
@@ -46,7 +45,8 @@ class AdapPerson(
 
         Glide.with(holder.b.imgProfile)
             .asBitmap()
-            .load(model.phoneNo.getDpLink())
+            .load(model.fileDp)
+            .diskCacheStrategy(DiskCacheStrategy.NONE)
             .circleCrop()
             .override(200)
             .placeholder(R.drawable.def_avatar)

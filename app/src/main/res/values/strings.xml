@@ -25,4 +25,11 @@
     <string name="message_corners">Message corners</string>
     <string name="message_text_size">Message text size</string>
     <string name="background_parallax_factor">Background parallax factor</string>
+    <string name="notifications">Notifications</string>
+    <string name="chat_lock">Chat Lock</string>
+    <string name="shared_media_files">Shared media files</string>
+    <string name="phone_call">Phone</string>
+    <string name="video">Video</string>
+    <string name="chat_background">Chat background</string>
+    <string name="wallpaper">Wallpaper</string>
 </resources>

@@ -271,15 +271,7 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
                     .circleCrop()
                     .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .error(R.drawable.ic_avatar)
-                    .into(object : CustomTarget<Bitmap>() {
-                        override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
-                            b.imgSelectDp.setImageBitmap(resource)
-                        }
-
-                        override fun onLoadCleared(placeholder: Drawable?) {
-                        }
-
-                    })
+                    .into(b.imgSelectDp)
             }
         }
 
@@ -491,7 +483,7 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
         b2.msgTv.setTextColor(ContextCompat.getColor(this, R.color.fore))
         b2.contTime.gravity = Gravity.END
         b2.imgMsgStatus.visibility = View.GONE
-        b2.msgBg.setData(false, 12f.px, ContextCompat.getColor(this, R.color.softBg))
+        b2.msgBg.setData(true, 12f.px, ContextCompat.getColor(this, R.color.softBg))
 
         "Adjust corner radius".also { b2.msgTv.text = it }
         b2.emojiTv.visibility = View.GONE

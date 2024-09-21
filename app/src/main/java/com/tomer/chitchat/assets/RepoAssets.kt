@@ -13,6 +13,4 @@ interface RepoAssets {
 
     suspend fun getRandomJson(): UiMsgModal
 
-    suspend fun downLoadBytes(urlString: String) : ByteArray?
-
 }

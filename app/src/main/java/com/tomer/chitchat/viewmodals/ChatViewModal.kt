@@ -320,7 +320,7 @@ class ChatViewModal @Inject constructor(
             try {
                 chatMsgs.clear()
 
-                val roomMsgs = repoMsgs.getMsgsOfUser(Utils.currentPartner?.partnerId!!)
+                val roomMsgs = repoMsgs.getMsgsOfUser(phone)
                 val arrUI = Array<UiMsgModal?>(roomMsgs.size) { _ -> null }
 
                 val job = viewModelScope.launch {

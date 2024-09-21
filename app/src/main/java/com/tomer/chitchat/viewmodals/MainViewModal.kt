@@ -246,6 +246,7 @@ class MainViewModal @Inject constructor(
             return builder.build()
         }
 
+        builder.fileDp(repoStorage.getDP(phoneNo, true).also { if (it == null) needTobeDownload.add(5 to phoneNo) })
         if (mediaType == MsgMediaType.EMOJI) {
 
             val nameGoogleJson = EmojisHashingUtils.googleJHash[ConversionUtils.encode(lastMsg)]
@@ -290,7 +291,6 @@ class MainViewModal @Inject constructor(
             else builder.lastMessageFile(file)
 
         }
-        builder.fileDp(repoStorage.getDP(phoneNo, true).also { if (it == null) needTobeDownload.add(5 to phoneNo) })
         return builder.build()
     }
 

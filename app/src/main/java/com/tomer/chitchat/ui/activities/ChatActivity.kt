@@ -13,6 +13,7 @@ import android.hardware.SensorManager
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.os.PowerManager
 import android.text.Editable
 import android.text.TextWatcher
 import android.util.Log
@@ -39,6 +40,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
+import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestOptions
@@ -65,7 +67,6 @@ import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
 import com.tomer.chitchat.utils.Utils.Companion.isLandscapeOrientation
 import com.tomer.chitchat.utils.Utils.Companion.px
 import com.tomer.chitchat.utils.Utils.Companion.showKeyBoard
-import com.tomer.chitchat.utils.qrProvider.GradModel
 import com.tomer.chitchat.viewmodals.AssetsViewModel
 import com.tomer.chitchat.viewmodals.ChatActivityVm
 import com.tomer.chitchat.viewmodals.ChatViewModal
@@ -255,9 +256,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             }
         }
 
-//        if (this.isDarkModeEnabled()) b.imgBg.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.bg_dark)).also {
-//            b.imgBg.alpha = 0.1f
-//        }
+        if (powerSaveOn()) vma.myPref.parallaxFactor = 0f
         b.imgBg.run {
             if (vma.myPref.parallaxFactor > 0f)
                 setParallaxFactor(vma.myPref.parallaxFactor)
@@ -270,7 +269,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         }
 
         adap = ChatAdapter(this, this, vm.chatMsgs)
-        adap.setValues(vma.myPref.textSize, vma.myPref.msgItemCorners.px, GradModel(0, ContextCompat.getColor(this, R.color.primary), ContextCompat.getColor(this, R.color.primary_dark)))
         b.rvMsg.adapter = adap
 
         ll = LinearLayoutManager(this)
@@ -328,24 +326,10 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             cardFlipper.setOnClickListener(this@ChatActivity)
             layDetail.setOnClickListener(this@ChatActivity)
             tvPartnerName.text = (vm.partnerPref?.name ?: "").ifEmpty { vma.phone }
-            Glide.with(this@ChatActivity)
-                .asBitmap()
-                .apply(roundOptions)
-                .load(Utils.currentPartner!!.partnerId.getDpLink())
-                .placeholder(R.drawable.def_avatar)
-                .error(R.drawable.def_avatar)
-                .into(imgDp)
 
             if (Utils.currentPartner!!.isAccepted) return@apply
 
             contRelation.visibility = View.VISIBLE
-            Glide.with(this@ChatActivity)
-                .asBitmap()
-                .circleCrop()
-                .placeholder(R.drawable.def_avatar)
-                .error(R.drawable.def_avatar)
-                .load(Utils.currentPartner!!.partnerId.getDpLink())
-                .into(imgDpCard)
             tvPartnerNameCard.text = (vm.partnerPref?.name ?: "").ifEmpty { vma.phone }
 
             if (Utils.currentPartner!!.isConnSent) {
@@ -522,6 +506,33 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             }
         })
 
+        vma.dpFile.observe(this) {
+            if (b.contRelation.visibility == View.VISIBLE) {
+                Glide.with(this@ChatActivity)
+                    .asBitmap()
+                    .apply(roundOptions)
+                    .load(it)
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .placeholder(R.drawable.def_avatar)
+                    .error(R.drawable.def_avatar)
+                    .into(b.imgDpCard)
+            }
+            Glide.with(this@ChatActivity)
+                .asBitmap()
+                .apply(roundOptions)
+                .load(it)
+                .diskCacheStrategy(DiskCacheStrategy.NONE)
+                .placeholder(R.drawable.def_avatar)
+                .error(R.drawable.def_avatar)
+                .into(b.imgDp)
+        }
+
+        vma.partnerPref.observe(this) { mod ->
+            b.imgBg.setData(isDarkModeEnabled(), mod.background.alpha, mod.backgroundAsset, mod.background.color, mod.background.grad)
+            if (mod.accent.grad == null)
+                adap.setValues(vma.myPref.textSize, vma.myPref.msgItemCorners.px, mod.accent.color)
+            else adap.setValues(vma.myPref.textSize, vma.myPref.msgItemCorners.px, mod.accent.grad)
+        }
     }
 
     private fun sendTextMessage(text: String, isOnlyEmoji: Boolean) {
@@ -653,7 +664,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             }
 
             b.layDetail.id -> {
-                startActivity(Intent(this, PartnerPrefActivity::class.java))
+                val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, b.imgDp, vma.phone)
+                startActivity(Intent(this, PartnerPrefActivity::class.java).apply { putExtra("phone", vma.phone);putExtra("dpFile", vma.dpFile.value?.absolutePath ?: "") }, options.toBundle())
             }
         }
     }
@@ -689,7 +701,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
     }
 
     private fun handleFlow(msg: MsgsFlowState) {
-        Log.d("TAG--", "handleFlow: CAHT ACTVITz $msg")
         if (msg.fromUser != Utils.currentPartner!!.partnerId) return
         when (msg.type) {
             FlowType.MSG -> {
@@ -1190,4 +1201,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
     }
     //endregion CLICK LISTENERS
 
+    private fun powerSaveOn(): Boolean {
+        val powerMan = getSystemService(POWER_SERVICE) as PowerManager
+        return powerMan.isPowerSaveMode
+    }
 }

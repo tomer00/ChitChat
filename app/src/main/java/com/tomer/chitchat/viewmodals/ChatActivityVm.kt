@@ -11,6 +11,7 @@ import com.tomer.chitchat.repo.RepoMessages
 import com.tomer.chitchat.repo.RepoPersons
 import com.tomer.chitchat.repo.RepoStorage
 import com.tomer.chitchat.repo.RepoUtils
+import com.tomer.chitchat.room.ModelPartnerPref
 import com.tomer.chitchat.room.ModelRoomPersons
 import com.tomer.chitchat.room.MsgMediaType
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -18,6 +19,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import java.io.File
 import javax.inject.Inject
 
 @HiltViewModel
@@ -25,7 +27,7 @@ class ChatActivityVm @Inject constructor(
     private val repoPersons: RepoPersons,
     private val repoStorage: RepoStorage,
     private val repoMsg: RepoMessages,
-    private val repoUtils: RepoUtils,
+    repoUtils: RepoUtils,
 ) : ViewModel() {
 
     //region SELECTION HANDLING
@@ -155,12 +157,24 @@ class ChatActivityVm @Inject constructor(
 
     var replyClickID = -1L
 
+    private val _dpFile = MutableLiveData<File>()
+    val dpFile: LiveData<File> = _dpFile
+
     //endregion STATES
 
     var phone = ""
     val myPref: MyPrefs = repoUtils.getPrefs()
 
+    private val _partnerPref = MutableLiveData<ModelPartnerPref>()
+    val partnerPref: LiveData<ModelPartnerPref> = _partnerPref
+
     fun setPartnerNo(phone: String) {
         this.phone = phone
+        viewModelScope.launch {
+            _dpFile.postValue(repoStorage.getDP(phone))
+        }
+        viewModelScope.launch {
+            _partnerPref.postValue(repoPersons.getPersonPref(phone))
+        }
     }
 }
