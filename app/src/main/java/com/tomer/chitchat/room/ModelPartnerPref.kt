@@ -1,6 +1,5 @@
 package com.tomer.chitchat.room
 
-import androidx.annotation.DrawableRes
 import androidx.annotation.IntRange
 import androidx.room.Entity
 import androidx.room.PrimaryKey
@@ -12,13 +11,12 @@ data class ModelPartnerPref(
     val phone: String,
     var name: String,
     val background: RenderModel,
-    val accent: RenderModel,
-    @DrawableRes
-    val backgroundAsset: Int,
+    var accent: RenderModel,
+    var backgroundAssetNo: Int,
     val dpNo: Int,
     val about: String,
     @IntRange(0, Long.MAX_VALUE)
     val lastOnlineMillis: Long,
-    var notificationAllowed:Boolean,
-    var chatLocked:Boolean,
+    var notificationAllowed: Boolean,
+    var chatLocked: Boolean,
 )

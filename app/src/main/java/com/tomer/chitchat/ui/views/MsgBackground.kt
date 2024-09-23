@@ -27,7 +27,7 @@ class MsgBackground : View {
 
     //region GLOBALS-->>>
 
-    private var isSent = false
+    private var isSent: Boolean? = null
     private var canShow = true
     private var cornerRadius = 20f
     private val bounds = RectF()
@@ -49,7 +49,9 @@ class MsgBackground : View {
     override fun onDraw(canvas: Canvas) {
         if (!canShow) return
         canvas.drawRoundRect(bounds, cornerRadius, cornerRadius, paint)
-        if (isSent)
+        if (isSent == null)
+            return
+        if (isSent!!)
             canvas.drawRect(bounds.width().times(.5f), bounds.height().times(.5f), bounds.right, bounds.bottom, paint)
         else canvas.drawRect(0f, bounds.height().times(.5f), bounds.width().times(.5f), bounds.bottom, paint)
 
@@ -57,7 +59,7 @@ class MsgBackground : View {
 
     //region COMMU
 
-    fun setData(isSent: Boolean, cornerRadius: Float, @ColorInt color: Int) {
+    fun setData(isSent: Boolean?, cornerRadius: Float, @ColorInt color: Int) {
         this.isSent = isSent
         this.gradModel = null
         this.cornerRadius = cornerRadius
@@ -69,7 +71,7 @@ class MsgBackground : View {
         postInvalidate()
     }
 
-    fun setData(isSent: Boolean, cornerRadius: Float, gradModel: GradModel) {
+    fun setData(isSent: Boolean?, cornerRadius: Float, gradModel: GradModel) {
         this.isSent = isSent
         this.gradModel = gradModel
         this.cornerRadius = cornerRadius

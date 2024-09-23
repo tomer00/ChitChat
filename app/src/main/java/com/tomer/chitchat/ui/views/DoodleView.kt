@@ -85,13 +85,18 @@ class DoodleView : View {
 
     //region COMMU
 
+    fun setTrans(@FloatRange(0.0, 1.0) alpha: Float) {
+        paint.alpha = 255f.times(alpha).roundToInt()
+        postInvalidate()
+    }
+
     fun setData(
-        isDark: Boolean, @FloatRange(0.0, 1.0) alpha: Float, @DrawableRes bgAsset: Int,
+        isDark: Boolean, @FloatRange(0.0, 1.0) alpha: Float, bgAssetNo: Int,
         @ColorInt color: Int = Color.BLACK, gradModel: GradModel? = null
     ) {
         paint.alpha = 255f.times(alpha).roundToInt()
         this.isDark = isDark
-        this.bgAsset = bgAsset
+        this.bgAsset = patterns.getOrDefault(bgAssetNo, R.drawable.pattern_7)
         this.color = color
         this.gradModel = gradModel
 
@@ -100,7 +105,7 @@ class DoodleView : View {
                 jobBitmap!!.cancel()
 
             jobBitmap = CoroutineScope(Dispatchers.Default).launch {
-                val bmp = BackgroundProvider.getBackground(bgAsset, Point(width + 200, height + 200), isDark, context, color, gradModel)
+                val bmp = BackgroundProvider.getBackground(this@DoodleView.bgAsset, Point(width + 200, height + 200), isDark, context, color, gradModel)
                 yield()
                 bmpBg.recycle()
                 bmpBg = bmp
@@ -129,6 +134,23 @@ class DoodleView : View {
 
         postInvalidate()
 
+    }
+
+    companion object {
+        private val patterns by lazy {
+            mapOf(
+                1 to R.drawable.pattern_1,
+                2 to R.drawable.pattern_2,
+                3 to R.drawable.pattern_3,
+                4 to R.drawable.pattern_4,
+                5 to R.drawable.pattern_5,
+                6 to R.drawable.pattern_6,
+                7 to R.drawable.pattern_7,
+                8 to R.drawable.pattern_8,
+                9 to R.drawable.pattern_9,
+                10 to R.drawable.pattern_10
+            )
+        }
     }
 
     //endregion COMMU

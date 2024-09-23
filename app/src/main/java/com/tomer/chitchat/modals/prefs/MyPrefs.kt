@@ -19,4 +19,12 @@ data class MyPrefs(
     @SerializedName("parallaxFactor")
     @FloatRange(0.0, 8.2)
     var parallaxFactor: Float
-)
+) {
+    fun copyFrom(pref: MyPrefs) {
+        this.name = pref.name
+        this.about = pref.about
+        this.msgItemCorners = pref.msgItemCorners
+        this.textSize = pref.textSize
+        this.dpNo = pref.dpNo
+    }
+}

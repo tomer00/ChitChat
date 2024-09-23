@@ -67,7 +67,7 @@ class MainViewModal @Inject constructor(
                 if (repoRelations.getRelation(phone) == null) connectNew(phone, openNextActivity, true)
                 else {
                     val oldPersons = repoPersons.getPersonByPhone(phone)
-                    val oldPerf = repoPersons.getPersonPref(phone)
+                    val oldPerf = repoPersons.getPersonPref(phone) ?: PartnerPrefBuilder(phone, phone).build().also { repoPersons.insertPersonPref(it) }
                     if (oldPersons == null)
                         ModelRoomPersons(
                             phone, oldPerf?.name ?: "",

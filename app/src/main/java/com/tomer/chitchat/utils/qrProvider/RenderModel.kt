@@ -5,7 +5,7 @@ import androidx.annotation.FloatRange
 
 data class RenderModel(
     @FloatRange(0.0, 1.0)
-    val alpha: Float,
+    var alpha: Float,
     @ColorInt
     val color: Int,
     val grad: GradModel? = null

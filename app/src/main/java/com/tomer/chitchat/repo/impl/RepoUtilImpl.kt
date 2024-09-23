@@ -30,16 +30,12 @@ class RepoUtilImpl(
                 MyPrefs::class.java
             )
         } catch (e: Exception) {
-            MyPrefs(Utils.myPhone, "", "", 12f, 18f, 0,4f)
+            MyPrefs(Utils.myPhone, "", "", 12f, 18f, 1, 3.2f)
         }
     }
 
     override fun savePrefs(mod: MyPrefs) {
-        myPrefMod.name = mod.name
-        myPrefMod.about = mod.about
-        myPrefMod.msgItemCorners = mod.msgItemCorners
-        myPrefMod.textSize = mod.textSize
-        myPrefMod.dpNo = mod.dpNo
+        myPrefMod.copyFrom(mod)
         prefUtils.edit().putString("myPrefs", gson.toJson(myPrefMod)).apply()
     }
 
