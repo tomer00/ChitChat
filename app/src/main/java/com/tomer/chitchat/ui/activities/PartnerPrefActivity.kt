@@ -161,7 +161,7 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
         for (i in 1..10)
             ((b.contBgDoodles.getChildAt(i) as CardView).getChildAt(0) as ConstraintLayout).getChildAt(1).visibility = View.GONE
         br.selectionView.visibility = View.VISIBLE
-        vm.setBackGround(v.tag.toString().toInt())
+        vm.setBackGround(v.tag.toString().toInt(), vm.rvDoodle.find { it.first.toString() == v.tag.toString() }?.second)
     }
 
     private val clickAccent = View.OnClickListener { v ->

@@ -47,8 +47,8 @@
 
             <ImageView
                 android:id="@+id/btProfile"
-                android:layout_width="26dp"
-                android:layout_height="26dp"
+                android:layout_width="32dp"
+                android:layout_height="32dp"
                 android:layout_marginHorizontal="24dp"
                 android:contentDescription="@string/app_name"
                 android:src="@drawable/ic_avatar"

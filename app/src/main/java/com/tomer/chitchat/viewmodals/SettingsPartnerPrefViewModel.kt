@@ -13,6 +13,7 @@ import com.tomer.chitchat.repo.RepoStorage
 import com.tomer.chitchat.repo.RepoUtils
 import com.tomer.chitchat.room.ModelPartnerPref
 import com.tomer.chitchat.room.MsgMediaType
+import com.tomer.chitchat.utils.qrProvider.GradModel
 import com.tomer.chitchat.utils.qrProvider.RenderModel
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.launch
@@ -45,29 +46,28 @@ class SettingsPartnerPrefViewModel @Inject constructor(
     //region THEME DATA
 
     val rvDoodle = listOf(
-        1 to RenderModel(1f, Color.GREEN),
-        2 to RenderModel(1f, Color.GREEN),
-        3 to RenderModel(1f, Color.GREEN),
-        4 to RenderModel(1f, Color.GREEN),
-        5 to RenderModel(1f, Color.GREEN),
-        6 to RenderModel(1f, Color.GREEN),
-        7 to RenderModel(1f, Color.GREEN),
-        8 to RenderModel(1f, Color.GREEN),
-        9 to RenderModel(1f, Color.GREEN),
-        10 to RenderModel(1f, Color.GREEN),
+        1 to RenderModel(1f, Color.GREEN, GradModel(120, Color.parseColor("#a6c0fe"), Color.parseColor("#f68084"))),
+        2 to RenderModel(1f, Color.GREEN, GradModel(45, Color.parseColor("#cf5e0c"), Color.parseColor("#ee0979"))),
+        3 to RenderModel(1f, Color.GREEN, GradModel(90, Color.parseColor("#642b73"), Color.parseColor("#c6426e"))),
+        4 to RenderModel(1f, Color.GREEN, GradModel(45, Color.parseColor("#cb356b"), Color.parseColor("#bd3f32"))),
+        5 to RenderModel(1f, Color.GREEN, GradModel(125, Color.parseColor("#283c86"), Color.parseColor("#45a247"))),
+        6 to RenderModel(1f, Color.GREEN, GradModel(45, Color.parseColor("#2f0743"), Color.parseColor("#41295a"))),
+        7 to RenderModel(1f, Color.GREEN, GradModel(15, Color.parseColor("#cf5e0c"), Color.parseColor("#ee0979"))),
+        8 to RenderModel(1f, Color.GREEN, GradModel(45, Color.parseColor("#0f3443"), Color.parseColor("#34e89e"))),
+        9 to RenderModel(1f, Color.GREEN, GradModel(125, Color.parseColor("#935096"), Color.parseColor("#4568dc"))),
+        10 to RenderModel(1f, Color.GREEN, GradModel(95, Color.parseColor("#cf5e0c"), Color.parseColor("#ee0979"))),
     )
 
     val rvAccent = listOf(
-        RenderModel(1f, Color.GREEN),
-        RenderModel(1f, Color.RED),
-        RenderModel(1f, Color.DKGRAY),
-        RenderModel(1f, Color.YELLOW),
-        RenderModel(1f, Color.GREEN),
-        RenderModel(1f, Color.BLUE),
-        RenderModel(1f, Color.GREEN),
-        RenderModel(1f, Color.GREEN),
-        RenderModel(1f, Color.GREEN),
-        RenderModel(1f, Color.GREEN),
+        RenderModel(1f, Color.GREEN, GradModel(125, Color.parseColor("#f915d7"), Color.parseColor("#160062"))),
+        RenderModel(1f, Color.parseColor("#005feb")),
+        RenderModel(1f, Color.parseColor("#28a359")),
+        RenderModel(1f, Color.GREEN, GradModel(100, Color.parseColor("#6573f8"), Color.parseColor("#a751a8"))),
+        RenderModel(1f, Color.parseColor("#8366cc")),
+        RenderModel(1f, Color.GREEN, GradModel(30, Color.parseColor("#2f0743"), Color.parseColor("#41295a"))),
+        RenderModel(1f, Color.GREEN, GradModel(45, Color.parseColor("#358669"), Color.parseColor("#4d8f51"))),
+        RenderModel(1f, Color.parseColor("#d28036")),
+        RenderModel(1f, Color.GREEN, GradModel(100, Color.parseColor("#4b639f"), Color.parseColor("#5baeb4"))),
     )
 
     //endregion THEME DATA
@@ -102,10 +102,12 @@ class SettingsPartnerPrefViewModel @Inject constructor(
         }
     }
 
-    fun setBackGround(assetNo: Int) {
+    fun setBackGround(assetNo: Int, renderModel: RenderModel?) {
         isChanged = true
         val pref = _partnerPref.value ?: return
         pref.backgroundAssetNo = assetNo
+        if (renderModel != null)
+            pref.background = renderModel
         viewModelScope.launch {
             repoPersons.insertPersonPref(pref)
             _partnerPref.postValue(pref)
@@ -115,7 +117,7 @@ class SettingsPartnerPrefViewModel @Inject constructor(
     fun setAccent(index: Int) {
         isChanged = true
         val pref = _partnerPref.value ?: return
-        pref.accent = rvAccent.getOrNull(index) ?: RenderModel(1f, Color.RED)
+        pref.accent = rvAccent.getOrNull(index) ?: RenderModel(1f, Color.parseColor("#005feb"))
         viewModelScope.launch {
             repoPersons.insertPersonPref(pref)
             _partnerPref.postValue(pref)

@@ -31,6 +31,7 @@ import com.tomer.chitchat.room.ModalMediaUpload
 import com.tomer.chitchat.room.ModelRoomMessageBuilder
 import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
+import com.tomer.chitchat.utils.NetworkUtils
 import com.tomer.chitchat.utils.Utils
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
@@ -332,7 +333,6 @@ class AssetsViewModel @Inject constructor(
                             }
                             handleUploaing(baos.toByteArray(), null)
                         }
-
                     }
 
                     MsgMediaType.FILE -> {
@@ -365,7 +365,7 @@ class AssetsViewModel @Inject constructor(
                     return@withContext
                 }
 
-                val byes = repoAssets.downLoadBytes(url)
+                val byes = NetworkUtils.downloadBytes(url)
                 if (byes == null)
                     flowEvents.emit(MsgsFlowState.IOFlowState(id, FlowType.DOWNLOAD_FAILS, fromUser))
                 else {

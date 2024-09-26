@@ -326,7 +326,9 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                     b.etNewNumber.error = "Enter Valid Number"
                     return
                 }
-                viewModal.connectNew(b.etNewNumber.text.toString(), true, false)
+                lifecycleScope.launch {
+                    viewModal.connectNew(b.etNewNumber.text.toString(), openNextActivity = true, mandatoryConnect = false)
+                }
                 viewModal.setFab(false)
             }
 
@@ -430,7 +432,9 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         if (data.length != 17) return
         val phoneNo = data.substring(7)
         if (!phoneNo.isDigitsOnly()) return
-        viewModal.connectNew(phoneNo, openNextActivity = true, mandatoryConnect = false)
+        lifecycleScope.launch {
+            viewModal.connectNew(phoneNo, openNextActivity = true, mandatoryConnect = false)
+        }
     }
 
     //region Handel FLOW MSGS
@@ -566,11 +570,14 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             }
 
             FlowType.SEND_NEW_CONNECTION_REQUEST -> {
-                viewModal.connectNew(msg.fromUser, false)
+                lifecycleScope.launch {
+                    viewModal.connectNew(msg.fromUser, false)
+                    if (activityLife) b.root.postDelayed({ viewModal.loadPersons(adapter.currentList) }, 100)
+                }
             }
 
 
-            FlowType.INCOMING_NEW_CONNECTION_REQUEST, FlowType.REQ_ACCEPTED, FlowType.REQ_REJECTED -> if (activityLife) b.root.postDelayed({ viewModal.loadPersons(adapter.currentList) }, 40)
+            FlowType.INCOMING_NEW_CONNECTION_REQUEST, FlowType.REQ_ACCEPTED, FlowType.REQ_REJECTED -> if (activityLife) b.root.postDelayed({ viewModal.loadPersons(adapter.currentList) }, 100)
             FlowType.ONLINE,
             FlowType.OFFLINE -> if (activityLife) {
                 val b = getRvViewIfVisible(msg.fromUser) ?: return

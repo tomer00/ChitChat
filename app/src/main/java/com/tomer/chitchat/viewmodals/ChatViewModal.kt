@@ -197,7 +197,8 @@ class ChatViewModal @Inject constructor(
     //region ACTIVITY COMM
 
     fun textChanged() {
-        webSocket.typing()
+        if (canSendMsg)
+            webSocket.typing()
     }
 
     fun clearUnreadCount() {
@@ -302,6 +303,7 @@ class ChatViewModal @Inject constructor(
     fun openChat(phone: String, selectedIds: MutableList<Long>) {
         if (Utils.currentPartner?.partnerId == phone) {
             canSendMsg = Utils.currentPartner?.isAccepted ?: false
+            cryptoService.setCurrentPartner(phone)
             viewModelScope.launch {
                 flowMsgs.emit(MsgsFlowState.ChangeGif(typeF = FlowType.SET_PREFS, phone = phone))
                 flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone))
@@ -384,7 +386,10 @@ class ChatViewModal @Inject constructor(
                         BigInteger(cryptoService.checkForKeyAndGenerateIfNot(Utils.currentPartner!!.partnerId).tempKeyMy, 16), CipherUtils.P
                     ).toString(16)
                 )
-            ).also { canSendMsg = true }
+            ).also {
+                cryptoService.setCurrentPartner(Utils.currentPartner!!.partnerId)
+                canSendMsg = true
+            }
         else sendMsg(RejectConnection())
 
         viewModelScope.launch {
@@ -392,7 +397,7 @@ class ChatViewModal @Inject constructor(
             if (accepted)
                 relation.isAccepted = true
             else {
-                relation.isConnSent = false
+                relation.isConnSent = true
                 relation.isAccepted = false
                 relation.isRejected = true
             }

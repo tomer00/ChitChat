@@ -173,7 +173,6 @@ class MessageHandler(
 
                 for (i in 0..messages.size - 2) handleMsgCombine(fromUser, messages[i].first, messages[i].second, false)
                 handleMsgCombine(fromUser, messages[messages.lastIndex].first, messages[messages.lastIndex].second, true)
-                Log.d("TAG--", "Handling BULK MSg: $messages")
             }
 
             "ACK-PRB" -> {
@@ -225,12 +224,6 @@ class MessageHandler(
             }
 
             "*F-ACC*" -> {
-                if (repoPersons.getPersonByPhone(fromUser) == null) {
-                    callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.SEND_NEW_CONNECTION_REQUEST, fromUser))
-                    return
-                }
-
-                callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.REQ_ACCEPTED, fromUser))
                 val sts = text.substring(17).split(",-,".toRegex(), 2)
                 crypto.updateKeyAndGenerateFullKey(sts[0], fromUser)
                 repoRelation.saveRelation(
@@ -239,6 +232,8 @@ class MessageHandler(
                     )
                 )
                 val oldPer = repoPersons.getPersonPref(fromUser) ?: PartnerPrefBuilder(fromUser, sts[1]).build().also { repoPersons.insertPersonPref(it) }
+                oldPer.name = sts[1]
+                callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.REQ_ACCEPTED, fromUser))
                 repoPersons.insertPerson(
                     ModelRoomPersons(
                         fromUser, oldPer.name,
@@ -252,6 +247,11 @@ class MessageHandler(
             }
 
             "*F-REJ*" -> {
+                repoRelation.saveRelation(
+                    ModelRoomPersonRelation(
+                        fromUser, isConnSent = true, isAccepted = false, isRejected = true
+                    )
+                )
                 callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.REQ_REJECTED, fromUser))
                 val oldPer = repoPersons.getPersonByPhone(fromUser)
                 if (oldPer != null)
@@ -263,11 +263,6 @@ class MessageHandler(
                         isSent = false,
                         msgStatus = MsgStatus.RECEIVED
                     ).also { repoPersons.insertPerson(it) }
-                repoRelation.saveRelation(
-                    ModelRoomPersonRelation(
-                        fromUser, isConnSent = true, isAccepted = false, isRejected = true
-                    )
-                )
             }
         }
     }
@@ -275,7 +270,6 @@ class MessageHandler(
     private suspend fun handleMsgCombine(fromUser: String, id: Long, mod: ModelMsgSocket, isLast: Boolean) {
         val builderRoom = ModelRoomMessageBuilder()
         try {
-            Log.d("TAG--", "handelMsg: $mod")
             builderRoom
                 .id(id)
                 .isRep(mod.isReply)

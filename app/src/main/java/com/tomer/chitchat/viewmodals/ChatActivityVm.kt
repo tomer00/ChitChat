@@ -5,6 +5,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.tomer.chitchat.modals.prefs.MyPrefs
+import com.tomer.chitchat.modals.prefs.PartnerPrefBuilder
 import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.modals.states.UiMsgModal
 import com.tomer.chitchat.repo.RepoMessages
@@ -168,13 +169,19 @@ class ChatActivityVm @Inject constructor(
     private val _partnerPref = MutableLiveData<ModelPartnerPref>()
     val partnerPref: LiveData<ModelPartnerPref> = _partnerPref
 
+    fun reloadPartnerPref(){
+        viewModelScope.launch {
+            _partnerPref.postValue(repoPersons.getPersonPref(phone) ?: PartnerPrefBuilder(phone).build())
+        }
+    }
+
     fun setPartnerNo(phone: String) {
         this.phone = phone
         viewModelScope.launch {
             _dpFile.postValue(repoStorage.getDP(phone))
         }
         viewModelScope.launch {
-            _partnerPref.postValue(repoPersons.getPersonPref(phone))
+            _partnerPref.postValue(repoPersons.getPersonPref(phone) ?: PartnerPrefBuilder(phone).build())
         }
     }
 }

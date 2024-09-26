@@ -36,7 +36,7 @@ class CryptoCipher(
         return false
     }
 
-    private fun generateNewKeyForUser(phone: String) =
+    private fun generateAndSaveNewKeyForUser(phone: String) =
         CryptoKey(
             phone, false,
             CipherUtils.generateRandom().toString(16),
@@ -50,16 +50,15 @@ class CryptoCipher(
         val oldKey = checkForKeyAndGenerateIfNot(phone)
         repoCipher.saveKey(
             CryptoKey(
-                oldKey.partnerUserPhone, true,
+                phone, true,
                 oldKey.tempKeyMy,
                 BigInteger(secret, 16).modPow(BigInteger(oldKey.tempKeyMy, 16), CipherUtils.P).toByteArray()
             )
         )
-
     }
 
     override fun checkForKeyAndGenerateIfNot(phone: String): CryptoKey =
-        repoCipher.getKey(phone) ?: generateNewKeyForUser(phone)
+        repoCipher.getKey(phone) ?: generateAndSaveNewKeyForUser(phone)
 
 
     @Throws(Exception::class)

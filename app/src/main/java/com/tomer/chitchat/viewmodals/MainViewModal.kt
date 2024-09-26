@@ -60,7 +60,7 @@ class MainViewModal @Inject constructor(
         }
     }
 
-    fun connectNew(phone: String, openNextActivity: Boolean, mandatoryConnect: Boolean = true) {
+    suspend fun connectNew(phone: String, openNextActivity: Boolean, mandatoryConnect: Boolean = true) {
         if (!mandatoryConnect) {
             viewModelScope.launch {
                 if (!phone.isDigitsOnly()) return@launch
@@ -70,7 +70,7 @@ class MainViewModal @Inject constructor(
                     val oldPerf = repoPersons.getPersonPref(phone) ?: PartnerPrefBuilder(phone, phone).build().also { repoPersons.insertPersonPref(it) }
                     if (oldPersons == null)
                         ModelRoomPersons(
-                            phone, oldPerf?.name ?: "",
+                            phone, oldPerf.name,
                             MsgMediaType.TEXT, "", -1L,
                             System.currentTimeMillis(),
                             lastSeenMillis = System.currentTimeMillis(),
@@ -80,7 +80,7 @@ class MainViewModal @Inject constructor(
                     if (openNextActivity)
                         flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.OPEN_NEW_CONNECTION_ACTIVITY, phone))
                 }
-            }
+            }.join()
             return
         }
         viewModelScope.launch {
@@ -113,11 +113,10 @@ class MainViewModal @Inject constructor(
                 isSent = false,
                 msgStatus = MsgStatus.RECEIVED
             ).apply { repoPersons.insertPerson(this) }
-        }
+        }.join()
     }
 
     private fun genKeyAndSendNotification(relation: ModelRoomPersonRelation) {
-        relation.isRejected = false
         repoRelations.saveRelation(relation)
         val key = cryptoService.checkForKeyAndGenerateIfNot(relation.partnerId)
         webSocket.sendMessage(

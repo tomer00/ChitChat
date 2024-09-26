@@ -74,8 +74,23 @@ class MsgBackground : View {
     fun setData(isSent: Boolean?, cornerRadius: Float, gradModel: GradModel) {
         this.isSent = isSent
         this.gradModel = gradModel
+        paint.shader = BackgroundProvider.createLinearGradient(Point(width, height), gradModel)
         this.cornerRadius = cornerRadius
         canShow = true
+        postInvalidate()
+    }
+
+    fun setColor(@ColorInt color: Int, gradModel: GradModel? = null) {
+        if (isSent != false) return
+        if (gradModel == null) {
+            paint.apply {
+                this.color = color
+                shader = null
+            }
+        } else {
+            this.gradModel = gradModel
+            paint.shader = BackgroundProvider.createLinearGradient(Point(width, height), gradModel)
+        }
         postInvalidate()
     }
 

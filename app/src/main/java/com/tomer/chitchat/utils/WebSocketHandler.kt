@@ -75,8 +75,7 @@ class WebSocketHandler(
         }
 
         override fun onMessage(webSocket: WebSocket, text: String) {
-            Log.d("TAG--", "onMessageNEW: $text")
-            //Handle Chunkes IMPL
+            //Handle Chunks IMPL
             if (text.elementAt(0) == 'C') {
                 val chunkId = ConversionUtils.fromBase64(text.substring(1, 13))
                 val chunkIndex = text.substring(13, 16).toInt()

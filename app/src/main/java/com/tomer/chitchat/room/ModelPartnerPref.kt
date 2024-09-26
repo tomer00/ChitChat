@@ -10,7 +10,7 @@ data class ModelPartnerPref(
     @PrimaryKey
     val phone: String,
     var name: String,
-    val background: RenderModel,
+    var background: RenderModel,
     var accent: RenderModel,
     var backgroundAssetNo: Int,
     val dpNo: Int,

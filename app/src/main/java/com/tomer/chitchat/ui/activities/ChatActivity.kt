@@ -16,7 +16,6 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.View
 import android.view.ViewAnimationUtils
 import android.view.WindowInsets
@@ -85,6 +84,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
     private val vma: ChatActivityVm by viewModels()
     private val vm: ChatViewModal by viewModels()
     private val vmAssets: AssetsViewModel by viewModels()
+
+    private val codePrefs = 1012
 
     private lateinit var adap: ChatAdapter
     private val emojiAdap by lazy {
@@ -370,7 +371,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
         lifecycleScope.launch {
             vma.flowDeleteIds.collectLatest { id ->
-                Log.d("TAG--", "DELETED $id")
                 val pos = vm.chatMsgs.indexOfFirst { it.id == id }
                 if (pos == -1) return@collectLatest
 
@@ -528,10 +528,20 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         }
 
         vma.partnerPref.observe(this) { mod ->
-            b.imgBg.setData(isDarkModeEnabled(), mod.background.alpha, mod.backgroundAsset, mod.background.color, mod.background.grad)
-            if (mod.accent.grad == null)
+            b.imgBg.setData(isDarkModeEnabled(), mod.background.alpha, mod.backgroundAssetNo, mod.background.color, mod.background.grad)
+            for (i in 0 until ll.childCount) {
+                val b = ll.getChildAt(i)?.let { MsgItemBinding.bind(it) } ?: continue
+                b.msgBg.setColor(mod.accent.color, mod.accent.grad)
+            }
+            if (mod.accent.grad == null) {
                 adap.setValues(vma.myPref.textSize, vma.myPref.msgItemCorners.px, mod.accent.color)
-            else adap.setValues(vma.myPref.textSize, vma.myPref.msgItemCorners.px, mod.accent.grad)
+                b.btSendBG.setData(null, 100.px, mod.accent.color)
+                b.bgLayReply.setData(null, vma.myPref.msgItemCorners.px, mod.accent.color)
+                return@observe
+            }
+            adap.setValues(vma.myPref.textSize, vma.myPref.msgItemCorners.px, mod.accent.grad!!)
+            b.btSendBG.setData(null, 100.px, mod.accent.grad!!)
+            b.bgLayReply.setData(null, vma.myPref.msgItemCorners.px, mod.accent.grad!!)
         }
     }
 
@@ -665,11 +675,20 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
             b.layDetail.id -> {
                 val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, b.imgDp, vma.phone)
-                startActivity(Intent(this, PartnerPrefActivity::class.java).apply { putExtra("phone", vma.phone);putExtra("dpFile", vma.dpFile.value?.absolutePath ?: "") }, options.toBundle())
+                startActivityForResult(
+                    Intent(this, PartnerPrefActivity::class.java)
+                        .apply {
+                            putExtra("phone", vma.phone)
+                            putExtra("dpFile", vma.dpFile.value?.absolutePath ?: "")
+                        },
+                    codePrefs,
+                    options.toBundle()
+                )
             }
         }
     }
     //endregion CLICK LISTENER
+
 
     //region FLOW EVENTS
 
@@ -701,7 +720,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
     }
 
     private fun handleFlow(msg: MsgsFlowState) {
-        if (msg.fromUser != Utils.currentPartner!!.partnerId) return
+        if (msg.fromUser != (Utils.currentPartner?.partnerId ?: "")) return
         when (msg.type) {
             FlowType.MSG -> {
                 val msgL = msg.data ?: return
@@ -883,7 +902,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             FlowType.SET_PREFS -> {
                 b.imgBg.run {
                     val mod = vm.partnerPref ?: return
-                    setData(isDarkModeEnabled(), mod.background.alpha, mod.backgroundAsset, mod.background.color, mod.background.grad)
+                    setData(isDarkModeEnabled(), mod.background.alpha, mod.backgroundAssetNo, mod.background.color, mod.background.grad)
                 }
             }
 
@@ -892,6 +911,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             }
 
             FlowType.REQ_ACCEPTED -> {
+                Utils.currentPartner?.isAccepted = true
                 runOnUiThread {
                     b.contRelation.visibility = View.GONE
                     vm.openChat(msg.fromUser, vma.selectedMsgIds)
@@ -899,6 +919,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             }
 
             FlowType.INCOMING_NEW_CONNECTION_REQUEST -> {
+                Utils.currentPartner?.isAccepted = false
+                vm.canSendMsg = false
                 runOnUiThread {
                     b.apply {
                         contRelation.visibility = View.VISIBLE
@@ -1016,6 +1038,11 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         super.onActivityResult(requestCode, resultCode, data)
+        if (requestCode == codePrefs) {
+            if (resultCode == RESULT_OK)
+                vma.reloadPartnerPref()
+            return
+        }
         if (requestCode != 1001) return
         if (resultCode != RESULT_OK) return
         val index = vm.chatMsgs.indexOfFirst { it.id == msgIdForImageShow }
