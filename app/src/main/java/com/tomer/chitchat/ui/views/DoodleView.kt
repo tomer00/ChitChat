@@ -70,9 +70,9 @@ class DoodleView : View {
                 jobBitmap!!.cancel()
 
             jobBitmap = CoroutineScope(Dispatchers.Default).launch {
+                yield()
                 val bmp = BackgroundProvider.getBackground(bgAsset, Point(w + 200, h + 200), isDark, context, color, gradModel)
                 yield()
-                bmpBg.recycle()
                 bmpBg = bmp
                 postInvalidate()
             }
@@ -105,9 +105,9 @@ class DoodleView : View {
                 jobBitmap!!.cancel()
 
             jobBitmap = CoroutineScope(Dispatchers.Default).launch {
+                yield()
                 val bmp = BackgroundProvider.getBackground(this@DoodleView.bgAsset, Point(width + 200, height + 200), isDark, context, color, gradModel)
                 yield()
-                bmpBg.recycle()
                 bmpBg = bmp
                 postInvalidate()
             }

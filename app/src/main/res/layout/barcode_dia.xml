@@ -19,6 +19,36 @@
         app:layout_constraintTop_toTopOf="parent"
         app:tint="@color/white" />
 
+    <ImageView
+        android:id="@+id/btGal"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:layout_gravity="end"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/round_bg"
+        android:backgroundTint="@color/purple"
+        android:contentDescription="@string/app_name"
+        android:padding="6dp"
+        android:src="@drawable/ic_gifs"
+        app:layout_constraintEnd_toStartOf="@id/btCross"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/white" />
+
+    <ImageView
+        android:id="@+id/btFlash"
+        android:layout_width="34dp"
+        android:layout_height="34dp"
+        android:layout_gravity="end"
+        android:layout_marginEnd="20dp"
+        android:background="@drawable/round_bg"
+        android:backgroundTint="@color/purple"
+        android:contentDescription="@string/app_name"
+        android:padding="6dp"
+        android:src="@drawable/flash_on"
+        app:layout_constraintEnd_toStartOf="@id/btGal"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="@color/white" />
+
     <androidx.cardview.widget.CardView
         android:layout_width="match_parent"
         android:layout_height="0dp"

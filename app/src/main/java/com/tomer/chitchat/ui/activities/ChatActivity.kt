@@ -489,6 +489,10 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             }
         }
 
+        vma.lastSeenText.observe(this) {
+            b.tvDetails.text = it
+        }
+
         lifecycleScope.launch {
             vmAssets.flowEvents.collectLatest {
                 handleFlow(it)
@@ -835,7 +839,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
             FlowType.TYPING -> {
                 if (b.tvDetails.text.toString() == "Typing...") return
-                "Typing...".also { b.tvDetails.text = it }
+                vma.setTypingText("Typing...")
                 val animDur = 200L
                 lifecycleScope.launch {
                     delay(animDur)
@@ -851,8 +855,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
             FlowType.NO_TYPING -> {
                 if (b.tvDetails.text.toString() != "Typing...") return
-                if (lastSeenMillis == -1L) "Online".also { b.tvDetails.text = it }
-                else "last seen at ${ConversionUtils.getRelativeTime(lastSeenMillis)}".also { b.tvDetails.text = it }
+                if (lastSeenMillis == -1L) vma.setTypingText("Online")
+                else vma.setTypingText("last seen at ${ConversionUtils.getRelativeTime(lastSeenMillis)}")
                 val animDur = 200L
                 lifecycleScope.launch {
                     delay(animDur)
@@ -867,7 +871,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             }
 
             FlowType.ONLINE -> {
-                "Online".also { b.tvDetails.text = it }
+                vma.setTypingText("Online")
                 lastSeenMillis = -1L
             }
 
@@ -888,10 +892,10 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                 lastSeenMillis = msg.msgId!!
                 val relTimeText = ConversionUtils.getRelativeTime(lastSeenMillis)
                 if (relTimeText.contains(':'))
-                    "last seen at $relTimeText".also { b.tvDetails.text = it }
+                    vma.setTypingText("last seen at $relTimeText")
                 else if (relTimeText == "Yesterday")
-                    "last seen yesterday at ${ConversionUtils.millisToTimeText(lastSeenMillis)}".also { b.tvDetails.text = it }
-                else "last seen on $relTimeText".also { b.tvDetails.text = it }
+                    vma.setTypingText("last seen yesterday at ${ConversionUtils.millisToTimeText(lastSeenMillis)}")
+                else vma.setTypingText("last seen on $relTimeText")
             }
 
             FlowType.RELOAD_RV -> {

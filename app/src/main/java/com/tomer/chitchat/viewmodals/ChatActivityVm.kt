@@ -161,6 +161,12 @@ class ChatActivityVm @Inject constructor(
     private val _dpFile = MutableLiveData<File>()
     val dpFile: LiveData<File> = _dpFile
 
+    private val _lastSeenText = MutableLiveData("")
+    val lastSeenText: LiveData<String> = _lastSeenText
+
+    fun setTypingText(text: String) {
+        _lastSeenText.postValue(text)
+    }
     //endregion STATES
 
     var phone = ""
@@ -169,7 +175,7 @@ class ChatActivityVm @Inject constructor(
     private val _partnerPref = MutableLiveData<ModelPartnerPref>()
     val partnerPref: LiveData<ModelPartnerPref> = _partnerPref
 
-    fun reloadPartnerPref(){
+    fun reloadPartnerPref() {
         viewModelScope.launch {
             _partnerPref.postValue(repoPersons.getPersonPref(phone) ?: PartnerPrefBuilder(phone).build())
         }

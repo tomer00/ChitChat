@@ -97,7 +97,7 @@ class HiltModules {
 
     @Provides
     @Singleton
-    fun provideNotificationService(@ApplicationContext appContext: Context): NotificationService = AndroidNotificationService(appContext)
+    fun provideNotificationService(@ApplicationContext appContext: Context,repoPersons: RepoPersons,): NotificationService = AndroidNotificationService(appContext,repoPersons)
 
     //region REPOS
 

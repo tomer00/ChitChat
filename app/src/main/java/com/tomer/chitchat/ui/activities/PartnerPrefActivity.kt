@@ -22,6 +22,7 @@ import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.tomer.chitchat.R
 import com.tomer.chitchat.databinding.AccentRowBinding
 import com.tomer.chitchat.databinding.ActivityPartnerPrefBinding
+import com.tomer.chitchat.databinding.ItemGradBgBinding
 import com.tomer.chitchat.databinding.PatternRowBinding
 import com.tomer.chitchat.room.ModelPartnerPref
 import com.tomer.chitchat.ui.views.DoodleView
@@ -168,6 +169,10 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
         vm.setAccent(v.tag.toString().toInt())
     }
 
+    private val clickBgRender = View.OnClickListener { v ->
+        vm.setBackGroundIndex(v.tag.toString().toInt())
+    }
+
     private fun populateThemeData() {
         val dark = isDarkModeEnabled()
         val paramFirstView = LinearLayout.LayoutParams(18.px.toInt(), 100)
@@ -187,6 +192,29 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
             ((b.contBgDoodles.getChildAt(assetNo) as CardView).getChildAt(0) as ConstraintLayout).getChildAt(1).visibility = View.VISIBLE
         }, 100)
 
+
+        val roundCorner = 52.px
+        b.contBgGrades.addView(Space(this).apply { layoutParams = paramFirstView })
+        for (i in vm.rvBgRenders.indices step 2) {
+
+            val bR = ItemGradBgBinding.bind(LayoutInflater.from(this).inflate(R.layout.item_grad_bg, b.contBgGrades, false))
+            val mod1 = vm.rvBgRenders[i]
+            val mod2 = vm.rvBgRenders[i + 1]
+            if (mod1.grad == null)
+                bR.v1.setData(null, roundCorner, mod1.color)
+            else bR.v1.setData(null, roundCorner, mod1.grad)
+
+            if (mod2.grad == null)
+                bR.v2.setData(null, roundCorner, mod2.color)
+            else bR.v2.setData(null, roundCorner, mod2.grad)
+            bR.v1.setOnClickListener(clickBgRender)
+            bR.v1.tag = i.toString()
+
+            bR.v2.setOnClickListener(clickBgRender)
+            bR.v2.tag = (i + 1).toString()
+            b.contBgGrades.addView(bR.root)
+        }
+        b.contBgGrades.addView(Space(this).apply { layoutParams = paramLastView })
 
         val colBg = ContextCompat.getColor(this, R.color.softBg)
         val corners = vm.myPref.msgItemCorners.px.times(.78f)

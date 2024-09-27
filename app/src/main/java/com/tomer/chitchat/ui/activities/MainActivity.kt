@@ -4,16 +4,19 @@ import android.Manifest
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
-import android.util.Log
 import android.view.View
 import android.view.ViewAnimationUtils
 import android.view.WindowInsets
 import android.view.animation.LinearInterpolator
 import android.widget.Toast
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
@@ -29,6 +32,11 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
 import com.google.firebase.auth.FirebaseAuth
+import com.google.zxing.BinaryBitmap
+import com.google.zxing.LuminanceSource
+import com.google.zxing.MultiFormatReader
+import com.google.zxing.RGBLuminanceSource
+import com.google.zxing.common.HybridBinarizer
 import com.journeyapps.barcodescanner.BarcodeCallback
 import com.journeyapps.barcodescanner.CompoundBarcodeView
 import com.karumi.dexter.Dexter
@@ -388,6 +396,43 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
     //region BARCODE CALLBACK
 
+    private var flashState = false
+
+    private val gallery: ActivityResultLauncher<PickVisualMediaRequest> =
+        registerForActivityResult(
+            ActivityResultContracts.PickVisualMedia()
+        ) {
+            if (it == null)
+                return@registerForActivityResult
+            contentResolver.openInputStream(it).use { ins ->
+                val bmp = BitmapFactory.decodeStream(ins)
+                val data = scanImageForQR(bmp)
+                if (data.isEmpty())
+                    Toast.makeText(this, "No Code Found...", Toast.LENGTH_SHORT).show()
+                else {
+                    connectFromQrData(data)
+                    b.layNewNumber.visibility = View.GONE
+                    b.imgBarcode.pauseAnimation()
+                    b.imgFab.visibility = View.VISIBLE
+                }
+            }
+        }
+
+    private fun scanImageForQR(bmp: Bitmap): String {
+        var ret = ""
+        val arr = IntArray(bmp.width * bmp.height)
+        bmp.getPixels(arr, 0, bmp.width, 0, 0, bmp.width, bmp.height)
+        val source: LuminanceSource = RGBLuminanceSource(bmp.width, bmp.height, arr)
+        val bitmap = BinaryBitmap(HybridBinarizer(source))
+        val reader = MultiFormatReader()
+        try {
+            val result = reader.decode(bitmap)
+            ret = result.text
+        } catch (ignored: java.lang.Exception) {
+        }
+        return ret
+    }
+
     private fun crQr(): AlertDialog {
         val fb: BarcodeDiaBinding = BarcodeDiaBinding.inflate(layoutInflater)
         val b = AlertDialog.Builder(this)
@@ -398,13 +443,31 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         fb.btCross.setOnClickListener {
             qrd.cancel()
         }
+        fb.btGal.setOnClickListener {
+            qrd.cancel()
+            gallery.launch(
+                PickVisualMediaRequest.Builder()
+                    .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                    .build()
+            )
+        }
+        fb.btFlash.setOnClickListener {
+            if (flashState) barcodeView.setTorchOff().also { flashState = false }
+            else barcodeView.setTorchOn().also { flashState = true }
+        }
         fb.barcodeView.setStatusText("")
         barcodeView = fb.barcodeView
         fb.btCross.translationY = 120f
+        fb.btGal.translationY = 120f
+        fb.btFlash.translationY = 120f
         fb.btCross.animate().translationY(0f).setDuration(400).setStartDelay(400).start()
+        fb.btGal.animate().translationY(0f).setDuration(400).setStartDelay(600).start()
+        fb.btFlash.animate().translationY(0f).setDuration(400).setStartDelay(800).start()
 
         qrd.setOnCancelListener {
             barcodeView.pause()
+            barcodeView.setTorchOff()
+            flashState = false
         }
 
         return qrd
@@ -412,7 +475,6 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
 
     private fun callBack() = BarcodeCallback { result ->
-        barcodeView.pause()
         qrDia.dismiss()
         connectFromQrData(result.text.toString())
         b.layNewNumber.visibility = View.GONE
@@ -428,7 +490,6 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
     //endregion BARCODE CALLBACK
 
     private fun connectFromQrData(data: String) {
-        Log.d("TAG--", "connectFromQrData: $data")
         if (data.length != 17) return
         val phoneNo = data.substring(7)
         if (!phoneNo.isDigitsOnly()) return

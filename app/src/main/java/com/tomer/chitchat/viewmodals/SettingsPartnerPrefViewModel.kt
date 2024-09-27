@@ -51,7 +51,7 @@ class SettingsPartnerPrefViewModel @Inject constructor(
         3 to RenderModel(1f, Color.GREEN, GradModel(90, Color.parseColor("#642b73"), Color.parseColor("#c6426e"))),
         4 to RenderModel(1f, Color.GREEN, GradModel(45, Color.parseColor("#cb356b"), Color.parseColor("#bd3f32"))),
         5 to RenderModel(1f, Color.GREEN, GradModel(125, Color.parseColor("#283c86"), Color.parseColor("#45a247"))),
-        6 to RenderModel(1f, Color.GREEN, GradModel(45, Color.parseColor("#2f0743"), Color.parseColor("#41295a"))),
+        6 to RenderModel(1f, Color.GREEN, GradModel(100, Color.parseColor("#4b639f"), Color.parseColor("#5baeb4"))),
         7 to RenderModel(1f, Color.GREEN, GradModel(15, Color.parseColor("#cf5e0c"), Color.parseColor("#ee0979"))),
         8 to RenderModel(1f, Color.GREEN, GradModel(45, Color.parseColor("#0f3443"), Color.parseColor("#34e89e"))),
         9 to RenderModel(1f, Color.GREEN, GradModel(125, Color.parseColor("#935096"), Color.parseColor("#4568dc"))),
@@ -68,6 +68,25 @@ class SettingsPartnerPrefViewModel @Inject constructor(
         RenderModel(1f, Color.GREEN, GradModel(45, Color.parseColor("#358669"), Color.parseColor("#4d8f51"))),
         RenderModel(1f, Color.parseColor("#d28036")),
         RenderModel(1f, Color.GREEN, GradModel(100, Color.parseColor("#4b639f"), Color.parseColor("#5baeb4"))),
+    )
+
+    val rvBgRenders = listOf(
+        RenderModel(1f, Color.GREEN, GradModel(120, Color.parseColor("#a6c0fe"), Color.parseColor("#f68084"))),
+        RenderModel(1f, Color.GREEN, GradModel(45, Color.parseColor("#cf5e0c"), Color.parseColor("#ee0979"))),
+        RenderModel(1f, Color.GREEN, GradModel(90, Color.parseColor("#642b73"), Color.parseColor("#c6426e"))),
+        RenderModel(1f, Color.parseColor("#c678dd")),
+        RenderModel(1f, Color.GREEN, GradModel(125, Color.parseColor("#283c86"), Color.parseColor("#45a247"))),
+        RenderModel(1f, Color.GREEN, GradModel(15, Color.parseColor("#cf5e0c"), Color.parseColor("#ee0979"))),
+        RenderModel(1f, Color.GREEN, GradModel(45, Color.parseColor("#0f3443"), Color.parseColor("#34e89e"))),
+        RenderModel(1f, Color.GREEN, GradModel(80, Color.parseColor("#eacda3"), Color.parseColor("#d6ae7b"))),
+        RenderModel(1f, Color.GREEN, GradModel(95, Color.parseColor("#cf5e0c"), Color.parseColor("#ee0979"))),
+        RenderModel(1f, Color.GREEN, GradModel(45, Color.parseColor("#cb356b"), Color.parseColor("#bd3f32"))),
+        RenderModel(1f, Color.GREEN, GradModel(125, Color.parseColor("#935096"), Color.parseColor("#4568dc"))),
+        RenderModel(1f, Color.GREEN, GradModel(100, Color.parseColor("#4b639f"), Color.parseColor("#5baeb4"))),
+        RenderModel(1f, Color.parseColor("#d28036")),
+        RenderModel(1f, Color.GREEN, GradModel(25, Color.parseColor("#fefdcd"), Color.parseColor("#a3e6ff"))),
+        RenderModel(1f, Color.GREEN, GradModel(220, Color.parseColor("#bdc3c7"), Color.parseColor("#2c3e50"))),
+        RenderModel(1f, Color.GREEN, GradModel(125, Color.parseColor("#f7ff00"), Color.parseColor("#db36a4"))),
     )
 
     //endregion THEME DATA
@@ -111,6 +130,18 @@ class SettingsPartnerPrefViewModel @Inject constructor(
         viewModelScope.launch {
             repoPersons.insertPersonPref(pref)
             _partnerPref.postValue(pref)
+            _transparency.postValue(1f)
+        }
+    }
+
+    fun setBackGroundIndex(index: Int) {
+        isChanged = true
+        val pref = _partnerPref.value ?: return
+        pref.background = rvBgRenders.getOrNull(index) ?: RenderModel(1f, Color.parseColor("#005feb"))
+        viewModelScope.launch {
+            repoPersons.insertPersonPref(pref)
+            _partnerPref.postValue(pref)
+            _transparency.postValue(1f)
         }
     }
 

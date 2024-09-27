@@ -11,15 +11,16 @@ import android.graphics.drawable.Icon
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.PendingIntentCompat
-import androidx.core.app.TaskStackBuilder
 import com.tomer.chitchat.R
 import com.tomer.chitchat.adap.AdapPerson
 import com.tomer.chitchat.modals.states.UiMsgModal
+import com.tomer.chitchat.repo.RepoPersons
 import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.ui.activities.ChatActivity
 
 class AndroidNotificationService(
-    private val context: Context
+    private val context: Context,
+    private val repoPersons: RepoPersons,
 ) : NotificationService {
 
     private val notiMan by lazy { NotificationManagerCompat.from(context) }
@@ -47,6 +48,7 @@ class AndroidNotificationService(
     override fun showNewMessageNotification(msg: UiMsgModal?, phonePartner: String, namePartner: String) {
         if (!notiMan.areNotificationsEnabled()) return
         if (msg == null) return
+        if (repoPersons.getPersonPref(phonePartner)?.notificationAllowed == false) return
         if (notiMan.getNotificationChannelCompat("new_msg") == null)
             createNewMsgChannel()
 

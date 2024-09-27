@@ -209,7 +209,7 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
         }
 
         b.apply {
-            b.tvPhone.text = vm.phone
+            "${vm.phone.subSequence(0, 5)} ${ vm.phone.subSequence(5, 10)}".also { b.tvPhone.text = it }
         }
 
         vm.myPrefs.observe(this) {
