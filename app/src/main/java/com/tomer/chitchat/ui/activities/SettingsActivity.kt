@@ -87,7 +87,7 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
 
     //region PARALAX SENSOR
 
-    private var isSensorRegisterd = false
+    private var isSensorRegistered = false
     private val sensorManager by lazy { getSystemService(SENSOR_SERVICE) as SensorManager }
     private val accelerometer by lazy { sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) }
 
@@ -107,8 +107,12 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
     //region LIFECYCLE
 
     private fun registerLis() {
-        sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
-        isSensorRegisterd = true
+        try {
+            sensorManager.registerListener(this, accelerometer!!, SensorManager.SENSOR_DELAY_UI)
+            isSensorRegistered = true
+        } catch (_: Exception) {
+            vm.setParallax(0f)
+        }
     }
 
     override fun onResume() {
@@ -119,8 +123,11 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
 
     override fun onPause() {
         super.onPause()
-        sensorManager.unregisterListener(this)
-        isSensorRegisterd = false
+        try {
+            sensorManager.unregisterListener(this)
+        } catch (_: Exception) {
+        }
+        isSensorRegistered = false
     }
 
     override fun onBackPressed() {
@@ -209,7 +216,7 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
         }
 
         b.apply {
-            "${vm.phone.subSequence(0, 5)} ${ vm.phone.subSequence(5, 10)}".also { b.tvPhone.text = it }
+            "${vm.phone.subSequence(0, 5)} ${vm.phone.subSequence(5, 10)}".also { b.tvPhone.text = it }
         }
 
         vm.myPrefs.observe(this) {
@@ -302,12 +309,15 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
             if (fac == 0f) {
                 b.switchParallax.isChecked = false
                 b.sliderParallax.isEnabled = false
-                sensorManager.unregisterListener(this)
-                isSensorRegisterd = false
+                try {
+                    sensorManager.unregisterListener(this)
+                } catch (_: Exception) {
+                }
+                isSensorRegistered = false
                 return@observe
             }
 
-            if (!isSensorRegisterd)
+            if (!isSensorRegistered)
                 registerLis()
             b.switchParallax.isChecked = true
             b.sliderParallax.isEnabled = true

@@ -38,8 +38,8 @@ class SettingsPartnerPrefViewModel @Inject constructor(
     private val _transparency = MutableLiveData(1f)
     val transparency: LiveData<Float> = _transparency
 
-    private val _sharedContent = MutableLiveData<List<File>>(listOf())
-    val sharedContent: LiveData<List<File>> = _sharedContent
+    private val _sharedContent = MutableLiveData<List<Pair<Boolean, File>>>(listOf())
+    val sharedContent: LiveData<List<Pair<Boolean, File>>> = _sharedContent
 
     //endregion STATES
 
@@ -103,9 +103,9 @@ class SettingsPartnerPrefViewModel @Inject constructor(
         }
         if (_sharedContent.value?.isEmpty() == true)
             viewModelScope.launch {
-                val listFiles = mutableListOf<File>()
+                val listFiles = mutableListOf<Pair<Boolean, File>>()
                 repoMsgs.getMsgsOfUser(phone).filter { it.msgType == MsgMediaType.GIF || it.msgType == MsgMediaType.IMAGE }.forEach {
-                    repoStorage.getFileFromFolder(it.msgType, it.mediaFileName ?: "")?.let { file -> listFiles.add(file) }
+                    repoStorage.getFileFromFolder(it.msgType, it.mediaFileName ?: "")?.let { file -> listFiles.add((it.msgType == MsgMediaType.GIF) to file) }
                 }
                 _sharedContent.postValue(listFiles)
             }

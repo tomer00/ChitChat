@@ -2,14 +2,16 @@ package com.tomer.chitchat.ui.activities
 
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.content.ContentValues
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Point
 import android.graphics.drawable.Drawable
-import android.media.MediaScannerConnection
 import android.os.Build
 import android.os.Bundle
+import android.provider.MediaStore
 import android.transition.Transition.TransitionListener
+import android.util.Log
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
@@ -50,7 +52,7 @@ class ImageViewActivity : AppCompatActivity() {
 
     override fun onBackPressed() {
         b.gifImgView2.visibility = View.GONE
-        super.onBackPressed()
+        super.onBackPressedDispatcher.onBackPressed()
     }
 
     @SuppressLint("ClickableViewAccessibility")
@@ -153,6 +155,8 @@ class ImageViewActivity : AppCompatActivity() {
     }
 
 
+    private var isGif = false
+
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -169,12 +173,14 @@ class ImageViewActivity : AppCompatActivity() {
             colBg[2] = 22
         }
         b.root.setBackgroundColor(Color.argb(255, colBg[0], colBg[1], colBg[2]))
-        val isGif = intent.getBooleanExtra("isGif", false)
-        val isSent = intent.getBooleanExtra("isSent", false)
+        isGif = intent.getBooleanExtra("isGif", false)
+        val canSaveToGal = intent.getBooleanExtra("canSaveToGal", false)
+        val canDelete = intent.getBooleanExtra("canDelete", false)
+        val heading = intent.getStringExtra("heading").toString()
         val file = File(intent.getStringExtra("file") ?: "")
 
         if (intent.hasExtra("timeText"))
-            b.tvDetails.text = intent.getStringExtra("timeText")
+            b.tvDetails.text = (intent.getStringExtra("timeText") ?: "").also { if (it.isEmpty()) b.tvDetails.visibility = View.GONE }
         else {
             val time = intent.getLongExtra("timeMillis", System.currentTimeMillis())
             val dayDate = ConversionUtils.getRelativeTime(time).takeIf { !it.contains(':') } ?: "Today"
@@ -182,30 +188,52 @@ class ImageViewActivity : AppCompatActivity() {
             "$dayDate • $timeToday".also { b.tvDetails.text = it }
         }
 
-        b.btDelete.setOnClickListener {
-            AlertDialogBuilder(this)
-                .setTitle("Delete file?")
-                .setDescription("Do you really want to delete this file?")
-                .setPositiveButton("Delete for me") {
-                    onBackPressed()
-                    setResult(RESULT_OK)
-                }
-                .show()
-        }
+        if (canDelete)
+            b.btDelete.setOnClickListener {
+                AlertDialogBuilder(this)
+                    .setTitle("Delete file?")
+                    .setDescription("Do you really want to delete this file?")
+                    .setPositiveButton("Delete for me") {
+                        onBackPressed()
+                        setResult(RESULT_OK)
+                    }
+                    .show()
+            }
+
         b.btBack.setOnClickListener {
             onBackPressed()
         }
 
-        "You".also { b.tvPartnerName.text = it }
-        if (!isSent) {
+        b.tvPartnerName.text = heading
+        if (canSaveToGal) {
             b.btSaveToGallery.setOnClickListener {
-                MediaScannerConnection.scanFile(this, arrayOf(file.absolutePath), null) { _, _ ->
-                    b.root.post { Toast.makeText(this, "File saved to Gallery...", Toast.LENGTH_SHORT).show() }
+                val uri = MediaStore.Images.Media.getContentUri(MediaStore.VOLUME_EXTERNAL_PRIMARY)
+
+                val cnVals = ContentValues()
+                cnVals.put(MediaStore.Images.Media.WIDTH, dimen.x)
+                cnVals.put(MediaStore.Images.Media.HEIGHT, dimen.y)
+
+                cnVals.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Chit Chat")
+                if (isGif)
+                    cnVals.put(MediaStore.Images.Media.MIME_TYPE, "image/gif")
+                else cnVals.put(MediaStore.Images.Media.MIME_TYPE, "image/webp")
+                cnVals.put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
+
+                try {
+                    val nuri = this.contentResolver.insert(uri, cnVals).also { b.root.post { Toast.makeText(this, "Can't save...", Toast.LENGTH_SHORT).show() } } ?: return@setOnClickListener
+                    this.contentResolver.openOutputStream(nuri).use {
+                        it?.write(bytesImage)
+                        it?.flush()
+                    }
+                    b.root.post { Toast.makeText(this, "Image saved to Gallery...", Toast.LENGTH_SHORT).show() }
+                } catch (e: Exception) {
+                    Log.e("TAG--", "onCreate: ", e)
                 }
             }
-            b.tvPartnerName.text = intent.getStringExtra("partnerName").toString()
+            b.btSaveToGallery.visibility = View.VISIBLE
         }
-        b.btSaveToGallery.visibility = if (isSent) View.GONE else View.VISIBLE
+
+        b.btDelete.visibility = if (canDelete) View.VISIBLE else View.GONE
         val resourceId = resources.getIdentifier("status_bar_height", "dimen", "android")
         val h = if (resourceId > 0) {
             resources.getDimensionPixelSize(resourceId)

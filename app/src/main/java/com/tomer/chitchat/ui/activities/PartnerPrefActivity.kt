@@ -1,5 +1,6 @@
 package com.tomer.chitchat.ui.activities
 
+import android.content.Intent
 import android.os.Build
 import android.os.Bundle
 import android.view.Gravity
@@ -10,11 +11,15 @@ import android.view.animation.AccelerateInterpolator
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Space
+import android.widget.TextView
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.cardview.widget.CardView
 import androidx.constraintlayout.widget.ConstraintLayout
+import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
+import androidx.core.content.res.ResourcesCompat
+import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.load.resource.bitmap.CenterCrop
@@ -31,6 +36,7 @@ import com.tomer.chitchat.utils.Utils.Companion.isLandscapeOrientation
 import com.tomer.chitchat.utils.Utils.Companion.px
 import com.tomer.chitchat.viewmodals.SettingsPartnerPrefViewModel
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.launch
 import java.io.File
 
 @AndroidEntryPoint
@@ -87,7 +93,7 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
 
         vm.partnerPref.observe(this) { mod ->
             b.apply {
-                populateMsgs(mod)
+                populateMessages(mod)
                 tvNameBig.text = mod.name
                 tvNameSmall.text = mod.name
                 "+91 ${mod.phone.substring(0, 5)} ${mod.phone.substring(5)}".also { tvPhone.text = it }
@@ -107,14 +113,21 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
             val paramFirstView = LinearLayout.LayoutParams(8.px.toInt(), size100PX)
             val paramLastView = LinearLayout.LayoutParams(12.px.toInt(), size100PX)
             b.contMedia.addView(Space(this).apply { layoutParams = paramFirstView })
-            for (i in list) {
+            val maxItems = ((window.decorView.width / size100PX) + 2).coerceAtLeast(6)
+            var listNew = list
+            if (list.size > maxItems) listNew = list.subList(0, maxItems)
+            for (i in listNew.indices) {
+                val mod = listNew[i]
                 val img = ImageView(this).apply {
                     layoutParams = imgParam
                     scaleX = 0f
                     scaleY = 0f
+                    transitionName = mod.second.name
+                    setOnClickListener(mediaItemClick)
+                    tag = i
                 }
                 Glide.with(img)
-                    .load(i)
+                    .load(mod.second)
                     .error(R.drawable.round_image_24)
                     .skipMemoryCache(true)
                     .placeholder(R.drawable.round_image_24)
@@ -124,6 +137,16 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
                     .into(img)
                 b.contMedia.addView(img)
             }
+            if (list.size > maxItems)
+                b.contMedia.addView(TextView(this).apply {
+                    layoutParams = imgParam
+                    gravity = Gravity.CENTER
+                    setTextColor(ContextCompat.getColor(this@PartnerPrefActivity, R.color.fore))
+                    "+${list.size - maxItems}".also { text = it }
+                    textSize = 18.px
+                    typeface = ResourcesCompat.getFont(this@PartnerPrefActivity, R.font.nunito_bold)
+                })
+
             b.contMedia.addView(Space(this).apply { layoutParams = paramLastView })
             b.contMedia.post {
                 for (i in 0 until b.contMedia.childCount) {
@@ -144,7 +167,27 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
 
     //endregion LIFE CYCLE
 
-    //region CLICK LISTENER
+    //region CLICK LISTENER]
+
+    private val mediaItemClick = View.OnClickListener { v ->
+        val pos = v.tag.toString().toInt()
+        val item = vm.sharedContent.value?.getOrNull(pos) ?: return@OnClickListener
+        lifecycleScope.launch {
+            item.second.inputStream().use {
+                ImageViewActivity.bytesImage = it.readBytes()
+            }
+            if (ImageViewActivity.bytesImage == null || (ImageViewActivity.bytesImage?.size ?: 0) < 10) return@launch
+            val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this@PartnerPrefActivity, v, v.transitionName)
+            startActivity(Intent(this@PartnerPrefActivity, ImageViewActivity::class.java).apply {
+                putExtra("file", item.second.absolutePath)
+                putExtra("isGif", item.first)
+                putExtra("canSaveToGal", true)
+                putExtra("canDelete", false)
+                putExtra("timeText", "")
+                putExtra("heading", item.second.name)
+            }, options.toBundle())
+        }
+    }
 
     override fun onClick(v: View) {
         when (v.id) {
@@ -155,7 +198,7 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
     }
     //endregion CLICK LISTENER
 
-    //region UI MSGS
+    //region UI MSG
 
     private val clickDoodle = View.OnClickListener { v ->
         val br = PatternRowBinding.bind(v)
@@ -234,7 +277,7 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
     }
 
 
-    private fun populateMsgs(mod: ModelPartnerPref) {
+    private fun populateMessages(mod: ModelPartnerPref) {
         b.imgBg.setData(isDarkModeEnabled(), mod.background.alpha, mod.backgroundAssetNo, mod.background.color, mod.background.grad)
         if (mod.accent.grad == null) b.accentSend.setData(null, 40.px, mod.accent.color)
         else b.accentSend.setData(null, 40.px, mod.accent.grad!!)
@@ -289,5 +332,5 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
         b2.imgFileType.visibility = View.GONE
     }
 
-    //endregion UI MSGS
+    //endregion UI MSG
 }

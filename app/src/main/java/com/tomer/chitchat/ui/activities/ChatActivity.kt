@@ -167,8 +167,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         super.onResume()
         vm.isChatActivityVisible = true
         vm.clearUnreadCount()
-        if (vma.myPref.parallaxFactor > 0f)
-            sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
+        try {
+            if (vma.myPref.parallaxFactor > 0f)
+                sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
+        } catch (_: Exception) {
+            vma.myPref.parallaxFactor = 0f
+        }
     }
 
     override fun onPause() {
@@ -176,7 +180,10 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         vm.isChatActivityVisible = false
         vma.scrollPosition.postValue(ll.findFirstVisibleItemPosition())
         if (vma.myPref.parallaxFactor > 0f)
-            sensorManager.unregisterListener(this)
+            try {
+                sensorManager.unregisterListener(this)
+            } catch (_: Exception) {
+            }
     }
 
     override fun onBackPressed() {
@@ -1025,13 +1032,14 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                     val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, b.mediaImg, msg.fileGif?.name ?: "img")
                     if (ImageViewActivity.bytesImage == null) return@runOnUiThread
                     startActivityForResult(Intent(this, ImageViewActivity::class.java).apply {
-                        putExtra("file", msg.fileGif?.absolutePath)
                         putExtra("isGif", msg.type == FlowType.OPEN_GIF)
-                        putExtra("isSent", chatMsg.isSent)
+                        putExtra("file", msg.fileGif?.absolutePath)
+                        putExtra("canSaveToGal", !chatMsg.isSent)
+                        putExtra("canDelete", true)
                         if (msg.msgId == -1L)
                             putExtra("timeText", chatMsg.timeText)
                         else putExtra("timeMillis", msg.msgId)
-                        putExtra("partnerName", (vm.partnerPref?.name ?: "").ifEmpty { vma.phone })
+                        putExtra("heading", if (chatMsg.isSent) "You" else (vm.partnerPref?.name ?: "").ifEmpty { vma.phone })
                     }, 1001, options.toBundle())
                 }
             }
