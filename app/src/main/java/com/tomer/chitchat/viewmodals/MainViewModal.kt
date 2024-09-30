@@ -36,6 +36,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.math.BigInteger
 import javax.inject.Inject
+import kotlin.random.Random
 
 
 @HiltViewModel
@@ -71,7 +72,7 @@ class MainViewModal @Inject constructor(
                     if (oldPersons == null)
                         ModelRoomPersons(
                             phone, oldPerf.name,
-                            MsgMediaType.TEXT, "", -1L,
+                            MsgMediaType.TEXT, "", -Random.nextLong(120),
                             System.currentTimeMillis(),
                             lastSeenMillis = System.currentTimeMillis(),
                             isSent = false,
@@ -107,7 +108,7 @@ class MainViewModal @Inject constructor(
             repoPersons.insertPersonPref(oldPref)
             ModelRoomPersons(
                 phone, name,
-                MsgMediaType.TEXT, "Connection request sent...", -1L,
+                MsgMediaType.TEXT, "Connection request sent...", -Random.nextLong(120),
                 System.currentTimeMillis(),
                 lastSeenMillis = System.currentTimeMillis(),
                 isSent = false,

@@ -5,6 +5,7 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.PointF
 import android.graphics.drawable.ColorDrawable
 import android.graphics.drawable.Drawable
 import android.os.Build
@@ -286,6 +287,10 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             }
             return
         }
+        if (b.extendedDpView.isVisible()) {
+            b.extendedDpView.setBitmap("")
+            return
+        }
         super.onBackPressed()
         b.root.postDelayed({ finishAffinity() }, 400)
     }
@@ -384,6 +389,17 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         )
     }
 
+    override fun onClickDp(pos: Int) {
+        if (viewModal.headMenu.value == true) {
+            onLongClick(pos)
+            return
+        }
+        val br = getRvViewIfVisible(adapter.currentList[pos].phoneNo) ?: return
+        val loc = IntArray(2)
+        br.imgProfile.getLocationOnScreen(loc)
+        b.extendedDpView.setBitmap(adapter.currentList[pos].fileDp?.absolutePath ?: "", PointF(loc[0].toFloat(), loc[1].toFloat()))
+    }
+
     override fun onLongClick(pos: Int) {
         var isSel: Boolean
         adapter.currentList[pos].isSelected = viewModal.addDelNo(adapter.currentList[pos].phoneNo).also { isSel = it }
@@ -475,7 +491,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
 
     private fun callBack() = BarcodeCallback { result ->
-        qrDia.dismiss()
+        qrDia.cancel()
         connectFromQrData(result.text.toString())
         b.layNewNumber.visibility = View.GONE
         b.imgBarcode.pauseAnimation()

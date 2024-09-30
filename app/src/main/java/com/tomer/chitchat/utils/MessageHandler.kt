@@ -19,6 +19,7 @@ import com.tomer.chitchat.room.ModelRoomPersonRelation
 import com.tomer.chitchat.room.ModelRoomPersons
 import com.tomer.chitchat.room.MsgMediaType
 import java.util.stream.Collectors
+import kotlin.random.Random
 
 class MessageHandler(
     private val gson: Gson,
@@ -213,7 +214,7 @@ class MessageHandler(
                 repoPersons.insertPerson(
                     ModelRoomPersons(
                         fromUser, sts[1],
-                        MsgMediaType.TEXT, "Sent you connection request...", -1L,
+                        MsgMediaType.TEXT, "Sent you connection request...", -Random.nextLong(120),
                         System.currentTimeMillis(),
                         lastSeenMillis = System.currentTimeMillis(),
                         isSent = false,
@@ -237,7 +238,7 @@ class MessageHandler(
                 repoPersons.insertPerson(
                     ModelRoomPersons(
                         fromUser, oldPer.name,
-                        MsgMediaType.TEXT, "Request accepted...", -1L,
+                        MsgMediaType.TEXT, "Request accepted...", -Random.nextLong(120),
                         System.currentTimeMillis(),
                         lastSeenMillis = System.currentTimeMillis(),
                         isSent = false,
@@ -257,7 +258,7 @@ class MessageHandler(
                 if (oldPer != null)
                     ModelRoomPersons(
                         fromUser, oldPer.name,
-                        MsgMediaType.TEXT, "Request rejected...", -1L,
+                        MsgMediaType.TEXT, "Request rejected...", -Random.nextLong(120),
                         System.currentTimeMillis(),
                         lastSeenMillis = oldPer.lastSeenMillis,
                         isSent = false,

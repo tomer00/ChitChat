@@ -39,8 +39,8 @@
                 android:layout_height="26dp"
                 android:layout_marginHorizontal="24dp"
                 android:contentDescription="@string/app_name"
-                android:visibility="gone"
                 android:src="@drawable/ic_search"
+                android:visibility="gone"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintEnd_toStartOf="@id/btProfile"
                 app:layout_constraintTop_toTopOf="parent" />
@@ -59,10 +59,10 @@
         </androidx.constraintlayout.widget.ConstraintLayout>
 
         <androidx.constraintlayout.widget.ConstraintLayout
-            android:layout_width="match_parent"
             android:id="@+id/laySelHead"
-            android:background="@color/backgroundSelBg"
+            android:layout_width="match_parent"
             android:layout_height="match_parent"
+            android:background="@color/backgroundSelBg"
             android:visibility="gone">
 
             <ImageView
@@ -121,8 +121,8 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="20dp"
-        android:clickable="true"
         android:background="@drawable/ripple_round_bg"
+        android:clickable="true"
         android:contentDescription="@string/app_name"
         app:cardBackgroundColor="@color/primary"
         app:cardCornerRadius="30dp"
@@ -142,10 +142,10 @@
                 android:contentDescription="@string/app_name"
                 android:padding="12dp"
                 android:src="@drawable/ic_add_chat"
-                app:tint="@color/white"
                 android:visibility="visible"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/white" />
 
             <androidx.constraintlayout.widget.ConstraintLayout
                 android:id="@+id/layNewNumber"
@@ -227,5 +227,10 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintTop_toBottomOf="@id/topBar"
         tools:listitem="@layout/row_person" />
+
+    <com.tomer.chitchat.ui.views.ExtendedDpView
+        android:layout_width="match_parent"
+        android:id="@+id/extendedDpView"
+        android:layout_height="match_parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -1136,7 +1136,10 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
     private fun openFileInAssociatedApp(pos: Int) {
         val mod = vm.chatMsgs.getOrNull(pos) ?: return
-        if (mod.msgType != MsgMediaType.FILE) return
+        if (mod.msgType != MsgMediaType.FILE) {
+            onChatItemClicked(pos, ChatAdapter.ClickEvents.ROOT)
+            return
+        }
         vmAssets.openFile(mod.mediaFileName ?: "file")
     }
 

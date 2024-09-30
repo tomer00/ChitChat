@@ -133,6 +133,7 @@ class AdapPerson(
 
     }
 
+    //region MAP ICON PROVIDER
     companion object {
         fun getByteArr(data: String): Any {
             return try {
@@ -201,9 +202,11 @@ class AdapPerson(
             return map
         }
     }
+    //endregion MAP ICON PROVIDER
 
     interface CallbackClick {
         fun onClick(pos: Int)
+        fun onClickDp(pos: Int)
         fun onLongClick(pos: Int)
     }
 
@@ -211,6 +214,9 @@ class AdapPerson(
         init {
             b.root.setOnClickListener {
                 clickLis.onClick(absoluteAdapterPosition)
+            }
+            b.imgProfile.setOnClickListener {
+                clickLis.onClickDp(absoluteAdapterPosition)
             }
             b.root.setOnLongClickListener {
                 clickLis.onLongClick(absoluteAdapterPosition)

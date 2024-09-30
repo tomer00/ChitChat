@@ -199,6 +199,11 @@ class ChatAdapter(
             }
         }
 
+        private val onLongClickLis = View.OnLongClickListener {
+            callBack.onChatItemLongClicked(absoluteAdapterPosition)
+            true
+        }
+
         init {
             b.root.setOnClickListener(onCli)
             b.layUpload.setOnClickListener(onCli)
@@ -208,10 +213,14 @@ class ChatAdapter(
             b.msgTv.setOnClickListener(onCli)
             b.imgFileType.setOnClickListener(onCli)
             b.mediaImg.setOnClickListener(onCli)
-            b.root.setOnLongClickListener {
-                callBack.onChatItemLongClicked(absoluteAdapterPosition)
-                true
-            }
+
+
+            b.root.setOnLongClickListener(onLongClickLis)
+            b.mediaImg.setOnLongClickListener(onLongClickLis)
+            b.imgFileType.setOnLongClickListener(onLongClickLis)
+            b.msgTv.setOnLongClickListener(onLongClickLis)
+            b.repImgRv.setOnLongClickListener(onLongClickLis)
+            b.RepTv.setOnLongClickListener(onLongClickLis)
         }
     }
 
