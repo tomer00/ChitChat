@@ -148,7 +148,9 @@ class DoodleView : View {
                 7 to R.drawable.pattern_7,
                 8 to R.drawable.pattern_8,
                 9 to R.drawable.pattern_9,
-                10 to R.drawable.pattern_10
+                10 to R.drawable.pattern_10,
+                11 to R.drawable.pattern_11,
+                12 to R.drawable.pattern_12
             )
         }
     }

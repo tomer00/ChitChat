@@ -247,6 +247,11 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         notiMan.cancelAll()
 
         viewModal.loadMyDp()
+
+        lifecycleScope.launch {
+            delay(1000)
+            throw RuntimeException("Test")
+        }
     }
 
     private fun getRvViewIfVisible(phone: String): RowPersonBinding? {
