@@ -6,6 +6,9 @@ interface RepoUtils {
     fun getToken(): String
     fun saveToken(token: String)
 
+    fun getTime(): Long
+    fun saveTime(timeMillis: Long)
+
     fun getPrefs(): MyPrefs
     fun savePrefs(mod: MyPrefs)
 

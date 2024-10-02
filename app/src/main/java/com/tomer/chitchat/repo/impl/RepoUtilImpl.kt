@@ -21,6 +21,10 @@ class RepoUtilImpl(
         prefUtils.edit().putString("token", token).apply()
     }
 
+    override fun getTime() = prefUtils.getLong("time", 0)
+
+    override fun saveTime(timeMillis: Long) = prefUtils.edit().putLong("time", timeMillis).apply()
+
     override fun getPrefs() = myPrefMod
 
     private fun loadMyPref(): MyPrefs {

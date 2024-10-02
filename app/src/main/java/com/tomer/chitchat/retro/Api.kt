@@ -1,6 +1,7 @@
 package com.tomer.chitchat.retro
 
 import com.tomer.chitchat.retro.modals.LoginResponse
+import com.tomer.chitchat.retro.modals.SyncResponse
 import okhttp3.MultipartBody
 import retrofit2.Response
 import retrofit2.http.Field
@@ -78,6 +79,14 @@ interface Api {
     @FormUrlEncoded
     @POST("/chat/name")
     suspend fun getName(@Field("phone") phone: String): Response<String>
+
+    @FormUrlEncoded
+    @POST("/chat/about")
+    suspend fun getAbout(@Field("phone") phone: String): Response<String>
+
+    @FormUrlEncoded
+    @POST("/sync")
+    suspend fun getSyncedData(@Field("phoneNos") phoneNos: String): Response<SyncResponse>
 
 
 }

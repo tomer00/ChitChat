@@ -270,6 +270,8 @@ class ImageViewActivity : AppCompatActivity() {
                     }
 
                     override fun onTransitionEnd(transition: android.transition.Transition?) {
+                        b.viewIMg.postInvalidate()
+                        b.gifImgView.postInvalidate()
                         b.gifImgView2.visibility = View.VISIBLE
                         Glide.with(this@ImageViewActivity)
                             .load(bytesImage)
@@ -299,11 +301,13 @@ class ImageViewActivity : AppCompatActivity() {
         Glide.with(this)
             .asBitmap()
             .load(bytesImage)
+            .skipMemoryCache(true)
             .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
             .into(
                 object : CustomTarget<Bitmap>() {
                     override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
                         b.viewIMg.setImageBitmap(resource)
+                        b.viewIMg.postInvalidate()
                         dimen.set(resource.width, resource.height)
                     }
 

@@ -137,16 +137,21 @@ class ChatAdapter(
         } else {
             //There is Media File either upload or download
             holder.b.mediaCont.visibility = View.VISIBLE
-            if (mod.msgType == MsgMediaType.GIF || mod.msgType == MsgMediaType.IMAGE || mod.msgType == MsgMediaType.VIDEO) Glide.with(context).load(mod.bytes).apply(options).diskCacheStrategy(
-                DiskCacheStrategy.NONE
-            ).into(holder.b.mediaImg)
+            if (mod.msgType == MsgMediaType.GIF || mod.msgType == MsgMediaType.IMAGE || mod.msgType == MsgMediaType.VIDEO)
+                Glide.with(context)
+                    .load(mod.bytes)
+                    .apply(options)
+                    .skipMemoryCache(true)
+                    .diskCacheStrategy(DiskCacheStrategy.NONE)
+                    .into(holder.b.mediaImg)
+                    .also { holder.b.mediaImg.setCorners(corners) }
             else holder.b.mediaImg.setImageDrawable(null)
 
             if (mod.msgType == MsgMediaType.FILE) {
                 holder.b.msgTv.visibility = View.VISIBLE
                 holder.b.imgFileType.visibility = View.VISIBLE
                 holder.b.imgFileType.setImageDrawable(ContextCompat.getDrawable(context, AdapPerson.getDrawableId(mod.mediaFileName ?: "FILE")))
-                "${mod.mediaFileName ?: "File"}\n${mod.mediaSize} 🔹 ${Utils.getFileExt(mod.mediaFileName ?: "").uppercase()}".also { holder.b.msgTv.text = it }
+                "${mod.mediaFileName ?: "File"}\n${mod.mediaSize} • ${Utils.getFileExt(mod.mediaFileName ?: "").uppercase()}".also { holder.b.msgTv.text = it }
             } else {
                 holder.b.msgTv.visibility = View.GONE
                 holder.b.imgFileType.visibility = View.GONE

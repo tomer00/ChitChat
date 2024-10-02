@@ -155,6 +155,42 @@ class MainViewModal @Inject constructor(
         }
     }
 
+    //region WORK_MANAGER
+
+    init {
+        val prevTime = repoUtils.getTime()
+        if (prevTime < System.currentTimeMillis()) {
+            performSyncOperation()
+            repoUtils.saveTime(System.currentTimeMillis() + 8_64_00_000)
+        }
+    }
+
+    private fun performSyncOperation() {
+        viewModelScope.launch {
+            try {
+                val noToGetDataSynced = repoPersons.getAllPersons().map { it.phoneNo }
+                val sb = StringBuilder()
+                for (i in noToGetDataSynced) {
+                    if (sb.isNotEmpty()) sb.append(',')
+                    sb.append(i)
+                }
+                val syncedData = retro.getSyncedData(sb.toString()).body() ?: throw RuntimeException()
+                for (i in syncedData) {
+                    val prefMod = repoPersons.getPersonPref(i.phone) ?: continue
+                    if (prefMod.dpNo != i.dpNo) {
+                        repoStorage.deleteDP(i.phone)
+                    }
+                    prefMod.about = i.about
+                    prefMod.dpNo = i.dpNo
+                    repoPersons.insertPersonPref(prefMod)
+                }
+            } catch (_: Exception) {
+            }
+        }
+    }
+
+    //endregion WORK_MANAGER
+
     //region SELECTION HANDLING
 
     private val _fabView = MutableLiveData<Boolean>()

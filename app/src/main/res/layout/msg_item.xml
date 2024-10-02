@@ -110,11 +110,12 @@
                     android:layout_height="wrap_content"
                     android:layout_margin="4dp">
 
-                    <ImageView
+                    <com.tomer.chitchat.ui.views.CorneredImageView
                         android:id="@+id/media_img"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:adjustViewBounds="true"
+                        android:contentDescription="@string/app_name"
                         android:scaleType="fitXY"
                         app:layout_constraintTop_toTopOf="parent" />
 

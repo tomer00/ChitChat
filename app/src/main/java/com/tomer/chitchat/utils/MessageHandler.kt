@@ -34,7 +34,11 @@ class MessageHandler(
     //<(10)fromUser><(7)MSG_TYPE><DATA>
     @Throws(Exception::class)
     suspend fun handelMsg(text: String) {
-        if (text.isEmpty() || text == "PONG") return
+        if (text.isEmpty()) return
+        if (text == "PONG") {
+            callBack.invoke(MsgsFlowState.IOFlowState(0L, FlowType.PONG, ""))
+            return
+        }
         Log.d("TAG--", "handelMsg: $text")
         val fromUser = text.substring(0, 10).intern()
         val msgType = text.substring(10, 17).intern()

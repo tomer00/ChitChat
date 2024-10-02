@@ -33,7 +33,7 @@ class WebSocketHandler(
     repoPersons: RepoPersons,
     gson: Gson,
     private val notificationService: NotificationService,
-    private val repoRelations: RepoRelations,
+    repoRelations: RepoRelations,
     cryptoService: CryptoService,
 ) {
 
@@ -41,6 +41,10 @@ class WebSocketHandler(
     val flowMsgs = MutableSharedFlow<MsgsFlowState>()
     val flowConnection = MutableSharedFlow<Boolean>()
     private val msgHandler = MessageHandler(gson, repoMsgs, repoPersons, cryptoService, notificationService, repoRelations, repoStorage) { msg ->
+        if (msg.type == FlowType.PONG) {
+            lastReceivedPong = System.currentTimeMillis()
+            return@MessageHandler
+        }
         CoroutineScope(Dispatchers.IO).launch {
             flowMsgs.emit(msg)
         }
@@ -118,11 +122,13 @@ class WebSocketHandler(
         override fun onOpen(webSocket: WebSocket, response: Response) {
             CoroutineScope(Dispatchers.IO).launch {
                 flowConnection.emit(true)
+                backOffMultiplier = 0
                 Log.d("TAG--", "onOpen: ")
             }
         }
     }
 
+    private var backOffMultiplier = 0
     private fun tryReconnectAfter2Sec() {
         if (closedByActivityEnd) {
             webSocket = null
@@ -131,9 +137,10 @@ class WebSocketHandler(
 
         if (token.isNotEmpty())
             retryJob = CoroutineScope(Dispatchers.IO).launch {
+                backOffMultiplier++
                 Log.d("TAG--", "tryReconnectAfter2Sec: ")
                 webSocket = null
-                delay(2000)
+                delay(2000L * backOffMultiplier)
                 openConnection(token)
             }
     }
@@ -142,12 +149,21 @@ class WebSocketHandler(
     private var retryJob: Job? = null
 
 
+    private var lastReceivedPong = System.currentTimeMillis()
+    private fun createPongCheckJob(): Job {
+        return CoroutineScope(Dispatchers.IO).launch {
+            delay(30_000L)
+            if ((System.currentTimeMillis() - lastReceivedPong) > 30_000L) webSocket?.close(1000, "PONG NOT RECEIVED")
+        }
+    }
+
     private fun createNewPingingJob(): Job {
         return CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
-                delay(150000)
+                delay(40_000)
                 if (webSocket != null) {
                     webSocket?.send("PING")
+                    createPongCheckJob()
                 } else continue
             }
         }
@@ -200,19 +216,23 @@ class WebSocketHandler(
                     .url(Utils.WEBSOCKET_LINK)
                     .addHeader("Authorization", "Bearer $token")
                     .build()
+                pingingJob.cancel()
+                pingingJob = createNewPingingJob()
                 client.newWebSocket(request, webSocketListener)
             } catch (e: Exception) {
+                pingingJob.cancel()
                 null
             }
-            pingingJob.cancel()
-            pingingJob = createNewPingingJob()
         }
     }
 
     @Throws(Exception::class)
     fun closeConnection() {
         closedByActivityEnd = true
-        webSocket!!.close(1001, "Closed for activity close")
+        try {
+            webSocket!!.close(1001, "Activity closed")
+        } catch (_: Exception) {
+        }
         pingingJob.cancel()
         retryJob?.cancel()
     }

@@ -13,8 +13,8 @@ data class ModelPartnerPref(
     var background: RenderModel,
     var accent: RenderModel,
     var backgroundAssetNo: Int,
-    val dpNo: Int,
-    val about: String,
+    var dpNo: Int,
+    var about: String,
     @IntRange(0, Long.MAX_VALUE)
     val lastOnlineMillis: Long,
     var notificationAllowed: Boolean,
