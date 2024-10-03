@@ -7,6 +7,8 @@ data class LoginResponse(
     val isAlreadyRegistered: Boolean,
     @SerializedName("name")
     val name: String,
+    @SerializedName("about")
+    val about: String,
     @SerializedName("token")
     val token: String
 )

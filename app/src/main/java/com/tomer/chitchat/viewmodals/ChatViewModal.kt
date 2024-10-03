@@ -1,6 +1,5 @@
 package com.tomer.chitchat.viewmodals
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
@@ -66,7 +65,6 @@ class ChatViewModal @Inject constructor(
         viewModelScope.launch {
             pendingMsgs.reversed().forEach {
                 val msgRoom = repoMsgs.getMsg(it)
-                Log.d("TAG--", "Sending peding: ${msgRoom?.msgText}")
                 if (msgRoom != null && !msgRoom.msgText.startsWith('U')) {
 
                     val socketMsgBuilder = ModelMsgSocket.Builder()
@@ -311,53 +309,60 @@ class ChatViewModal @Inject constructor(
             return
         }
         viewModelScope.launch {
-            partnerPref = repoPersons.getPersonPref(phone)
-            flowMsgs.emit(MsgsFlowState.ChangeGif(typeF = FlowType.SET_PREFS, phone = phone))
+            withContext(Dispatchers.IO) {
+                launch { cryptoService.setCurrentPartner(phone) }
+                val t1 = launch {
+                    Utils.currentPartner = repoRelations.getRelation(phone)
+                    canSendMsg = Utils.currentPartner?.isAccepted ?: false
+                }
+                partnerPref = repoPersons.getPersonPref(phone)
+                t1.join()
+                flowMsgs.emit(MsgsFlowState.ChangeGif(typeF = FlowType.SET_PREFS, phone = phone))
+            }
         }
-        selectedIds.sort()
-        Utils.currentPartner = repoRelations.getRelation(phone)
-        canSendMsg = Utils.currentPartner?.isAccepted ?: false
-        cryptoService.setCurrentPartner(phone)
         viewModelScope.launch {
-            try {
-                chatMsgs.clear()
+            withContext(Dispatchers.IO) {
+                selectedIds.sort()
+                try {
+                    chatMsgs.clear()
 
-                val roomMsgs = repoMsgs.getMsgsOfUser(phone)
-                val arrUI = Array<UiMsgModal?>(roomMsgs.size) { _ -> null }
+                    val roomMsgs = repoMsgs.getMsgsOfUser(phone)
+                    val arrUI = Array<UiMsgModal?>(roomMsgs.size) { _ -> null }
 
-                val job = viewModelScope.launch {
-                    val defList = mutableListOf<Deferred<Unit>>()
-                    withContext(Dispatchers.IO) {
-                        for (i in roomMsgs.indices) {
-                            defList.add(async { arrUI[i] = roomMsgs[i].toUI() })
+                    val job = viewModelScope.launch {
+                        val defList = mutableListOf<Deferred<Unit>>()
+                        withContext(Dispatchers.IO) {
+                            for (i in roomMsgs.indices) {
+                                defList.add(async { arrUI[i] = roomMsgs[i].toUI() })
+                            }
+                            for (i in defList.indices) defList[i].join()
                         }
-                        for (i in defList.indices) defList[i].join()
                     }
-                }
-                job.join()
-                if (selectedIds.isEmpty())
-                    for (a in arrUI) {
-                        if (a != null)
-                            chatMsgs.add(a)
+                    job.join()
+                    if (selectedIds.isEmpty())
+                        for (a in arrUI) {
+                            if (a != null)
+                                chatMsgs.add(a)
+                        }
+                    else for (a in arrUI) {
+                        if (a == null) continue
+                        val pos = selectedIds.binarySearch(a.id)
+                        if (pos > -1) a.isSelected = true
+                        chatMsgs.add(a)
                     }
-                else for (a in arrUI) {
-                    if (a == null) continue
-                    val pos = selectedIds.binarySearch(a.id)
-                    if (pos > -1) a.isSelected = true
-                    chatMsgs.add(a)
-                }
 
-                flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone))
+                    flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone))
 
-                repoPersons.getPersonByPhone(phone)?.also {
-                    it.unReadCount = 0
-                    repoPersons.insertPerson(it)
+                    repoPersons.getPersonByPhone(phone)?.also {
+                        it.unReadCount = 0
+                        repoPersons.insertPerson(it)
+                    }
+                    if (Utils.currentPartner!!.isAccepted) {
+                        sendMsg(OfflineStatus())
+                        sendPendingMsgs()
+                    }
+                } catch (_: Exception) {
                 }
-                if (Utils.currentPartner!!.isAccepted) {
-                    sendMsg(OfflineStatus())
-                    sendPendingMsgs()
-                }
-            } catch (_: Exception) {
             }
         }
     }

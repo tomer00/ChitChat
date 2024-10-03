@@ -81,12 +81,6 @@ interface Api {
     suspend fun getName(@Field("phone") phone: String): Response<String>
 
     @FormUrlEncoded
-    @POST("/chat/about")
-    suspend fun getAbout(@Field("phone") phone: String): Response<String>
-
-    @FormUrlEncoded
     @POST("/sync")
     suspend fun getSyncedData(@Field("phoneNos") phoneNos: String): Response<SyncResponse>
-
-
 }

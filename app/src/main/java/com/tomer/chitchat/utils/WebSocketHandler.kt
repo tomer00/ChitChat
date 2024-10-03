@@ -160,11 +160,11 @@ class WebSocketHandler(
     private fun createNewPingingJob(): Job {
         return CoroutineScope(Dispatchers.IO).launch {
             while (isActive) {
-                delay(40_000)
+                delay(150_000)
                 if (webSocket != null) {
                     webSocket?.send("PING")
                     createPongCheckJob()
-                } else continue
+                }
             }
         }
     }
@@ -175,10 +175,10 @@ class WebSocketHandler(
 
     //region TYPING JOB
 
-    private var typingJob: Job = CoroutineScope(Dispatchers.IO).launch { delay(100) }
+    private var typingJob: Job = CoroutineScope(Dispatchers.Default).launch { delay(100) }
 
     private fun createNewTypingJob(): Job {
-        return CoroutineScope(Dispatchers.IO).launch {
+        return CoroutineScope(Dispatchers.Default).launch {
             delay(2000)
             sendMessage((Utils.currentPartner?.partnerId ?: "0000000000") + NoTyping())
         }

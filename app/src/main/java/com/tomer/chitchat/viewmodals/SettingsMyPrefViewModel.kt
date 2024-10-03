@@ -54,12 +54,13 @@ class SettingsMyPrefViewModel @Inject constructor(
         }
     }
 
-    fun setAbout(about: String) {
+    fun setAbout(a: String) {
         viewModelScope.launch {
-            if (about.isEmpty()) {
+            if (a.isEmpty()) {
                 flowEvents.emit(SettingEvents.ERROR_ABOUT to "")
                 return@launch
             }
+            val about = ConversionUtils.encode(a)
             val isUpdated = retro.updateAbout(about).body().toString() == "Updated"
             if (isUpdated) {
                 _myPrefs.value?.about = about

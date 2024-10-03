@@ -37,11 +37,9 @@ class WebAssetsRepo @Inject constructor(
     private val googleJsonFilesBinLink = "https://fonts.gstatic.com/s/e/notoemoji/latest/"
 
     init {
-        if (!gifAssets.exists())
-            gifAssets.mkdirs()
-
-        if (!jsonAssets.exists())
-            jsonAssets.mkdirs()
+        if (gifAssets.mkdirs())
+            File(gifAssets, ".nomedia").createNewFile()
+        jsonAssets.mkdirs()
     }
 
     override suspend fun getLottieJson(name: String, sync: Boolean): String? {

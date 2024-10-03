@@ -31,6 +31,7 @@ import com.tomer.chitchat.databinding.ItemGradBgBinding
 import com.tomer.chitchat.databinding.PatternRowBinding
 import com.tomer.chitchat.room.ModelPartnerPref
 import com.tomer.chitchat.ui.views.DoodleView
+import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
 import com.tomer.chitchat.utils.Utils.Companion.isLandscapeOrientation
 import com.tomer.chitchat.utils.Utils.Companion.px
@@ -97,7 +98,7 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
                 tvNameBig.text = mod.name
                 tvNameSmall.text = mod.name
                 "+91 ${mod.phone.substring(0, 5)} ${mod.phone.substring(5)}".also { tvPhone.text = it }
-                tvAbout.text = mod.about.ifEmpty { "Hey there using Chit Chat!!!" }
+                tvAbout.text = ConversionUtils.decode(mod.about.ifEmpty { "Hey+there+using+Chit+Chat%21%21%21" })
                 switchNoti.isChecked = mod.notificationAllowed
                 switchChatLock.isChecked = mod.chatLocked
             }

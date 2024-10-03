@@ -28,11 +28,14 @@ class RepoFileStorage @Inject constructor(
             )
         else File(context.getExternalFilesDir("ChitChat"), "media")
 
-    private val dpFolder = File(folder.parentFile, "profile").apply { this.mkdirs() }
+    private val dpFolder = File(folder.parentFile, "profile").apply {
+        if (this.mkdirs())
+            File(this, ".nomedia").createNewFile()
+    }
 
     override fun saveBytesToFolder(type: MsgMediaType, fileName: String, data: ByteArray) {
         val folderChild = File(folder, "/$type")
-        folderChild.mkdirs()
+        if (folderChild.mkdirs()) File(folderChild, ".nomedia").createNewFile()
         val file = File(folderChild, fileName)
         FileOutputStream(file).use {
             it.write(data)
@@ -41,7 +44,7 @@ class RepoFileStorage @Inject constructor(
 
     override fun saveVideoThumb(mediaFileName: String, data: ByteArray) {
         val folderChild = File(folder, "/VideoThumbs")
-        folderChild.mkdirs()
+        if (folderChild.mkdirs()) File(folderChild, ".nomedia").createNewFile()
         val file = File(folderChild, mediaFileName)
         FileOutputStream(file).use {
             it.write(data)

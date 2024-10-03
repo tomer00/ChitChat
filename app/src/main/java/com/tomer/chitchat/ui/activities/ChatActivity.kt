@@ -334,41 +334,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             cardFlipper.setOnClickListener(this@ChatActivity)
             layDetail.setOnClickListener(this@ChatActivity)
             tvPartnerName.text = (vm.partnerPref?.name ?: "").ifEmpty { vma.phone }
-
-            if (Utils.currentPartner!!.isAccepted) return@apply
-
-            contRelation.visibility = View.VISIBLE
-            tvPartnerNameCard.text = (vm.partnerPref?.name ?: "").ifEmpty { vma.phone }
-
-            if (Utils.currentPartner!!.isConnSent) {
-
-                if (Utils.currentPartner!!.isRejected)
-                    "Your request is rejected by user\nDo you want to send request again?"
-                        .also { tvStatusCard.text = it }
-                else "Your request not Accepted by user\nDo you want to send request again?"
-                    .also { tvStatusCard.text = it }
-                btNeg.visibility = View.GONE
-
-                btPositive.setOnClickListener {
-                    vm.genKeyAndSendNotification(Utils.currentPartner!!)
-                }
-                return@apply
-            }
-
-            if (Utils.currentPartner!!.isRejected && Utils.currentPartner!!.isConnSent) {
-                return@apply
-            }
-            "sending you connection request\nDo you also want to connect?"
-                .also { tvStatusCard.text = it }
-            btPositive.setOnClickListener {
-                vm.acceptConnection(true)
-                contRelation.visibility = View.GONE
-            }
-            btNeg.setOnClickListener {
-                vm.acceptConnection(false)
-                contRelation.visibility = View.GONE
-                finish()
-            }
         }
 
         //region DELETE MSGS
@@ -914,6 +879,44 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                 b.imgBg.run {
                     val mod = vm.partnerPref ?: return
                     setData(isDarkModeEnabled(), mod.background.alpha, mod.backgroundAssetNo, mod.background.color, mod.background.grad)
+                }
+
+                b.apply {
+                    tvPartnerName.text = (vm.partnerPref?.name ?: "").ifEmpty { vma.phone }
+                    if (!vm.canSendMsg) return@apply
+
+                    contRelation.visibility = View.VISIBLE
+                    tvPartnerNameCard.text = (vm.partnerPref?.name ?: "").ifEmpty { vma.phone }
+
+                    if (Utils.currentPartner!!.isConnSent) {
+
+                        if (Utils.currentPartner!!.isRejected)
+                            "Your request is rejected by user\nDo you want to send request again?"
+                                .also { tvStatusCard.text = it }
+                        else "Your request not Accepted by user\nDo you want to send request again?"
+                            .also { tvStatusCard.text = it }
+                        btNeg.visibility = View.GONE
+
+                        btPositive.setOnClickListener {
+                            vm.genKeyAndSendNotification(Utils.currentPartner!!)
+                        }
+                        return@apply
+                    }
+
+                    if (Utils.currentPartner!!.isRejected && Utils.currentPartner!!.isConnSent) {
+                        return@apply
+                    }
+                    "sending you connection request\nDo you also want to connect?"
+                        .also { tvStatusCard.text = it }
+                    btPositive.setOnClickListener {
+                        vm.acceptConnection(true)
+                        contRelation.visibility = View.GONE
+                    }
+                    btNeg.setOnClickListener {
+                        vm.acceptConnection(false)
+                        contRelation.visibility = View.GONE
+                        finish()
+                    }
                 }
             }
 

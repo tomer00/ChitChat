@@ -10,11 +10,9 @@ import android.graphics.PointF
 import android.graphics.RectF
 import android.graphics.drawable.Drawable
 import android.util.AttributeSet
-import android.util.Log
 import android.view.MotionEvent
 import android.view.View
 import android.view.animation.AccelerateDecelerateInterpolator
-import android.view.animation.OvershootInterpolator
 import androidx.core.animation.doOnEnd
 import androidx.core.animation.doOnStart
 import androidx.core.content.ContextCompat
@@ -147,9 +145,9 @@ class ExtendedDpView : View {
                 cornerRadius = px48.times(1 - animFac)
                 postInvalidate()
             }
-            start()
             doOnStart { animDir = 1 }
             doOnEnd { animDir = 0 }
+            start()
         }
     }
 

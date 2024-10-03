@@ -37,6 +37,7 @@ import com.google.gson.Gson
 import com.tomer.chitchat.R
 import com.tomer.chitchat.databinding.ActivitySettingsBinding
 import com.tomer.chitchat.modals.prefs.MyPrefs
+import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.Utils.Companion.hideKeyBoard
 import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
 import com.tomer.chitchat.utils.Utils.Companion.isLandscapeOrientation
@@ -370,7 +371,7 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
     private fun updateUI(mod: MyPrefs) {
         b.apply {
             tvName.setText(mod.name)
-            tvAbout.setText(mod.about)
+            tvAbout.setText(ConversionUtils.decode(mod.about))
         }
     }
 

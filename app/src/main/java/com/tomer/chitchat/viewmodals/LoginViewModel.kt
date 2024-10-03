@@ -235,6 +235,11 @@ class LoginViewModel @Inject constructor(
                                 if (token.isSuccessful) {
                                     token.body()?.let {
                                         repo.saveToken(it.token)
+                                        repo.getPrefs().apply {
+                                            this.about = it.about
+                                            this.name = it.name
+                                            repo.savePrefs(this)
+                                        }
                                         name = it.name
                                     }
                                     _currentFrag.postValue(3)
