@@ -11,7 +11,6 @@ import android.os.Build
 import android.os.Bundle
 import android.provider.MediaStore
 import android.transition.Transition.TransitionListener
-import android.util.Log
 import android.view.GestureDetector
 import android.view.GestureDetector.SimpleOnGestureListener
 import android.view.MotionEvent
@@ -135,15 +134,7 @@ class ImageViewActivity : AppCompatActivity() {
     }
 
     private fun statusBarVisi(visible: Boolean) {
-        if (!visible) {
-            // Hide the status bar
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
-                window.insetsController?.hide(WindowInsets.Type.statusBars())
-                return
-            }
-            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            actionBar?.hide()
-        } else {
+        if (visible) {
             // Show the status bar
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
                 window.insetsController?.show(WindowInsets.Type.statusBars())
@@ -151,7 +142,15 @@ class ImageViewActivity : AppCompatActivity() {
             }
             window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
             actionBar?.show()
+            return
         }
+        // Hide the status bar
+        if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+            window.insetsController?.hide(WindowInsets.Type.statusBars())
+            return
+        }
+        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+        actionBar?.hide()
     }
 
 
@@ -220,14 +219,14 @@ class ImageViewActivity : AppCompatActivity() {
                 cnVals.put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
 
                 try {
-                    val nuri = this.contentResolver.insert(uri, cnVals).also { b.root.post { Toast.makeText(this, "Can't save...", Toast.LENGTH_SHORT).show() } } ?: return@setOnClickListener
+                    val nuri = this.contentResolver.insert(uri, cnVals) ?: return@setOnClickListener
                     this.contentResolver.openOutputStream(nuri).use {
                         it?.write(bytesImage)
                         it?.flush()
                     }
                     b.root.post { Toast.makeText(this, "Image saved to Gallery...", Toast.LENGTH_SHORT).show() }
                 } catch (e: Exception) {
-                    Log.e("TAG--", "onCreate: ", e)
+                    Toast.makeText(this, "Can't save...", Toast.LENGTH_SHORT).show()
                 }
             }
             b.btSaveToGallery.visibility = View.VISIBLE

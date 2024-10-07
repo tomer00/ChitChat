@@ -110,12 +110,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             override(60)
         }
     }
-    private val roundOptions by lazy {
-        RequestOptions().apply {
-            transform(RoundedCorners(60))
-            override(60)
-        }
-    }
     private var lastSeenMillis = -1L
 
     //region PARALLAX SENSOR
@@ -167,9 +161,13 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         super.onResume()
         vm.isChatActivityVisible = true
         vm.clearUnreadCount()
+        if (accelerometer == null) {
+            vma.myPref.parallaxFactor = 0f
+            return
+        }
         try {
             if (vma.myPref.parallaxFactor > 0f)
-                sensorManager.registerListener(this, accelerometer, SensorManager.SENSOR_DELAY_UI)
+                sensorManager.registerListener(this, accelerometer!!, SensorManager.SENSOR_DELAY_UI)
         } catch (_: Exception) {
             vma.myPref.parallaxFactor = 0f
         }
@@ -178,7 +176,10 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
     override fun onPause() {
         super.onPause()
         vm.isChatActivityVisible = false
-        vma.scrollPosition.postValue(ll.findFirstVisibleItemPosition())
+        try {
+            vma.scrollPosition.postValue(ll.findFirstVisibleItemPosition())
+        } catch (_: Exception) {
+        }
         if (vma.myPref.parallaxFactor > 0f)
             try {
                 sensorManager.unregisterListener(this)
@@ -231,12 +232,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         }
         setContentView(b.root)
         if (isLandscapeOrientation()) {
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q)
                 window.insetsController?.hide(WindowInsets.Type.statusBars())
-                return
+            else {
+                window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                actionBar?.hide()
             }
-            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            actionBar?.hide()
         }
         vm.openChat(intent.getStringExtra("phone")!!, vma.selectedMsgIds)
         vma.setPartnerNo(intent.getStringExtra("phone")!!)
@@ -333,7 +334,6 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             btMenu.setOnClickListener(this@ChatActivity)
             cardFlipper.setOnClickListener(this@ChatActivity)
             layDetail.setOnClickListener(this@ChatActivity)
-            tvPartnerName.text = (vm.partnerPref?.name ?: "").ifEmpty { vma.phone }
         }
 
         //region DELETE MSGS
@@ -486,8 +486,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             if (b.contRelation.visibility == View.VISIBLE) {
                 Glide.with(this@ChatActivity)
                     .asBitmap()
-                    .apply(roundOptions)
                     .load(it)
+                    .override(200)
                     .diskCacheStrategy(DiskCacheStrategy.NONE)
                     .placeholder(R.drawable.def_avatar)
                     .error(R.drawable.def_avatar)
@@ -495,8 +495,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             }
             Glide.with(this@ChatActivity)
                 .asBitmap()
-                .apply(roundOptions)
                 .load(it)
+                .override(80)
                 .diskCacheStrategy(DiskCacheStrategy.NONE)
                 .placeholder(R.drawable.def_avatar)
                 .error(R.drawable.def_avatar)
@@ -880,13 +880,20 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                     val mod = vm.partnerPref ?: return
                     setData(isDarkModeEnabled(), mod.background.alpha, mod.backgroundAssetNo, mod.background.color, mod.background.grad)
                 }
-
                 b.apply {
                     tvPartnerName.text = (vm.partnerPref?.name ?: "").ifEmpty { vma.phone }
-                    if (!vm.canSendMsg) return@apply
+                    if (vm.canSendMsg) return@apply
 
                     contRelation.visibility = View.VISIBLE
-                    tvPartnerNameCard.text = (vm.partnerPref?.name ?: "").ifEmpty { vma.phone }
+                    tvPartnerNameCard.text = tvPartnerName.text
+                    Glide.with(this@ChatActivity)
+                        .asBitmap()
+                        .load(vma.dpFile.value)
+                        .override(200)
+                        .diskCacheStrategy(DiskCacheStrategy.NONE)
+                        .placeholder(R.drawable.def_avatar)
+                        .error(R.drawable.def_avatar)
+                        .into(b.imgDpCard)
 
                     if (Utils.currentPartner!!.isConnSent) {
 

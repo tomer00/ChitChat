@@ -56,8 +56,8 @@ object BackgroundProvider {
             blendMode = BlendMode.SRC_ATOP
         }
 
-        val adjustedWidth = 820f.times(con.resources.displayMetrics.densityDpi / 440)
-        val adjustedHeight = 1775.57f.times(con.resources.displayMetrics.densityDpi / 440)
+        val adjustedWidth = 820f.times(con.resources.displayMetrics.densityDpi / 440f)
+        val adjustedHeight = 1775.57f.times(con.resources.displayMetrics.densityDpi / 440f)
 
         val cM = Canvas(tBmp)
         val w = dimen.x / adjustedWidth.toInt()

@@ -1,6 +1,5 @@
 package com.tomer.chitchat.utils
 
-import android.util.Log
 import com.google.gson.Gson
 import com.tomer.chitchat.crypto.CryptoService
 import com.tomer.chitchat.modals.msgs.ModelMsgSocket
@@ -39,7 +38,6 @@ class MessageHandler(
             callBack.invoke(MsgsFlowState.IOFlowState(0L, FlowType.PONG, ""))
             return
         }
-        Log.d("TAG--", "handelMsg: $text")
         val fromUser = text.substring(0, 10).intern()
         val msgType = text.substring(10, 17).intern()
         when (msgType) {

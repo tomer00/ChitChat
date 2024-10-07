@@ -23,7 +23,7 @@ class CorneredImageView : AppCompatImageView {
 
     //region GLOBALS-->>>
 
-    private var cornerRadius = 20f
+    private var cornerRadius = -1f
     private val bounds = RectF()
     private val path = Path()
 
@@ -32,6 +32,7 @@ class CorneredImageView : AppCompatImageView {
     override fun onSizeChanged(w: Int, h: Int, oldw: Int, oldh: Int) {
         super.onSizeChanged(w, h, oldw, oldh)
         bounds.set(0f, 0f, w.toFloat(), h.toFloat())
+        if (cornerRadius == -1f) cornerRadius = w.toFloat()
     }
 
     override fun onDraw(canvas: Canvas) {

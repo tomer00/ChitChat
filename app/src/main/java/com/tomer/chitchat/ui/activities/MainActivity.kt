@@ -103,12 +103,12 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
         setContentView(b.root)
         if (isLandscapeOrientation()) {
-            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) {
+            if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q)
                 window.insetsController?.hide(WindowInsets.Type.statusBars())
-                return
+            else {
+                window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                actionBar?.hide()
             }
-            window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
-            actionBar?.hide()
         }
         Utils.myPhone = FirebaseAuth.getInstance().currentUser?.phoneNumber?.substring(3) ?: ""
         if (isDarkModeEnabled()) b.tvAppName.setTextColor(ContextCompat.getColor(this, R.color.white))
@@ -358,7 +358,11 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                 }
             }
 
-            b.btDel.id -> viewModal.delSelected(true, adapter.currentList)
+            b.btDel.id -> {
+                b.btDel.isClickable = false
+                viewModal.delSelected(true, adapter.currentList)
+            }
+
             b.btProfile.id -> {
                 val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, b.btProfile, "avatar")
                 startActivityForResult(Intent(this, SettingsActivity::class.java), REQ_CODE_PROILE_CHANGE, options.toBundle())

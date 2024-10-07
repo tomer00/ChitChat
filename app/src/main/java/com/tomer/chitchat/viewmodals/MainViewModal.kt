@@ -87,15 +87,15 @@ class MainViewModal @Inject constructor(
         viewModelScope.launch {
             if (!phone.isDigitsOnly()) return@launch
             val relation = ModelRoomPersonRelation(phone, isConnSent = true, isAccepted = false, isRejected = false)
-            Utils.currentPartner = relation
             cryptoService.setCurrentPartner(phone)
 
             genKeyAndSendNotification(relation)
+            val oldPref = repoPersons.getPersonPref(phone) ?: PartnerPrefBuilder(phone, phone).build()
+            repoPersons.insertPersonPref(oldPref)
             if (openNextActivity)
                 flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.OPEN_NEW_CONNECTION_ACTIVITY, phone))
             else flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.INCOMING_NEW_CONNECTION_REQUEST, phone))
 
-            val oldPref = repoPersons.getPersonPref(phone) ?: PartnerPrefBuilder(phone, phone).build()
             //getting Name from server
             val name = if (oldPref.name == phone) {
                 try {
@@ -228,16 +228,18 @@ class MainViewModal @Inject constructor(
         if (isDel) {
             viewModelScope.launch {
                 selectedPhoneNos.forEach {
-                    repoPersons.deletePersonById(it)
+                    launch { repoPersons.deletePersonById(it) }
                 }
                 loadPersons(oldList)
                 withContext(Dispatchers.IO) {
                     selectedPhoneNos.forEach { no ->
-                        val msgs = repoMsg.getMsgsOfUser(no)
-                        msgs.forEach { msg ->
-                            repoStorage.deleteFile(msg.mediaFileName, msg.msgType)
+                        launch {
+                            val msgs = repoMsg.getMsgsOfUser(no)
+                            msgs.forEach { msg ->
+                                repoStorage.deleteFile(msg.mediaFileName, msg.msgType)
+                            }
+                            repoMsg.deleteAllByUser(no)
                         }
-                        repoMsg.deleteAllByUser(no)
                     }
                 }
             }

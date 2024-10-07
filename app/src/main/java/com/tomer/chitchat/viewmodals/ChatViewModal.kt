@@ -299,15 +299,6 @@ class ChatViewModal @Inject constructor(
     var partnerPref: ModelPartnerPref? = null
 
     fun openChat(phone: String, selectedIds: MutableList<Long>) {
-        if (Utils.currentPartner?.partnerId == phone) {
-            canSendMsg = Utils.currentPartner?.isAccepted ?: false
-            cryptoService.setCurrentPartner(phone)
-            viewModelScope.launch {
-                flowMsgs.emit(MsgsFlowState.ChangeGif(typeF = FlowType.SET_PREFS, phone = phone))
-                flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone))
-            }
-            return
-        }
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
                 launch { cryptoService.setCurrentPartner(phone) }
@@ -317,8 +308,12 @@ class ChatViewModal @Inject constructor(
                 }
                 partnerPref = repoPersons.getPersonPref(phone)
                 t1.join()
-                flowMsgs.emit(MsgsFlowState.ChangeGif(typeF = FlowType.SET_PREFS, phone = phone))
+                withContext(Dispatchers.Main) { flowMsgs.emit(MsgsFlowState.ChangeGif(typeF = FlowType.SET_PREFS, phone = phone)) }
             }
+        }
+        if (Utils.currentPartner?.partnerId == phone) {
+            viewModelScope.launch { withContext(Dispatchers.Main) { flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone)) } }
+            return
         }
         viewModelScope.launch {
             withContext(Dispatchers.IO) {
