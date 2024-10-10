@@ -13,6 +13,7 @@ import android.graphics.Shader
 import androidx.annotation.ColorInt
 import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
+import com.tomer.chitchat.utils.Utils.Companion.px
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -56,8 +57,8 @@ object BackgroundProvider {
             blendMode = BlendMode.SRC_ATOP
         }
 
-        val adjustedWidth = 820f.times(con.resources.displayMetrics.densityDpi / 440f)
-        val adjustedHeight = 1775.57f.times(con.resources.displayMetrics.densityDpi / 440f)
+        val adjustedWidth = 280.px
+        val adjustedHeight = 2.1653333f.times(adjustedWidth)
 
         val cM = Canvas(tBmp)
         val w = dimen.x / adjustedWidth.toInt()
@@ -103,7 +104,7 @@ object BackgroundProvider {
             setShader(shader)
             alpha = 110
         })
-        c.drawBitmap(genTintedPattern(bgAsset, shader,dimen, con), 0f, 0f, null)
+        c.drawBitmap(genTintedPattern(bgAsset, shader, dimen, con), 0f, 0f, null)
         return bmpMain
     }
 
