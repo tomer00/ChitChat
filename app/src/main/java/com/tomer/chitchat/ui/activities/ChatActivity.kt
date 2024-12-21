@@ -638,8 +638,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                         .x(0F)
                         .setDuration(220)
                         .setInterpolator(OvershootInterpolator(1.2f))
-                        .start();
-
+                        .start()
                     return
                 }
 
@@ -650,6 +649,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             }
 
             b.layDetail.id -> {
+                if (vma.headMenu.value == true) return
                 val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, b.imgDp, vma.phone)
                 startActivityForResult(
                     Intent(this, PartnerPrefActivity::class.java)
@@ -1131,6 +1131,10 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         val col = if (isSel) ContextCompat.getColor(this, R.color.selected)
         else ContextCompat.getColor(this, R.color.trans)
         b.root.setBackgroundColor(col)
+    }
+
+    override fun onOpenLinkInBrowser(link: String) {
+        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
     }
 
     private var msgIdForImageShow = -1L

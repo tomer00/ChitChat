@@ -15,6 +15,7 @@ import androidx.annotation.DrawableRes
 import androidx.core.content.ContextCompat
 import com.tomer.chitchat.utils.Utils.Companion.px
 import kotlin.math.cos
+import kotlin.math.roundToInt
 import kotlin.math.sin
 
 object BackgroundProvider {
@@ -61,14 +62,14 @@ object BackgroundProvider {
         val adjustedHeight = 2.1653333f.times(adjustedWidth)
 
         val cM = Canvas(tBmp)
-        val w = dimen.x / adjustedWidth.toInt()
-        val h = dimen.y / adjustedHeight.toInt()
+        val w = dimen.x / adjustedWidth.roundToInt()
+        val h = dimen.y / adjustedHeight.roundToInt()
 
         val widthExt = adjustedWidth * (w + 1)
         val heightExt = adjustedHeight * (h + 1)
 
-        val xM = (widthExt - dimen.x).toInt() shr 1
-        val yM = (heightExt - dimen.y).toInt() shr 1
+        val xM = (widthExt - dimen.x).roundToInt() shr 1
+        val yM = (heightExt - dimen.y).roundToInt() shr 1
 
 
         val pT = Paint(Paint.ANTI_ALIAS_FLAG)

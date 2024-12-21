@@ -66,6 +66,7 @@ class UiMsgModalBuilder {
         mediaSize = mediaSize,
         replyMediaFileName = replyMediaName,
         repBytes = repBytes,
-        isEmojiOnly = EmojisHashingUtils.isOnlyEmojis(msg)
+        isEmojiOnly = EmojisHashingUtils.isOnlyEmojis(msg),
+        spannableString = null
     )
 }

@@ -61,7 +61,6 @@ class SettingsPartnerPrefViewModel @Inject constructor(
     )
 
     val rvAccent = listOf(
-        RenderModel(1f, Color.GREEN, GradModel(125, Color.parseColor("#f915d7"), Color.parseColor("#160062"))),
         RenderModel(1f, Color.parseColor("#005feb")),
         RenderModel(1f, Color.parseColor("#28a359")),
         RenderModel(1f, Color.GREEN, GradModel(100, Color.parseColor("#6573f8"), Color.parseColor("#a751a8"))),

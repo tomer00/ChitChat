@@ -1,8 +1,9 @@
 package com.tomer.chitchat.modals.states
 
+import android.text.SpannableString
 import com.tomer.chitchat.room.MsgMediaType
 
-class UiMsgModal constructor(
+class UiMsgModal(
     var id: Long,
     val replyId: Long,
     var status: MsgStatus,
@@ -22,5 +23,6 @@ class UiMsgModal constructor(
     var bytes: ByteArray?,
     val repBytes: ByteArray?,
     val isEmojiOnly: Boolean,
-    var isSelected: Boolean = false
+    var isSelected: Boolean = false,
+    var spannableString: SpannableString?
 )

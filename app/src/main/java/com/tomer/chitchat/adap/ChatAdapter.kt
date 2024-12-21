@@ -2,7 +2,18 @@ package com.tomer.chitchat.adap
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.Intent
+import android.graphics.Color
 import android.graphics.drawable.Drawable
+import android.net.Uri
+import android.text.SpannableString
+import android.text.Spanned
+import android.text.method.LinkMovementMethod
+import android.text.style.ClickableSpan
+import android.text.style.ForegroundColorSpan
+import android.text.style.UnderlineSpan
+import android.util.Log
+import android.util.Patterns
 import android.util.TypedValue
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -11,6 +22,7 @@ import android.view.ViewGroup
 import androidx.annotation.ColorInt
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.text.method.LinkMovementMethodCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -60,9 +72,30 @@ class ChatAdapter(
 
 
     override fun onBindViewHolder(holder: ChatViewHolder, position: Int) {
+        val mod = chatItems[position]
+        //check for clickable Spanned
+        if (mod.spannableString == null) {
+            val spanStr = SpannableString(mod.msg)
+            val matcher = Patterns.WEB_URL.matcher(mod.msg)
+            while (matcher.find()) {
+                val start = matcher.start()
+                val end = matcher.end()
+
+                val clickableSpan = object : ClickableSpan() {
+                    override fun onClick(widget: View) {
+                        callBack.onOpenLinkInBrowser(mod.msg.substring(start, end))
+                    }
+                }
+                spanStr.setSpan(clickableSpan, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                spanStr.setSpan(UnderlineSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                spanStr.setSpan(ForegroundColorSpan(Color.parseColor("#ee0979")), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+            }
+            mod.spannableString = spanStr
+        }
+        holder.b.msgTv.text = mod.spannableString
+        holder.b.msgTv.movementMethod = LinkMovementMethod.getInstance()
 
         val params = holder.b.msgLay.layoutParams as ConstraintLayout.LayoutParams
-        val mod = chatItems[position]
         if (mod.isSent) {
             params.startToStart = ConstraintLayout.LayoutParams.PARENT_ID
             params.endToEnd = ConstraintLayout.LayoutParams.PARENT_ID
@@ -94,7 +127,6 @@ class ChatAdapter(
         if (mod.isSelected) holder.b.root.setBackgroundColor(ContextCompat.getColor(context, R.color.selected))
         else holder.b.root.setBackgroundColor(ContextCompat.getColor(context, R.color.trans))
 
-        holder.b.msgTv.text = mod.msg
         holder.b.emojiTv.text = mod.msg
         holder.b.RepTv.text = mod.rep
         holder.b.tvTime.text = mod.timeText
@@ -259,5 +291,6 @@ class ChatAdapter(
     interface ChatViewEvents {
         fun onChatItemClicked(pos: Int, type: ClickEvents)
         fun onChatItemLongClicked(pos: Int)
+        fun onOpenLinkInBrowser(link:String)
     }
 }

@@ -80,6 +80,7 @@ class ModelRoomMessageBuilder {
         isProg = true,
         bytes = bytes,
         repBytes = repBytes,
-        isEmojiOnly = EmojisHashingUtils.isOnlyEmojis(msgText)
+        isEmojiOnly = EmojisHashingUtils.isOnlyEmojis(msgText),
+        spannableString = null
     )
 }
