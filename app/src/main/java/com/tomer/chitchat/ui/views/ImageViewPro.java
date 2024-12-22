@@ -374,7 +374,7 @@ public class ImageViewPro extends ImageView {
             setScaleType(scaleType);
         }
         resetZoom();
-        scaleImage(scale, viewWidth / 2, viewHeight / 2, true);
+        scaleImage(scale, viewWidth / 2f, viewHeight / 2f, true);
         matrix.getValues(m);
         m[Matrix.MTRANS_X] = -((focusX * getImageWidth()) - (viewWidth * 0.5f));
         m[Matrix.MTRANS_Y] = -((focusY * getImageHeight()) - (viewHeight * 0.5f));
@@ -405,12 +405,12 @@ public class ImageViewPro extends ImageView {
     public PointF getScrollPosition() {
         Drawable drawable = getDrawable();
         if (drawable == null) {
-            return null;
+            return new PointF(0f,0f);
         }
         int drawableWidth = drawable.getIntrinsicWidth();
         int drawableHeight = drawable.getIntrinsicHeight();
 
-        PointF point = transformCoordTouchToBitmap(viewWidth / 2, viewHeight / 2, true);
+        PointF point = transformCoordTouchToBitmap(viewWidth / 2f, viewHeight / 2f, true);
         point.x /= drawableWidth;
         point.y /= drawableHeight;
         return point;
@@ -455,11 +455,11 @@ public class ImageViewPro extends ImageView {
         fixTrans();
         matrix.getValues(m);
         if (getImageWidth() < viewWidth) {
-            m[Matrix.MTRANS_X] = (viewWidth - getImageWidth()) / 2;
+            m[Matrix.MTRANS_X] = (viewWidth - getImageWidth()) / 2f;
         }
 
         if (getImageHeight() < viewHeight) {
-            m[Matrix.MTRANS_Y] = (viewHeight - getImageHeight()) / 2;
+            m[Matrix.MTRANS_Y] = (viewHeight - getImageHeight()) / 2f;
         }
         matrix.setValues(m);
     }
@@ -588,7 +588,7 @@ public class ImageViewPro extends ImageView {
             // Stretch and center image to fit view
             //
             matrix.setScale(scaleX, scaleY);
-            matrix.postTranslate(redundantXSpace / 2, redundantYSpace / 2);
+            matrix.postTranslate(redundantXSpace / 2f, redundantYSpace / 2f);
             normalizedScale = 1;
 
         } else {
@@ -979,7 +979,7 @@ public class ImageViewPro extends ImageView {
             }
 
             if (animateToZoomBoundary) {
-                DoubleTapZoom doubleTap = new DoubleTapZoom(targetZoom, viewWidth / 2, viewHeight / 2, true);
+                DoubleTapZoom doubleTap = new DoubleTapZoom(targetZoom, viewWidth / 2f, viewHeight / 2f, true);
                 compatPostOnAnimation(doubleTap);
             }
         }
@@ -1018,7 +1018,7 @@ public class ImageViewPro extends ImageView {
             // Used for translating image during scaling
             //
             startTouch = transformCoordBitmapToTouch(bitmapX, bitmapY);
-            endTouch = new PointF(viewWidth / 2, viewHeight / 2);
+            endTouch = new PointF(viewWidth / 2f, viewHeight / 2f);
         }
 
         @Override
