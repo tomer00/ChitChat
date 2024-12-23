@@ -66,13 +66,16 @@ import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
 import com.tomer.chitchat.utils.Utils.Companion.isLandscapeOrientation
 import com.tomer.chitchat.utils.Utils.Companion.px
 import com.tomer.chitchat.utils.Utils.Companion.showKeyBoard
+import com.tomer.chitchat.utils.clipText
 import com.tomer.chitchat.viewmodals.AssetsViewModel
 import com.tomer.chitchat.viewmodals.ChatActivityVm
 import com.tomer.chitchat.viewmodals.ChatViewModal
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.util.LinkedList
 
 
@@ -340,6 +343,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
         b.btBackSel.setOnClickListener(this)
         b.btDel.setOnClickListener(this)
+        b.btCopy.setOnClickListener(this)
+        b.btReply.setOnClickListener(this)
 
         lifecycleScope.launch {
             vma.flowDeleteIds.collectLatest { id ->
@@ -397,6 +402,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         vma.selCount.observe(this@ChatActivity) {
             b.root.post {
                 b.tvSelCount.text = it.toString()
+                b.btReply.visibility = if (it > 1) View.GONE else View.VISIBLE
             }
         }
         //endregion DELETE MSGS
@@ -588,6 +594,46 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             b.btScrollToBottom.id -> b.rvMsg.smoothScrollToPosition(0)
             b.btBack.id, b.btBackSel.id, b.cardFlipper.id -> onBackPressed()
             b.btDel.id -> vma.delSelected(true)
+            b.btCopy.id -> {
+                if (vma.selCount.value!! > 1) {
+                    lifecycleScope.launch {
+                        withContext(Dispatchers.Default) {
+                            val myName = Utils.myName
+                            val partnerName = vm.partnerPref?.name ?: ""
+                            val data = vm.chatMsgs.filter { it.id in vma.selectedMsgIds }
+                                .joinToString(separator = "\n") {
+                                    when (it.msgType) {
+                                        MsgMediaType.TEXT, MsgMediaType.EMOJI -> "${if (it.isSent) myName else partnerName}: ${it.msg}"
+                                        else -> "${if (it.isSent) myName else partnerName}: ${it.msgType.name}"
+                                    }
+                                }
+                            withContext(Dispatchers.Main) {
+                                clipText(this@ChatActivity, data, vma.selCount.value ?: 2)
+                                onBackPressed()
+                            }
+                        }
+                    }
+                } else try {
+                    val mod = vm.chatMsgs.findLast { it.id == vma.selectedMsgIds[0] } ?: throw Exception()
+                    if (mod.msgType == MsgMediaType.TEXT || mod.msgType == MsgMediaType.EMOJI)
+                        clipText(this, mod.msg, 1)
+                    else Toast.makeText(this, "Can't copy msg", Toast.LENGTH_SHORT).show()
+                } catch (_: Exception) {
+
+                } finally {
+                    onBackPressed()
+                }
+            }
+
+            b.btReply.id -> try {
+                val mod = vm.chatMsgs.findLast { it.id == vma.selectedMsgIds[0] } ?: throw Exception()
+                vma.setReplyData(mod)
+            } catch (_: Exception) {
+
+            }finally {
+                onBackPressed()
+            }
+
             b.btCloseReplyLay.id -> {
                 vma.removeReplyData()
                 b.root.postDelayed({ b.etMsg.requestFocus() }, 40)
@@ -1208,8 +1254,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         b.rvProg.visibility = View.VISIBLE
     }
 
-    private fun onChatItemReplyClicked(posadap: Int) {
-        val mod = vm.chatMsgs[posadap]
+    private fun onChatItemReplyClicked(posAdap: Int) {
+        val mod = vm.chatMsgs[posAdap]
         val pos = vm.chatMsgs.indexOfFirst { mod.replyId == it.id }
         if (pos == -1) return
 

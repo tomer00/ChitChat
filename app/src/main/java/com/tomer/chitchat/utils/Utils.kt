@@ -2,12 +2,16 @@ package com.tomer.chitchat.utils
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.content.ClipData
+import android.content.ClipboardManager
+import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.content.res.Resources
 import android.util.TypedValue
 import android.view.View
 import android.view.inputmethod.InputMethodManager
+import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.tomer.chitchat.room.ModelRoomPersonRelation
 import kotlin.math.pow
@@ -78,4 +82,12 @@ class Utils {
         fun Activity.isLandscapeOrientation() = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     }
 
+}
+
+fun clipText(con: Context, text: String, count: Int) {
+    val clipManager = con.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
+    val clipData = ClipData.newPlainText("Messages", text)
+    clipManager.setPrimaryClip(clipData)
+    if (count > 1) Toast.makeText(con, "$count Messages copied", Toast.LENGTH_SHORT).show()
+    else Toast.makeText(con, "Message copied", Toast.LENGTH_SHORT).show()
 }
