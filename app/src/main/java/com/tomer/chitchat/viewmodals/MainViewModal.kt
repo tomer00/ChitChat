@@ -357,4 +357,19 @@ class MainViewModal @Inject constructor(
     fun isNameSet() = repoUtils.getPrefs().name.isEmpty()
 
     //endregion LOAD PERSON DATA
+
+    //region BIOMETRIC
+    private val _openChatPhoneNo = MutableLiveData(Pair(false, ""))
+    val openChatPhoneNo: LiveData<Pair<Boolean, String>> = _openChatPhoneNo
+
+    fun openChat(phone: String) {
+        if (phone.isEmpty()) {
+            _openChatPhoneNo.postValue(Pair(false, ""))
+            return
+        }
+        val partnerPref = repoPersons.getPersonPref(phone) ?: PartnerPrefBuilder("", "").build()
+        _openChatPhoneNo.postValue(partnerPref.chatLocked to partnerPref.phone)
+    }
+
+    //endregion BIOMETRIC
 }

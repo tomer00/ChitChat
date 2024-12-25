@@ -21,6 +21,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.biometric.BiometricPrompt
 import androidx.core.animation.doOnEnd
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.app.NotificationManagerCompat
@@ -247,6 +248,56 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         notiMan.cancelAll()
 
         viewModal.loadMyDp()
+
+        viewModal.openChatPhoneNo.observe(this) {
+            if (it.second.isEmpty()) return@observe
+            if (it.first) {
+                // Initialize the biometric prompt
+                val biometricPrompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this), object : BiometricPrompt.AuthenticationCallback() {
+                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                        super.onAuthenticationSucceeded(result)
+                        startActivity(
+                            Intent(this@MainActivity, ChatActivity::class.java)
+                                .apply {
+                                    putExtra("phone", it.second)
+                                }
+                        )
+                        viewModal.openChat("")
+                    }
+
+                    override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
+                        super.onAuthenticationError(errorCode, errString)
+                        // Handle errors (e.g., show a message)
+                        viewModal.openChat("")
+                    }
+
+                    override fun onAuthenticationFailed() {
+                        super.onAuthenticationFailed()
+                        // Handle failed authentication
+                        viewModal.openChat("")
+                    }
+                })
+
+                // Configure the biometric prompt
+                val promptInfo = BiometricPrompt.PromptInfo.Builder()
+                    .setTitle("Chat Locked🔒")
+                    .setSubtitle("Use fingerprint or face lock to unlock...")
+                    .setNegativeButtonText("Cancel")
+                    .build()
+
+                // Show the biometric prompt
+                biometricPrompt.authenticate(promptInfo)
+            } else {
+                startActivity(
+                    Intent(this@MainActivity, ChatActivity::class.java)
+                        .apply {
+                            putExtra("phone", it.second)
+                        }
+                )
+                viewModal.openChat("")
+            }
+
+        }
     }
 
     private fun getRvViewIfVisible(phone: String): RowPersonBinding? {
@@ -385,12 +436,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             onLongClick(pos)
             return
         }
-        startActivity(
-            Intent(this, ChatActivity::class.java)
-                .apply {
-                    putExtra("phone", adapter.currentList[pos].phoneNo)
-                }
-        )
+        viewModal.openChat(adapter.currentList[pos].phoneNo)
     }
 
     override fun onClickDp(pos: Int) {

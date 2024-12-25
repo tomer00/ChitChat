@@ -193,8 +193,23 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
     override fun onClick(v: View) {
         when (v.id) {
             b.btBack.id -> onBackPressed()
-            b.btPhone.id -> {}
-            b.btVideo.id -> {}
+            b.btPhone.id -> startActivity(
+                Intent(this, CallingActivity::class.java)
+                    .apply {
+                        putExtra("video", false)
+                        putExtra("phoneNo", vm.partnerPref.value?.phone)
+                        putExtra("isCaller", true)
+                    }
+            )
+
+            b.btVideo.id -> startActivity(
+                Intent(this, CallingActivity::class.java)
+                    .apply {
+                        putExtra("video", true)
+                        putExtra("phoneNo", vm.partnerPref.value?.phone)
+                        putExtra("isCaller", true)
+                    }
+            )
         }
     }
     //endregion CLICK LISTENER
