@@ -4,6 +4,7 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.hardware.Sensor
@@ -14,8 +15,10 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
+import android.provider.OpenableColumns
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import android.view.ViewAnimationUtils
 import android.view.WindowInsets
@@ -81,7 +84,8 @@ import java.util.LinkedList
 
 @SuppressLint("CheckResult")
 @AndroidEntryPoint
-class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, View.OnClickListener, SensorEventListener {
+class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, View.OnClickListener,
+    SensorEventListener {
 
     private val b by lazy { ActivityChatBinding.inflate(layoutInflater) }
     private val vma: ChatActivityVm by viewModels()
@@ -141,22 +145,31 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             ActivityResultContracts.PickVisualMedia()
         ) {
             b.btGallery.isClickable = true
-            if (it != null)
-                sendMediaMsg(it, MsgMediaType.IMAGE)
+            if (it != null) {
+                val head = ByteArray(6)
+                this.contentResolver.openInputStream(it).use { ins ->
+                    ins?.read(head)
+                }
+                val headStr = String(head)
+                if (headStr == "GIF87a" || headStr == "GIF89a")
+                    sendMediaMsg(it, MsgMediaType.GIF)
+                else sendMediaMsg(it, MsgMediaType.IMAGE)
+            }
 
         }
 
-    private val filePicker = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-        b.btAttachments.isClickable = true
-        if (result.resultCode != RESULT_OK || result.data == null) return@registerForActivityResult
-        val uri = result.data?.data ?: return@registerForActivityResult
-        val size = contentResolver.openInputStream(uri)?.available() ?: -1
-        if (size == -1 || size > 10485760) {
-            Toast.makeText(this, "File size too large to upload...", Toast.LENGTH_SHORT).show()
-            return@registerForActivityResult
+    private val filePicker =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            b.btAttachments.isClickable = true
+            if (result.resultCode != RESULT_OK || result.data == null) return@registerForActivityResult
+            val uri = result.data?.data ?: return@registerForActivityResult
+            val size = contentResolver.openInputStream(uri)?.available() ?: -1
+            if (size == -1 || size > 10485760) {
+                Toast.makeText(this, "File size too large to upload...", Toast.LENGTH_SHORT).show()
+                return@registerForActivityResult
+            }
+            sendMediaMsg(uri, MsgMediaType.FILE)
         }
-        sendMediaMsg(uri, MsgMediaType.FILE)
-    }
 
     //endregion MEDIA IO
 
@@ -238,7 +251,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q)
                 window.insetsController?.hide(WindowInsets.Type.statusBars())
             else {
-                window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                window.decorView.systemUiVisibility =
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 actionBar?.hide()
             }
         }
@@ -276,7 +290,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
         b.etMsg.setKeyboardInputCall { info ->
             if (!vm.canSendMsg) return@setKeyboardInputCall
-            val pickingMediaType = if (info.description.getMimeType(0).equals("image/gif")) MsgMediaType.GIF else MsgMediaType.IMAGE
+            val pickingMediaType = if (
+                info
+                    .description
+                    .getMimeType(0)
+                    .equals("image/gif")
+            ) MsgMediaType.GIF else MsgMediaType.IMAGE
             sendMediaMsg(info.contentUri, pickingMediaType)
         }
 
@@ -371,7 +390,13 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                     btDel.isClickable = true
                 }
                 if (b.laySelHead.isAttachedToWindow)
-                    ViewAnimationUtils.createCircularReveal(b.laySelHead, width.times(0.8f).toInt(), height.shr(1), 1f, width.toFloat()).apply {
+                    ViewAnimationUtils.createCircularReveal(
+                        b.laySelHead,
+                        width.times(0.8f).toInt(),
+                        height.shr(1),
+                        1f,
+                        width.toFloat()
+                    ).apply {
                         duration = 340
                         start()
                     }
@@ -380,7 +405,13 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                 val height = b.laySelHead.height
                 window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
                 if (b.laySelHead.isAttachedToWindow)
-                    ViewAnimationUtils.createCircularReveal(b.laySelHead, width.times(0.8f).toInt(), height.shr(1), width.toFloat(), 1f).apply {
+                    ViewAnimationUtils.createCircularReveal(
+                        b.laySelHead,
+                        width.times(0.8f).toInt(),
+                        height.shr(1),
+                        width.toFloat(),
+                        1f
+                    ).apply {
                         duration = 200
                         doOnEnd {
                             b.apply {
@@ -427,13 +458,16 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
                     MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO -> {
                         imgReplyMedia.visibility = View.VISIBLE
-                        Glide.with(tvPartnerNameCard).load(uiMod.bytes).apply(options).into(imgReplyMedia)
+                        Glide.with(tvPartnerNameCard).load(uiMod.bytes).apply(options)
+                            .into(imgReplyMedia)
                         tvRep.text = uiMod.mediaFileName
                     }
 
                     MsgMediaType.FILE -> {
                         imgReplyMedia.visibility = View.VISIBLE
-                        Glide.with(tvPartnerNameCard).load(AdapPerson.getDrawableId(uiMod.mediaFileName ?: "FILE")).apply(options).into(imgReplyMedia)
+                        Glide.with(tvPartnerNameCard)
+                            .load(AdapPerson.getDrawableId(uiMod.mediaFileName ?: "FILE"))
+                            .apply(options).into(imgReplyMedia)
                         tvRep.text = uiMod.mediaFileName
                     }
                 }
@@ -484,7 +518,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         b.bigJson.addAnimatorListener(object : AnimatorListenerAdapter() {
             override fun onAnimationEnd(animation: Animator) {
                 super.onAnimationEnd(animation)
-                b.bigJson.animate().scaleX(0f).scaleY(0f).setDuration(320).setInterpolator(AccelerateInterpolator()).start()
+                b.bigJson.animate().scaleX(0f).scaleY(0f).setDuration(320)
+                    .setInterpolator(AccelerateInterpolator()).start()
             }
         })
 
@@ -510,7 +545,13 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         }
 
         vma.partnerPref.observe(this) { mod ->
-            b.imgBg.setData(isDarkModeEnabled(), mod.background.alpha, mod.backgroundAssetNo, mod.background.color, mod.background.grad)
+            b.imgBg.setData(
+                isDarkModeEnabled(),
+                mod.background.alpha,
+                mod.backgroundAssetNo,
+                mod.background.color,
+                mod.background.grad
+            )
             for (i in 0 until ll.childCount) {
                 val b = ll.getChildAt(i)?.let { MsgItemBinding.bind(it) } ?: continue
                 b.msgBg.setColor(mod.accent.color, mod.accent.grad)
@@ -560,7 +601,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         }
         msgB.msgData("Uploading")
         vmAssets.uploadFile(
-            Utils.currentPartner?.partnerId ?: "0000000000", pickingMediaType, uri, this, msgB.build(), tempId,
+            Utils.currentPartner?.partnerId ?: "0000000000",
+            pickingMediaType,
+            uri,
+            this,
+            msgB.build(),
+            tempId,
             if (b.replyLayout.visibility == View.VISIBLE) vma.replyMsgData.value!!.bytes else null
         ) { msg ->
             runOnUiThread {
@@ -580,10 +626,17 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         val animDur = 200L
         lifecycleScope.launch {
             delay(animDur)
-            b.imgMsgStatus.setImageDrawable(ContextCompat.getDrawable(this@ChatActivity, if (serverRec) R.drawable.ic_tick else R.drawable.ic_double_tick))
-            b.imgMsgStatus.animate().rotationY(0f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+            b.imgMsgStatus.setImageDrawable(
+                ContextCompat.getDrawable(
+                    this@ChatActivity,
+                    if (serverRec) R.drawable.ic_tick else R.drawable.ic_double_tick
+                )
+            )
+            b.imgMsgStatus.animate().rotationY(0f).setInterpolator(LinearInterpolator())
+                .setDuration(animDur).start()
         }
-        b.imgMsgStatus.animate().rotationY(180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+        b.imgMsgStatus.animate().rotationY(180f).setInterpolator(LinearInterpolator())
+            .setDuration(animDur).start()
     }
 
     //region CLICK LISTENER
@@ -614,7 +667,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                         }
                     }
                 } else try {
-                    val mod = vm.chatMsgs.findLast { it.id == vma.selectedMsgIds[0] } ?: throw Exception()
+                    val mod =
+                        vm.chatMsgs.findLast { it.id == vma.selectedMsgIds[0] } ?: throw Exception()
                     if (mod.msgType == MsgMediaType.TEXT || mod.msgType == MsgMediaType.EMOJI)
                         clipText(this, mod.msg, 1)
                     else Toast.makeText(this, "Can't copy msg", Toast.LENGTH_SHORT).show()
@@ -626,11 +680,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             }
 
             b.btReply.id -> try {
-                val mod = vm.chatMsgs.findLast { it.id == vma.selectedMsgIds[0] } ?: throw Exception()
+                val mod =
+                    vm.chatMsgs.findLast { it.id == vma.selectedMsgIds[0] } ?: throw Exception()
                 vma.setReplyData(mod)
             } catch (_: Exception) {
 
-            }finally {
+            } finally {
                 onBackPressed()
             }
 
@@ -676,7 +731,14 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                 if (emojiAdap.currentList.isEmpty()) {
                     b.rvEmojiContainer.x = b.rvEmojiContainer.width.toFloat()
                     b.rvEmoji.adapter = emojiAdap
-                    b.rvEmoji.setLayoutManager(GridLayoutManager(this, 3, GridLayoutManager.HORIZONTAL, false))
+                    b.rvEmoji.setLayoutManager(
+                        GridLayoutManager(
+                            this,
+                            3,
+                            GridLayoutManager.HORIZONTAL,
+                            false
+                        )
+                    )
                     emojiAdap.submitList(EmojisHashingUtils.emojiList)
                 }
                 if (b.rvEmojiContainer.x.toInt() > 0) {
@@ -696,7 +758,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
             b.layDetail.id -> {
                 if (vma.headMenu.value == true) return
-                val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, b.imgDp, vma.phone)
+                val options =
+                    ActivityOptionsCompat.makeSceneTransitionAnimation(this, b.imgDp, vma.phone)
                 startActivityForResult(
                     Intent(this, PartnerPrefActivity::class.java)
                         .apply {
@@ -747,7 +810,13 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             FlowType.MSG -> {
                 val msgL = msg.data ?: return
                 if (msgL.msgType != MsgMediaType.TEXT && msgL.msgType != MsgMediaType.EMOJI)
-                    vmAssets.downLoadFile(msgL.msg.split(",-,")[0], msgL.mediaFileName!!, msgL.msgType, msgL.id, Utils.currentPartner!!.partnerId) {
+                    vmAssets.downLoadFile(
+                        msgL.msg.split(",-,")[0],
+                        msgL.mediaFileName!!,
+                        msgL.msgType,
+                        msgL.id,
+                        Utils.currentPartner!!.partnerId
+                    ) {
                         msgL.isDownloaded = true
                         msgL.isProg = false
                         msgL.bytes = it
@@ -852,7 +921,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
             FlowType.PARTNER_REC -> {
                 handleMsgStatusAnimation(false, msg.msgId)
-                timeVisibilityQueue.addLast(Pair(System.currentTimeMillis() + 2000, msg.msgId ?: -1L))
+                timeVisibilityQueue.addLast(
+                    Pair(
+                        System.currentTimeMillis() + 2000,
+                        msg.msgId ?: -1L
+                    )
+                )
             }
 
             FlowType.TYPING -> {
@@ -866,15 +940,23 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                         imgDp.visibility = View.GONE
                         lottieTyping.visibility = View.VISIBLE
                     }
-                    b.cardFlipper.animate().rotationY(0f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+                    b.cardFlipper.animate().rotationY(0f).setInterpolator(LinearInterpolator())
+                        .setDuration(animDur).start()
                 }
-                b.cardFlipper.animate().rotationY(180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+                b.cardFlipper.animate().rotationY(180f).setInterpolator(LinearInterpolator())
+                    .setDuration(animDur).start()
             }
 
             FlowType.NO_TYPING -> {
                 if (b.tvDetails.text.toString() != "Typing...") return
                 if (lastSeenMillis == -1L) vma.setTypingText("Online")
-                else vma.setTypingText("last seen at ${ConversionUtils.getRelativeTime(lastSeenMillis)}")
+                else vma.setTypingText(
+                    "last seen at ${
+                        ConversionUtils.getRelativeTime(
+                            lastSeenMillis
+                        )
+                    }"
+                )
                 val animDur = 200L
                 lifecycleScope.launch {
                     delay(animDur)
@@ -883,9 +965,11 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                         imgDp.visibility = View.VISIBLE
                         lottieTyping.visibility = View.GONE
                     }
-                    b.cardFlipper.animate().rotationY(0f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+                    b.cardFlipper.animate().rotationY(0f).setInterpolator(LinearInterpolator())
+                        .setDuration(animDur).start()
                 }
-                b.cardFlipper.animate().rotationY(180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+                b.cardFlipper.animate().rotationY(180f).setInterpolator(LinearInterpolator())
+                    .setDuration(animDur).start()
             }
 
             FlowType.ONLINE -> {
@@ -903,16 +987,24 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                             imgDp.visibility = View.VISIBLE
                             lottieTyping.visibility = View.GONE
                         }
-                        b.cardFlipper.animate().rotationY(0f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+                        b.cardFlipper.animate().rotationY(0f).setInterpolator(LinearInterpolator())
+                            .setDuration(animDur).start()
                     }
-                    b.cardFlipper.animate().rotationY(180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+                    b.cardFlipper.animate().rotationY(180f).setInterpolator(LinearInterpolator())
+                        .setDuration(animDur).start()
                 }
                 lastSeenMillis = msg.msgId!!
                 val relTimeText = ConversionUtils.getRelativeTime(lastSeenMillis)
                 if (relTimeText.contains(':'))
                     vma.setTypingText("last seen at $relTimeText")
                 else if (relTimeText == "Yesterday")
-                    vma.setTypingText("last seen yesterday at ${ConversionUtils.millisToTimeText(lastSeenMillis)}")
+                    vma.setTypingText(
+                        "last seen yesterday at ${
+                            ConversionUtils.millisToTimeText(
+                                lastSeenMillis
+                            )
+                        }"
+                    )
                 else vma.setTypingText("last seen on $relTimeText")
             }
 
@@ -924,7 +1016,13 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             FlowType.SET_PREFS -> {
                 b.imgBg.run {
                     val mod = vm.partnerPref ?: return
-                    setData(isDarkModeEnabled(), mod.background.alpha, mod.backgroundAssetNo, mod.background.color, mod.background.grad)
+                    setData(
+                        isDarkModeEnabled(),
+                        mod.background.alpha,
+                        mod.backgroundAssetNo,
+                        mod.background.color,
+                        mod.background.grad
+                    )
                 }
                 b.apply {
                     tvPartnerName.text = (vm.partnerPref?.name ?: "").ifEmpty { vma.phone }
@@ -1022,7 +1120,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                         setDuration(120)
                         start()
                     }
-                    b.tCard.animate().scaleY(1f).scaleX(1f).setStartDelay(120).setDuration(120).start()
+                    b.tCard.animate().scaleY(1f).scaleX(1f).setStartDelay(120).setDuration(120)
+                        .start()
                     lifecycleScope.launch {
                         delay(120)
                         if (msg.data!!.msg.isEmpty()) return@launch
@@ -1034,7 +1133,8 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
             FlowType.SHOW_BIG_JSON -> {
                 runOnUiThread {
-                    b.bigJson.animate().scaleX(1f).scaleY(1f).setDuration(140).setInterpolator(AccelerateInterpolator()).start()
+                    b.bigJson.animate().scaleX(1f).scaleY(1f).setDuration(140)
+                        .setInterpolator(AccelerateInterpolator()).start()
                     b.bigJson.setAnimationFromJson(msg.data!!.msg, msg.data.mediaFileName)
                     b.bigJson.playAnimation()
                 }
@@ -1043,12 +1143,17 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
             FlowType.SHOW_BIG_GIF -> {
                 runOnUiThread {
-                    b.bigJson.animate().scaleX(1f).scaleY(1f).setDuration(140).setInterpolator(AccelerateInterpolator()).start()
+                    b.bigJson.animate().scaleX(1f).scaleY(1f).setDuration(140)
+                        .setInterpolator(AccelerateInterpolator()).start()
                     Glide.with(this).load(msg.fileGif!!).skipMemoryCache(true).into(b.bigJson)
                     lifecycleScope.launch {
                         delay(3600)
-                        b.bigJson.animate().scaleX(0f).scaleY(0f).setDuration(320).setInterpolator(AccelerateInterpolator()).start()
-                        b.bigJson.postDelayed({ Glide.with(this@ChatActivity).clear(b.bigJson) }, 340)
+                        b.bigJson.animate().scaleX(0f).scaleY(0f).setDuration(320)
+                            .setInterpolator(AccelerateInterpolator()).start()
+                        b.bigJson.postDelayed(
+                            { Glide.with(this@ChatActivity).clear(b.bigJson) },
+                            340
+                        )
                     }
                 }
             }
@@ -1069,12 +1174,22 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                         )
 
                         val intent = Intent(Intent.ACTION_VIEW).apply {
-                            setDataAndType(uri, ConversionUtils.mimeTypes.getOrDefault(msg.fileGif.extension, "application/octet-stream"))
+                            setDataAndType(
+                                uri,
+                                ConversionUtils.mimeTypes.getOrDefault(
+                                    msg.fileGif.extension,
+                                    "application/octet-stream"
+                                )
+                            )
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         }
                         startActivity(intent)
                     } catch (e: Exception) {
-                        Toast.makeText(this, "No application found to open this file.", Toast.LENGTH_SHORT).show()
+                        Toast.makeText(
+                            this,
+                            "No application found to open this file.",
+                            Toast.LENGTH_SHORT
+                        ).show()
                     }
                 }
             }
@@ -1082,10 +1197,15 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             FlowType.OPEN_IMAGE, FlowType.OPEN_GIF -> {
                 runOnUiThread {
                     val b = getRvViewIfPossibleForId(msgIdForImageShow) ?: return@runOnUiThread
-                    val chatMsg = vm.chatMsgs.find { it.id == msgIdForImageShow } ?: return@runOnUiThread
+                    val chatMsg =
+                        vm.chatMsgs.find { it.id == msgIdForImageShow } ?: return@runOnUiThread
                     ImageViewActivity.bytesImage = chatMsg.bytes
                     b.mediaImg.transitionName = msg.fileGif?.name ?: "img"
-                    val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, b.mediaImg, msg.fileGif?.name ?: "img")
+                    val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                        this,
+                        b.mediaImg,
+                        msg.fileGif?.name ?: "img"
+                    )
                     if (ImageViewActivity.bytesImage == null) return@runOnUiThread
                     startActivityForResult(Intent(this, ImageViewActivity::class.java).apply {
                         putExtra("isGif", msg.type == FlowType.OPEN_GIF)
@@ -1095,7 +1215,10 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                         if (msg.msgId == -1L)
                             putExtra("timeText", chatMsg.timeText)
                         else putExtra("timeMillis", msg.msgId)
-                        putExtra("heading", if (chatMsg.isSent) "You" else (vm.partnerPref?.name ?: "").ifEmpty { vma.phone })
+                        putExtra(
+                            "heading",
+                            if (chatMsg.isSent) "You" else (vm.partnerPref?.name
+                                ?: "").ifEmpty { vma.phone })
                     }, 1001, options.toBundle())
                 }
             }
@@ -1164,7 +1287,12 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
                 if (vm.chatMsgs[pos].status != MsgStatus.RECEIVED) return
                 b.contTime.visibility = View.VISIBLE
                 timeVisibilityQueue.removeIf { it.second == vm.chatMsgs[pos].id }
-                timeVisibilityQueue.addLast(Pair(System.currentTimeMillis() + 2000, vm.chatMsgs[pos].id))
+                timeVisibilityQueue.addLast(
+                    Pair(
+                        System.currentTimeMillis() + 2000,
+                        vm.chatMsgs[pos].id
+                    )
+                )
             }
         }
     }
@@ -1180,7 +1308,11 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
     }
 
     override fun onOpenLinkInBrowser(link: String) {
-        startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(link)).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+        startActivity(
+            Intent(
+                Intent.ACTION_VIEW,
+                Uri.parse(link)
+            ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
     }
 
     private var msgIdForImageShow = -1L
@@ -1227,7 +1359,13 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
     private fun onChatItemDownloadClicked(pos: Int) {
         val mod = vm.chatMsgs[pos]
-        vmAssets.downLoadFile(mod.msg.split(",-,")[0], mod.mediaFileName!!, mod.msgType, mod.id, Utils.currentPartner!!.partnerId) {
+        vmAssets.downLoadFile(
+            mod.msg.split(",-,")[0],
+            mod.mediaFileName!!,
+            mod.msgType,
+            mod.id,
+            Utils.currentPartner!!.partnerId
+        ) {
             runOnUiThread {
                 vm.chatMsgs[pos].isDownloaded = true
                 vm.chatMsgs[pos].isProg = false
