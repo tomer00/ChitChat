@@ -33,7 +33,6 @@ import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import com.google.firebase.auth.FirebaseAuth
 import com.google.zxing.BinaryBitmap
 import com.google.zxing.LuminanceSource
 import com.google.zxing.MultiFormatReader
@@ -63,6 +62,7 @@ import com.tomer.chitchat.utils.Utils
 import com.tomer.chitchat.utils.Utils.Companion.hideKeyBoard
 import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
 import com.tomer.chitchat.utils.Utils.Companion.isLandscapeOrientation
+import com.tomer.chitchat.utils.acceptNo
 import com.tomer.chitchat.viewmodals.AssetsViewModel
 import com.tomer.chitchat.viewmodals.MainViewModal
 import dagger.hilt.android.AndroidEntryPoint
@@ -90,13 +90,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        if (FirebaseAuth.getInstance().currentUser == null) {
-            startActivity(Intent(this, LoginActivity::class.java))
-            finish()
-            return
-        }
         if (viewModal.isNameSet()) {
-            FirebaseAuth.getInstance().signOut()
             startActivity(Intent(this, LoginActivity::class.java))
             finish()
             return
@@ -107,12 +101,18 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q)
                 window.insetsController?.hide(WindowInsets.Type.statusBars())
             else {
-                window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                window.decorView.systemUiVisibility =
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 actionBar?.hide()
             }
         }
-        Utils.myPhone = FirebaseAuth.getInstance().currentUser?.phoneNumber?.substring(3) ?: ""
-        if (isDarkModeEnabled()) b.tvAppName.setTextColor(ContextCompat.getColor(this, R.color.white))
+        Utils.myPhone = viewModal.getPhone()
+        if (isDarkModeEnabled()) b.tvAppName.setTextColor(
+            ContextCompat.getColor(
+                this,
+                R.color.white
+            )
+        )
         if (intent.action == Intent.ACTION_VIEW) {
             val uri = intent.data
             if (uri != null)
@@ -154,7 +154,10 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                         FlowType.SHOW_BIG_JSON -> if (activityLife) {
                             val b = getRvViewIfVisible(it.fromUser) ?: return@runOnUiThread
                             try {
-                                b.imgLottie.setAnimationFromJson(it.data!!.msg, it.data.mediaFileName)
+                                b.imgLottie.setAnimationFromJson(
+                                    it.data!!.msg,
+                                    it.data.mediaFileName
+                                )
                                 b.imgLottie.playAnimation()
                             } catch (_: Exception) {
                             }
@@ -190,7 +193,13 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                     btDel.isClickable = true
                 }
                 if (b.laySelHead.isAttachedToWindow)
-                    ViewAnimationUtils.createCircularReveal(b.laySelHead, width.times(0.8f).toInt(), height.shr(1), 1f, width.toFloat()).apply {
+                    ViewAnimationUtils.createCircularReveal(
+                        b.laySelHead,
+                        width.times(0.8f).toInt(),
+                        height.shr(1),
+                        1f,
+                        width.toFloat()
+                    ).apply {
                         duration = 340
                         start()
                     }
@@ -199,7 +208,13 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                 val height = b.laySelHead.height
                 window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
                 if (b.laySelHead.isAttachedToWindow)
-                    ViewAnimationUtils.createCircularReveal(b.laySelHead, width.times(0.8f).toInt(), height.shr(1), width.toFloat(), 1f).apply {
+                    ViewAnimationUtils.createCircularReveal(
+                        b.laySelHead,
+                        width.times(0.8f).toInt(),
+                        height.shr(1),
+                        width.toFloat(),
+                        1f
+                    ).apply {
                         duration = 200
                         doOnEnd {
                             b.apply {
@@ -253,30 +268,36 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             if (it.second.isEmpty()) return@observe
             if (it.first) {
                 // Initialize the biometric prompt
-                val biometricPrompt = BiometricPrompt(this, ContextCompat.getMainExecutor(this), object : BiometricPrompt.AuthenticationCallback() {
-                    override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
-                        super.onAuthenticationSucceeded(result)
-                        startActivity(
-                            Intent(this@MainActivity, ChatActivity::class.java)
-                                .apply {
-                                    putExtra("phone", it.second)
-                                }
-                        )
-                        viewModal.openChat("")
-                    }
+                val biometricPrompt = BiometricPrompt(
+                    this,
+                    ContextCompat.getMainExecutor(this),
+                    object : BiometricPrompt.AuthenticationCallback() {
+                        override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
+                            super.onAuthenticationSucceeded(result)
+                            startActivity(
+                                Intent(this@MainActivity, ChatActivity::class.java)
+                                    .apply {
+                                        putExtra("phone", it.second)
+                                    }
+                            )
+                            viewModal.openChat("")
+                        }
 
-                    override fun onAuthenticationError(errorCode: Int, errString: CharSequence) {
-                        super.onAuthenticationError(errorCode, errString)
-                        // Handle errors (e.g., show a message)
-                        viewModal.openChat("")
-                    }
+                        override fun onAuthenticationError(
+                            errorCode: Int,
+                            errString: CharSequence
+                        ) {
+                            super.onAuthenticationError(errorCode, errString)
+                            // Handle errors (e.g., show a message)
+                            viewModal.openChat("")
+                        }
 
-                    override fun onAuthenticationFailed() {
-                        super.onAuthenticationFailed()
-                        // Handle failed authentication
-                        viewModal.openChat("")
-                    }
-                })
+                        override fun onAuthenticationFailed() {
+                            super.onAuthenticationFailed()
+                            // Handle failed authentication
+                            viewModal.openChat("")
+                        }
+                    })
 
                 // Configure the biometric prompt
                 val promptInfo = BiometricPrompt.PromptInfo.Builder()
@@ -368,10 +389,17 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                             }
 
                             override fun onPermissionDenied(p0: PermissionDeniedResponse?) {
-                                Toast.makeText(this@MainActivity, "Please Provide with Camera Permission...", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(
+                                    this@MainActivity,
+                                    "Please Provide with Camera Permission...",
+                                    Toast.LENGTH_SHORT
+                                ).show()
                             }
 
-                            override fun onPermissionRationaleShouldBeShown(p0: PermissionRequest?, p1: PermissionToken?) {
+                            override fun onPermissionRationaleShouldBeShown(
+                                p0: PermissionRequest?,
+                                p1: PermissionToken?
+                            ) {
                             }
 
                         }).check()
@@ -383,15 +411,17 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             }
 
             b.btConnect.id -> {
-                if (
-                    b.etNewNumber.text.toString().length < 10 ||
-                    !b.etNewNumber.text.isDigitsOnly()
-                ) {
+                val newNo = b.etNewNumber.text.toString().acceptNo()
+                if (newNo.length != 10) {
                     b.etNewNumber.error = "Enter Valid Number"
                     return
                 }
                 lifecycleScope.launch {
-                    viewModal.connectNew(b.etNewNumber.text.toString(), openNextActivity = true, mandatoryConnect = false)
+                    viewModal.connectNew(
+                        newNo,
+                        openNextActivity = true,
+                        mandatoryConnect = false
+                    )
                 }
                 viewModal.setFab(false)
             }
@@ -415,8 +445,13 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             }
 
             b.btProfile.id -> {
-                val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this, b.btProfile, "avatar")
-                startActivityForResult(Intent(this, SettingsActivity::class.java), REQ_CODE_PROILE_CHANGE, options.toBundle())
+                val options =
+                    ActivityOptionsCompat.makeSceneTransitionAnimation(this, b.btProfile, "avatar")
+                startActivityForResult(
+                    Intent(this, SettingsActivity::class.java),
+                    REQ_CODE_PROILE_CHANGE,
+                    options.toBundle()
+                )
             }
 
             b.btSearch.id -> {
@@ -447,12 +482,16 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         val br = getRvViewIfVisible(adapter.currentList[pos].phoneNo) ?: return
         val loc = IntArray(2)
         br.imgProfile.getLocationOnScreen(loc)
-        b.extendedDpView.setBitmap(adapter.currentList[pos].fileDp?.absolutePath ?: "", PointF(loc[0].toFloat(), loc[1].toFloat()))
+        b.extendedDpView.setBitmap(
+            adapter.currentList[pos].fileDp?.absolutePath ?: "",
+            PointF(loc[0].toFloat(), loc[1].toFloat())
+        )
     }
 
     override fun onLongClick(pos: Int) {
         var isSel: Boolean
-        adapter.currentList[pos].isSelected = viewModal.addDelNo(adapter.currentList[pos].phoneNo).also { isSel = it }
+        adapter.currentList[pos].isSelected =
+            viewModal.addDelNo(adapter.currentList[pos].phoneNo).also { isSel = it }
         val b = getRvViewIfVisible(adapter.currentList[pos].phoneNo) ?: return
         val col = if (isSel) ContextCompat.getColor(this, R.color.primary_light)
         else ContextCompat.getColor(this, R.color.backgroundC)
@@ -505,7 +544,14 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         b.setView(fb.root)
         val qrd = b.create()
         qrd.window?.attributes?.windowAnimations = R.style.Dialog
-        qrd.window?.setBackgroundDrawable(ColorDrawable(ContextCompat.getColor(this, R.color.trans)))
+        qrd.window?.setBackgroundDrawable(
+            ColorDrawable(
+                ContextCompat.getColor(
+                    this,
+                    R.color.trans
+                )
+            )
+        )
         fb.btCross.setOnClickListener {
             qrd.cancel()
         }
@@ -578,12 +624,14 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
                 val lastMsg: String = when (msg.data.msgType) {
                     MsgMediaType.TEXT, MsgMediaType.EMOJI -> msg.data.msg
-                    MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> msg.data.mediaFileName ?: msg.data.msgType.name
+                    MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> msg.data.mediaFileName
+                        ?: msg.data.msgType.name
                 }
                 val b = getRvViewIfVisible(msg.fromUser) ?: return
                 b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.fore))
                 b.tvLastMsg.text = lastMsg.also { b.tvLastMsg.tag = it }
-                b.tvUnreadMsgCount.text = b.tvUnreadMsgCount.text.toString().toInt().plus(1).toString()
+                b.tvUnreadMsgCount.text =
+                    b.tvUnreadMsgCount.text.toString().toInt().plus(1).toString()
                 b.msgStatus.visibility = View.GONE
                 b.tvUnreadMsgCount.visibility = View.VISIBLE
                 b.tvTime.setTextColor(ContextCompat.getColor(this, R.color.purple))
@@ -591,12 +639,16 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
                 when (msg.data.msgType) {
                     MsgMediaType.TEXT, MsgMediaType.EMOJI -> b.msgType.visibility = View.GONE
-                    MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> b.msgType.visibility = View.VISIBLE
+                    MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> b.msgType.visibility =
+                        View.VISIBLE
                 }
 
                 when (msg.data.msgType) {
                     MsgMediaType.IMAGE, MsgMediaType.GIF -> {
-                        val byes = assetsVM.getBytesOfFile(msg.data.msgType, msg.data.mediaFileName.toString())
+                        val byes = assetsVM.getBytesOfFile(
+                            msg.data.msgType,
+                            msg.data.mediaFileName.toString()
+                        )
                         Glide.with(this@MainActivity)
                             .load(byes ?: AdapPerson.getByteArr(msg.data.msg.split(",-,")[1]))
                             .skipMemoryCache(true)
@@ -612,7 +664,10 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                             .diskCacheStrategy(DiskCacheStrategy.NONE)
                             .into(
                                 object : CustomTarget<Bitmap>() {
-                                    override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                                    override fun onResourceReady(
+                                        resource: Bitmap,
+                                        transition: Transition<in Bitmap>?
+                                    ) {
                                         val b1 = getRvViewIfVisible(msg.fromUser) ?: return
                                         b1.imgLottie.setImageBitmap(resource)
                                     }
@@ -622,20 +677,27 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
                                     override fun onLoadFailed(errorDrawable: Drawable?) {
                                         val b1 = getRvViewIfVisible(msg.fromUser) ?: return
-                                        b1.imgLottie.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, R.drawable.ic_video))
+                                        b1.imgLottie.setImageDrawable(
+                                            ContextCompat.getDrawable(
+                                                this@MainActivity,
+                                                R.drawable.ic_video
+                                            )
+                                        )
                                     }
                                 }
                             )
                     }
 
                     MsgMediaType.EMOJI -> {
-                        val nameGoogleJson = EmojisHashingUtils.googleJHash[ConversionUtils.encode(msg.data.msg)]
+                        val nameGoogleJson =
+                            EmojisHashingUtils.googleJHash[ConversionUtils.encode(msg.data.msg)]
                         if (!nameGoogleJson.isNullOrEmpty()) {
                             assetsVM.showGoogleJsonViaFlow(nameGoogleJson, msg.fromUser)
                             return
                         }
 
-                        val nameJson = EmojisHashingUtils.jHash[ConversionUtils.encode(msg.data.msg)]
+                        val nameJson =
+                            EmojisHashingUtils.jHash[ConversionUtils.encode(msg.data.msg)]
                         if (!nameJson.isNullOrEmpty()) {
                             assetsVM.showJsonViaFlow(nameJson, msg.fromUser)
                             return
@@ -647,7 +709,8 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                             return
                         }
 
-                        val nameTeleGif = EmojisHashingUtils.teleHash[ConversionUtils.encode(msg.data.msg)]
+                        val nameTeleGif =
+                            EmojisHashingUtils.teleHash[ConversionUtils.encode(msg.data.msg)]
                         if (!nameTeleGif.isNullOrEmpty()) {
                             assetsVM.showTeleGifViaFlow(nameTeleGif, msg.fromUser)
                             return
@@ -658,7 +721,11 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                         if (msg.data.msgType == MsgMediaType.FILE) {
                             b.msgType.visibility = View.VISIBLE
                             b.msgType.setImageResource(getDrawableId(msg.data.mediaFileName ?: ""))
-                            b.imgLottie.setImageResource(getDrawableId(msg.data.mediaFileName ?: ""))
+                            b.imgLottie.setImageResource(
+                                getDrawableId(
+                                    msg.data.mediaFileName ?: ""
+                                )
+                            )
                         } else {
                             b.msgType.visibility = View.GONE
                             b.imgLottie.setImageDrawable(null)
@@ -669,14 +736,16 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             }
 
             FlowType.SERVER_REC -> {
-                val old = adapter.currentList.find { t -> t.lastMsgId == (msg.oldId ?: -2L) } ?: return
+                val old =
+                    adapter.currentList.find { t -> t.lastMsgId == (msg.oldId ?: -2L) } ?: return
                 old.lastMsgId = msg.msgId ?: old.lastMsgId
                 old.msgStatus = MsgStatus.SENT_TO_SERVER
                 handleMsgStatusAnimation(true, msg.fromUser)
             }
 
             FlowType.PARTNER_REC -> {
-                val old = adapter.currentList.find { t -> t.lastMsgId == (msg.msgId ?: -2L) } ?: return
+                val old =
+                    adapter.currentList.find { t -> t.lastMsgId == (msg.msgId ?: -2L) } ?: return
                 old.msgStatus = MsgStatus.RECEIVED
                 handleMsgStatusAnimation(false, msg.fromUser)
             }
@@ -691,7 +760,12 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                 val b = getRvViewIfVisible(msg.fromUser) ?: return
                 if (b.tvLastMsg.text == "Typing...") {
                     if (b.tvUnreadMsgCount.visibility != View.VISIBLE)
-                        b.tvLastMsg.setTextColor(ContextCompat.getColor(this@MainActivity, R.color.hintCol))
+                        b.tvLastMsg.setTextColor(
+                            ContextCompat.getColor(
+                                this@MainActivity,
+                                R.color.hintCol
+                            )
+                        )
                     b.tvLastMsg.text = b.tvLastMsg.tag.toString()
                 }
             }
@@ -699,12 +773,19 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             FlowType.SEND_NEW_CONNECTION_REQUEST -> {
                 lifecycleScope.launch {
                     viewModal.connectNew(msg.fromUser, false)
-                    if (activityLife) b.root.postDelayed({ viewModal.loadPersons(adapter.currentList) }, 100)
+                    if (activityLife) b.root.postDelayed(
+                        { viewModal.loadPersons(adapter.currentList) },
+                        100
+                    )
                 }
             }
 
 
-            FlowType.INCOMING_NEW_CONNECTION_REQUEST, FlowType.REQ_ACCEPTED, FlowType.REQ_REJECTED -> if (activityLife) b.root.postDelayed({ viewModal.loadPersons(adapter.currentList) }, 100)
+            FlowType.INCOMING_NEW_CONNECTION_REQUEST, FlowType.REQ_ACCEPTED, FlowType.REQ_REJECTED -> if (activityLife) b.root.postDelayed(
+                { viewModal.loadPersons(adapter.currentList) },
+                100
+            )
+
             FlowType.ONLINE,
             FlowType.OFFLINE -> if (activityLife) {
                 val b = getRvViewIfVisible(msg.fromUser) ?: return
@@ -758,10 +839,17 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         val animDur = 200L
         lifecycleScope.launch {
             delay(animDur)
-            b.msgStatus.setImageDrawable(ContextCompat.getDrawable(this@MainActivity, if (serverRec) R.drawable.ic_tick else R.drawable.ic_double_tick))
-            b.msgStatus.animate().rotationY(0f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+            b.msgStatus.setImageDrawable(
+                ContextCompat.getDrawable(
+                    this@MainActivity,
+                    if (serverRec) R.drawable.ic_tick else R.drawable.ic_double_tick
+                )
+            )
+            b.msgStatus.animate().rotationY(0f).setInterpolator(LinearInterpolator())
+                .setDuration(animDur).start()
         }
-        b.msgStatus.animate().rotationY(180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+        b.msgStatus.animate().rotationY(180f).setInterpolator(LinearInterpolator())
+            .setDuration(animDur).start()
     }
 
 }

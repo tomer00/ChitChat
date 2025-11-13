@@ -355,6 +355,7 @@ class MainViewModal @Inject constructor(
     }
 
     fun isNameSet() = repoUtils.getPrefs().name.isEmpty()
+    fun getPhone() = repoUtils.getPrefs().phone
 
     //endregion LOAD PERSON DATA
 
