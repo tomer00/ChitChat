@@ -144,7 +144,7 @@ class SettingsMyPrefViewModel @Inject constructor(
                             }, bytes
                         ).also {
                             _dpUploadProg.postValue(false)
-                            flowEvents.emit(Pair(SettingEvents.SHOW_TOAST, "File uploaded successfully"))
+                            flowEvents.emit(Pair(SettingEvents.SHOW_TOAST, "Profile updated successfully"))
                             flowEvents.emit(Pair(SettingEvents.DP_UPLOADED, it.absolutePath))
                         }
                     )
