@@ -20,11 +20,11 @@ class Utils {
     companion object {
 
         //        private const val IP: String = "192.168.43.167:9080"
-        private const val IP: String = "35.209.235.169:9080"
-        const val SERVER_LINK: String = "http://$IP"
-        const val WEBSOCKET_LINK: String = "ws://$IP/socket"
-        fun String.getDpLink() = "https://firebasestorage.googleapis.com/v0/b/chitchat-13c0f.appspot.com/o/dps%2F$this.webp?alt=media"
-
+        private const val IP: String = "chitchat.devhimu.in"
+        const val SERVER_LINK: String = "https://$IP"
+        const val WEBSOCKET_LINK: String = "wss://$IP/socket"
+        fun String.getDpLink() =
+            "https://firebasestorage.googleapis.com/v0/b/chitchat-13c0f.appspot.com/o/dps%2F$this.webp?alt=media"
 
         var myPhone = ""
         var myName = ""
@@ -75,14 +75,20 @@ class Utils {
             ActivityCompat.checkSelfPermission(this, name) == PackageManager.PERMISSION_GRANTED
 
         fun Activity.isDarkModeEnabled(): Boolean {
-            val currentNightMode = resources.configuration.uiMode.and(Configuration.UI_MODE_NIGHT_MASK)
+            val currentNightMode =
+                resources.configuration.uiMode.and(Configuration.UI_MODE_NIGHT_MASK)
             return currentNightMode == Configuration.UI_MODE_NIGHT_YES
         }
 
-        fun Activity.isLandscapeOrientation() = resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        fun Activity.isLandscapeOrientation() =
+            resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     }
 
 }
+
+fun String.acceptNo() =
+    this.replace("[^0-9]".toRegex(), "")
+
 
 fun clipText(con: Context, text: String, count: Int) {
     val clipManager = con.getSystemService(Context.CLIPBOARD_SERVICE) as ClipboardManager
