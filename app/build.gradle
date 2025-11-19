@@ -17,12 +17,12 @@ android {
         }
     }
     namespace 'com.tomer.chitchat'
-    compileSdk 34
+    compileSdk 36
 
     defaultConfig {
         applicationId "com.tomer.chitchat"
         minSdk 29
-        targetSdk 33
+        targetSdk 35
         versionCode 1
         versionName "1.0.0"
 
@@ -56,26 +56,24 @@ android {
 
 dependencies {
 
-    implementation 'androidx.core:core-ktx:1.13.1'
-    implementation 'androidx.activity:activity-ktx:1.9.3'
-    implementation 'androidx.appcompat:appcompat:1.7.0'
+    implementation 'androidx.core:core-ktx:1.17.0'
+    implementation 'androidx.activity:activity-ktx:1.10.1'
+    implementation 'androidx.appcompat:appcompat:1.7.1'
     implementation 'com.google.android.material:material:1.12.0'
-    implementation 'androidx.constraintlayout:constraintlayout:2.1.4'
+    implementation 'androidx.constraintlayout:constraintlayout:2.2.0'
 
-    implementation 'androidx.palette:palette:1.0.0'
-    implementation 'androidx.browser:browser:1.8.0'
-    implementation 'com.google.code.gson:gson:2.11.0'
+    implementation 'androidx.palette:palette-ktx:1.0.0'
+    implementation 'com.google.code.gson:gson:2.12.1'
     implementation 'com.airbnb.android:lottie:6.5.2'
     //noinspection GradleDependency
     implementation 'com.google.firebase:firebase-messaging:24.0.2'
-    implementation 'com.google.firebase:firebase-auth:20.0.0'
+    implementation "com.google.android.gms:play-services-auth:20.7.0"
     implementation 'com.karumi:dexter:6.2.3'
-    implementation 'androidx.activity:activity:1.9.3'
     implementation 'androidx.biometric:biometric:1.1.0'
 
 
     //Hilt
-    def hiltVer = '2.52'
+    def hiltVer = '2.57.1'
     implementation "com.google.dagger:hilt-android:$hiltVer"
     kapt "com.google.dagger:hilt-compiler:$hiltVer"
 
@@ -85,7 +83,7 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$courVer"
 
     //Room
-    def roomVer = '2.6.1'
+    def roomVer = '2.7.2'
     implementation "androidx.room:room-runtime:$roomVer"
     kapt "androidx.room:room-compiler:$roomVer"
 
@@ -98,14 +96,14 @@ dependencies {
 
 
     //lifecycle
-    def lifecycle_version = '2.8.6'
-    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
-    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
+    def lifecycle_version = '2.9.2'
+//    implementation "androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version"
+//    implementation "androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version"
     implementation "androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version"
-    implementation "androidx.lifecycle:lifecycle-extensions:2.2.0"
+//    implementation "androidx.lifecycle:lifecycle-extensions:2.2.0"
 
     //paging3
-    implementation 'androidx.paging:paging-runtime:3.3.2'
+    implementation 'androidx.paging:paging-runtime-ktx:3.3.5'
     implementation "com.mesibo.api:webrtc:1.0.5"
 
     //Glide
