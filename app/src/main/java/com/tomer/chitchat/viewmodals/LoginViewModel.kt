@@ -6,12 +6,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.google.android.gms.tasks.Task
-import com.google.firebase.FirebaseException
-import com.google.firebase.auth.AuthResult
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.auth.PhoneAuthCredential
-import com.google.firebase.auth.PhoneAuthProvider
 import com.google.firebase.messaging.FirebaseMessaging
 import com.tomer.chitchat.modals.prefs.MyPrefs
 import com.tomer.chitchat.repo.RepoUtils
@@ -38,15 +32,6 @@ class LoginViewModel @Inject constructor(
     private val repo: RepoUtils
 ) : ViewModel() {
 
-    private val _phone = MutableLiveData<String>()
-    val phone: LiveData<String> = _phone
-
-    private val _reSend = MutableLiveData<Boolean>()
-    val reSend: LiveData<Boolean> = _reSend
-
-    private val _sendOtp = MutableLiveData<Boolean>()
-    val sendOtp: LiveData<Boolean> = _sendOtp
-
     private val _codeSend = MutableLiveData<Boolean>()
     val codeSend: LiveData<Boolean> = _codeSend
 
@@ -58,9 +43,6 @@ class LoginViewModel @Inject constructor(
 
     private val _done = MutableLiveData<Boolean>()
     val done: LiveData<Boolean> = _done
-
-    private val _canAuth = MutableLiveData<Boolean>()
-    val canAuth: LiveData<Boolean> = _canAuth
 
     private val _selectedImg = MutableLiveData<Uri>()
     val selectedImg: LiveData<Uri> = _selectedImg
@@ -77,26 +59,55 @@ class LoginViewModel @Inject constructor(
     private val _currentFrag = MutableLiveData(1)
     val currentFrag: LiveData<Int> = _currentFrag
 
+    //region FRAG_OTP
+    private val _phone = MutableLiveData<String>()
+    val phone: LiveData<String> = _phone
+
+    private val _showProgSendOtpFrag = MutableLiveData(false)
+    val showProg: LiveData<Boolean> = _showProgSendOtpFrag
+    //endregion FRAG_OTP
+
     val flowToasts = MutableSharedFlow<String>()
 
     var name = ""
     var otpTemp = ""
-    private var jobTimer: Job = viewModelScope.launch { ; }
+    private var jobTimer: Job = viewModelScope.launch { }
 
-    init {
-        viewModelScope.launch {
-            val cA = try {
-                retro.canAuth().body().equals("true")
-            } catch (e: Exception) {
-                false
-            }
-            _canAuth.postValue(cA)
-        }
-    }
-
-    fun setOtp(otp: String) {
-        signInWithPhoneAuthCredential(otp)
+    fun loginWithOtp(otp: String) {
         _loginProg.value = true
+        viewModelScope.launch {
+            withContext(Dispatchers.IO) {
+                val firebaseNotificationToken = async { getFirebaseNotificationToken() }
+                try {
+                    val token = retro.getLoginToken(otp, firebaseNotificationToken.await())
+                    if (token.code() == 403) {
+                        flowToasts.emit("Invalid OTP")
+                        _loginProg.postValue(false)
+                        return@withContext
+                    }
+                    if (token.isSuccessful) {
+                        token.body()?.let {
+                            repo.saveToken(it.token)
+                            repo.getPrefs().apply {
+                                this.phone = _phone.value.toString().trim()
+                                this.about = it.about
+                                this.name = it.name
+                                repo.savePrefs(this)
+                            }
+                            name = it.name
+                        }
+                        _currentFrag.postValue(3)
+                        jobTimer.cancel()
+                        _loginProg.postValue(false)
+                    } else {
+                        _loginProg.postValue(false)
+                    }
+                } catch (e: Exception) {
+                    _loginProg.postValue(false)
+                    e.printStackTrace()
+                }
+            }
+        }
     }
 
     fun showGallery(bool: Boolean) = _showSelGallery.postValue(bool)
@@ -118,15 +129,6 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-    fun setReSend(reSend: Boolean) {
-        _reSend.value = reSend
-        _loginProg.value = true
-    }
-
-    fun setSendOtp(sendOtp: Boolean) {
-        _sendOtp.value = sendOtp
-    }
-
     fun setStoragePermission(isGiven: Boolean) {
         _storagePermission.postValue(isGiven)
     }
@@ -135,48 +137,44 @@ class LoginViewModel @Inject constructor(
         _currentFrag.postValue(no)
     }
 
-    fun setPhone(phone: String, viaClick: Boolean) {
+    fun setPhone(phone: String) {
         _phone.value = phone
-        if (viaClick) {
-            _sendOtp.postValue(true)
-            repo.savePhone(phone)
-        }
     }
 
     init {
-        setPhone(repo.getPhone(), false)
+        setPhone(repo.getPhone())
     }
 
-    lateinit var resendingToken: PhoneAuthProvider.ForceResendingToken
-    var verificationId: String = ""
-    val phoneCallback by lazy {
-        object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-
-            override fun onCodeSent(p0: String, p1: PhoneAuthProvider.ForceResendingToken) {
-                super.onCodeSent(p0, p1)
-                resendingToken = p1
-                verificationId = p0
-                _codeSend.value = true
-                _loginProg.value = false
-                jobTimer.cancel()
-                jobTimer = createNewCountDownJob()
-                _reSend.postValue(false)
-            }
-
-            override fun onVerificationCompleted(p0: PhoneAuthCredential) {
-                _currentFrag.postValue(3)
-                jobTimer.cancel()
-                _reSend.postValue(false)
-            }
-
-            override fun onVerificationFailed(p0: FirebaseException) {
-                _codeSend.value = false
-                _loginProg.value = false
-                viewModelScope.launch { flowToasts.emit("Something went wrong...") }
-                _reSend.postValue(false)
-            }
-        }
-    }
+//    lateinit var resendingToken: PhoneAuthProvider.ForceResendingToken
+//    var verificationId: String = ""
+//    val phoneCallback by lazy {
+//        object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+//
+//            override fun onCodeSent(p0: String, p1: PhoneAuthProvider.ForceResendingToken) {
+//                super.onCodeSent(p0, p1)
+//                resendingToken = p1
+//                verificationId = p0
+//                _codeSend.value = true
+//                _loginProg.value = false
+//                jobTimer.cancel()
+//                jobTimer = createNewCountDownJob()
+//                _reSend.postValue(false)
+//            }
+//
+//            override fun onVerificationCompleted(p0: PhoneAuthCredential) {
+//                _currentFrag.postValue(3)
+//                jobTimer.cancel()
+//                _reSend.postValue(false)
+//            }
+//
+//            override fun onVerificationFailed(p0: FirebaseException) {
+//                _codeSend.value = false
+//                _loginProg.value = false
+//                viewModelScope.launch { flowToasts.emit("Something went wrong...") }
+//                _reSend.postValue(false)
+//            }
+//        }
+//    }
 
     private var currentRemTime = 40
     private fun createNewCountDownJob(): Job {
@@ -217,57 +215,36 @@ class LoginViewModel @Inject constructor(
         }
     }
 
-
-    private fun signInWithPhoneAuthCredential(otp: String) {
-        FirebaseAuth.getInstance().signInWithCredential(PhoneAuthProvider.getCredential(verificationId, otp))
-            .addOnFailureListener {
-                viewModelScope.launch { flowToasts.emit("Please Provide Valid OTP") }
-                _loginProg.postValue(false)
+    fun sendOtp() {
+        viewModelScope.launch {
+            _showProgSendOtpFrag.value = true
+            val sendOtpRes = retro.sendOtp(_phone.value.toString().trim())
+            if (sendOtpRes.isSuccessful) {
+                _codeSend.value = true
+                _loginProg.value = false
+                jobTimer.cancel()
+                jobTimer = createNewCountDownJob()
+                setCurrentFrag(2)
+            } else {
+                _showProgSendOtpFrag.value = false
+                _loginProg.value = false
+                _codeSend.value = false
+                flowToasts.emit("Something went wrong...")
             }
-            .addOnCompleteListener { task: Task<AuthResult> ->
-                if (task.isSuccessful) {
-                    viewModelScope.launch {
-                        withContext(Dispatchers.IO) {
-                            val firebaseAuthToken = async { getFirebaseAuthToken() }
-                            val firebaseNotificationToken = async { getFirebaseNotificationToken() }
-                            try {
-                                val token = retro.getLoginToken(firebaseAuthToken.await(), firebaseNotificationToken.await())
-                                if (token.isSuccessful) {
-                                    token.body()?.let {
-                                        repo.saveToken(it.token)
-                                        repo.getPrefs().apply {
-                                            this.about = it.about
-                                            this.name = it.name
-                                            repo.savePrefs(this)
-                                        }
-                                        name = it.name
-                                    }
-                                    _currentFrag.postValue(3)
-                                    jobTimer.cancel()
-                                    _loginProg.postValue(false)
-                                } else {
-                                    _loginProg.postValue(false)
-                                }
-                            } catch (e: Exception) {
-                                _loginProg.postValue(false)
-                            }
-                        }
-                    }
-                }
-            }
-    }
-
-    private suspend fun getFirebaseAuthToken(): String {
-        return suspendCoroutine { continuation ->
-            FirebaseAuth.getInstance().currentUser!!.getIdToken(true)
-                .addOnCompleteListener { task ->
-                    if (task.isSuccessful)
-                        continuation.resumeWith(Result.success(task.result.token!!))
-                    else continuation.resumeWith(Result.failure(task.exception!!))
-                }
-
         }
     }
+
+//    private suspend fun getFirebaseAuthToken(): String {
+//        return suspendCoroutine { continuation ->
+//            FirebaseAuth.getInstance().currentUser!!.getIdToken(true)
+//                .addOnCompleteListener { task ->
+//                    if (task.isSuccessful)
+//                        continuation.resumeWith(Result.success(task.result.token!!))
+//                    else continuation.resumeWith(Result.failure(task.exception!!))
+//                }
+//
+//        }
+//    }
 
     private suspend fun getFirebaseNotificationToken(): String {
         return suspendCoroutine { continuation ->
