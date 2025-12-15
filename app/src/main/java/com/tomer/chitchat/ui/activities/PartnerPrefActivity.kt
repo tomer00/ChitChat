@@ -62,7 +62,8 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q)
                 window.insetsController?.hide(WindowInsets.Type.statusBars())
             else {
-                window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                window.decorView.systemUiVisibility =
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 actionBar?.hide()
             }
         }
@@ -97,8 +98,11 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
                 populateMessages(mod)
                 tvNameBig.text = mod.name
                 tvNameSmall.text = mod.name
-                "+91 ${mod.phone.substring(0, 5)} ${mod.phone.substring(5)}".also { tvPhone.text = it }
-                tvAbout.text = ConversionUtils.decode(mod.about.ifEmpty { "Hey+there+using+Chit+Chat%21%21%21" })
+                "+91 ${mod.phone.substring(0, 5)} ${mod.phone.substring(5)}".also {
+                    tvPhone.text = it
+                }
+                tvAbout.text =
+                    ConversionUtils.decode(mod.about.ifEmpty { "Hey+there+using+Chit+Chat%21%21%21" })
                 switchNoti.isChecked = mod.notificationAllowed
                 switchChatLock.isChecked = mod.chatLocked
             }
@@ -106,11 +110,15 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
 
         vm.sharedContent.observe(this) { list ->
             if (list.isEmpty()) {
-
+                b.imgNoMedia.visibility = View.VISIBLE
+                b.imgNoMedia.playAnimation()
                 return@observe
             }
+            b.imgNoMedia.visibility = View.GONE
+            b.imgNoMedia.pauseAnimation()
             val size100PX = 100.px.toInt()
-            val imgParam = LinearLayout.LayoutParams(size100PX, size100PX).apply { marginStart = 4.px.toInt() }
+            val imgParam =
+                LinearLayout.LayoutParams(size100PX, size100PX).apply { marginStart = 4.px.toInt() }
             val paramFirstView = LinearLayout.LayoutParams(8.px.toInt(), size100PX)
             val paramLastView = LinearLayout.LayoutParams(12.px.toInt(), size100PX)
             b.contMedia.addView(Space(this).apply { layoutParams = paramFirstView })
@@ -177,8 +185,14 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
             item.second.inputStream().use {
                 ImageViewActivity.bytesImage = it.readBytes()
             }
-            if (ImageViewActivity.bytesImage == null || (ImageViewActivity.bytesImage?.size ?: 0) < 10) return@launch
-            val options = ActivityOptionsCompat.makeSceneTransitionAnimation(this@PartnerPrefActivity, v, v.transitionName)
+            if (ImageViewActivity.bytesImage == null || (ImageViewActivity.bytesImage?.size
+                    ?: 0) < 10
+            ) return@launch
+            val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                this@PartnerPrefActivity,
+                v,
+                v.transitionName
+            )
             startActivity(Intent(this@PartnerPrefActivity, ImageViewActivity::class.java).apply {
                 putExtra("file", item.second.absolutePath)
                 putExtra("isGif", item.first)
@@ -193,23 +207,25 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
     override fun onClick(v: View) {
         when (v.id) {
             b.btBack.id -> onBackPressed()
-            b.btPhone.id -> startActivity(
-                Intent(this, CallingActivity::class.java)
-                    .apply {
-                        putExtra("video", false)
-                        putExtra("phoneNo", vm.partnerPref.value?.phone)
-                        putExtra("isCaller", true)
-                    }
-            )
+            b.btPhone.id ->
+                startActivity(
+                    Intent(this, CallingActivity::class.java)
+                        .apply {
+                            putExtra("video", false)
+                            putExtra("phoneNo", vm.partnerPref.value?.phone)
+                            putExtra("isCaller", true)
+                        }
+                )
 
-            b.btVideo.id -> startActivity(
-                Intent(this, CallingActivity::class.java)
-                    .apply {
-                        putExtra("video", true)
-                        putExtra("phoneNo", vm.partnerPref.value?.phone)
-                        putExtra("isCaller", true)
-                    }
-            )
+            b.btVideo.id ->
+                startActivity(
+                    Intent(this, CallingActivity::class.java)
+                        .apply {
+                            putExtra("video", true)
+                            putExtra("phoneNo", vm.partnerPref.value?.phone)
+                            putExtra("isCaller", true)
+                        }
+                )
         }
     }
     //endregion CLICK LISTENER
@@ -219,9 +235,14 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
     private val clickDoodle = View.OnClickListener { v ->
         val br = PatternRowBinding.bind(v)
         for (i in 1..10)
-            ((b.contBgDoodles.getChildAt(i) as CardView).getChildAt(0) as ConstraintLayout).getChildAt(1).visibility = View.GONE
+            ((b.contBgDoodles.getChildAt(i) as CardView).getChildAt(0) as ConstraintLayout).getChildAt(
+                1
+            ).visibility = View.GONE
         br.selectionView.visibility = View.VISIBLE
-        vm.setBackGround(v.tag.toString().toInt(), vm.rvDoodle.find { it.first.toString() == v.tag.toString() }?.second)
+        vm.setBackGround(
+            v.tag.toString().toInt(),
+            vm.rvDoodle.find { it.first.toString() == v.tag.toString() }?.second
+        )
     }
 
     private val clickAccent = View.OnClickListener { v ->
@@ -238,7 +259,9 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
         val paramLastView = LinearLayout.LayoutParams(22.px.toInt(), 100)
         b.contBgDoodles.addView(Space(this).apply { layoutParams = paramFirstView })
         vm.rvDoodle.forEach { pair ->
-            val bR = PatternRowBinding.bind(LayoutInflater.from(this).inflate(R.layout.pattern_row, b.contBgDoodles, false))
+            val bR = PatternRowBinding.bind(
+                LayoutInflater.from(this).inflate(R.layout.pattern_row, b.contBgDoodles, false)
+            )
             ((bR.root.getChildAt(0) as ConstraintLayout).getChildAt(0) as DoodleView)
                 .setData(dark, 1f, pair.first, pair.second.color, pair.second.grad)
             bR.root.setOnClickListener(clickDoodle)
@@ -248,7 +271,9 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
         b.contBgDoodles.addView(Space(this).apply { layoutParams = paramLastView })
         b.root.postDelayed({
             val assetNo = vm.partnerPref.value?.backgroundAssetNo ?: 7
-            ((b.contBgDoodles.getChildAt(assetNo) as CardView).getChildAt(0) as ConstraintLayout).getChildAt(1).visibility = View.VISIBLE
+            ((b.contBgDoodles.getChildAt(assetNo) as CardView).getChildAt(0) as ConstraintLayout).getChildAt(
+                1
+            ).visibility = View.VISIBLE
         }, 100)
 
 
@@ -256,7 +281,9 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
         b.contBgGrades.addView(Space(this).apply { layoutParams = paramFirstView })
         for (i in vm.rvBgRenders.indices step 2) {
 
-            val bR = ItemGradBgBinding.bind(LayoutInflater.from(this).inflate(R.layout.item_grad_bg, b.contBgGrades, false))
+            val bR = ItemGradBgBinding.bind(
+                LayoutInflater.from(this).inflate(R.layout.item_grad_bg, b.contBgGrades, false)
+            )
             val mod1 = vm.rvBgRenders[i]
             val mod2 = vm.rvBgRenders[i + 1]
             if (mod1.grad == null)
@@ -279,7 +306,9 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
         val corners = vm.myPref.msgItemCorners.px.times(.78f)
         b.contAccents.addView(Space(this).apply { layoutParams = paramFirstView })
         vm.rvAccent.forEachIndexed { i, mod ->
-            val bR = AccentRowBinding.bind(LayoutInflater.from(this).inflate(R.layout.accent_row, b.contAccents, false))
+            val bR = AccentRowBinding.bind(
+                LayoutInflater.from(this).inflate(R.layout.accent_row, b.contAccents, false)
+            )
 
             bR.bgView2.setData(true, corners, colBg)
             if (mod.grad == null)
@@ -294,7 +323,13 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
 
 
     private fun populateMessages(mod: ModelPartnerPref) {
-        b.imgBg.setData(isDarkModeEnabled(), mod.background.alpha, mod.backgroundAssetNo, mod.background.color, mod.background.grad)
+        b.imgBg.setData(
+            isDarkModeEnabled(),
+            mod.background.alpha,
+            mod.backgroundAssetNo,
+            mod.background.color,
+            mod.background.grad
+        )
         if (mod.accent.grad == null) b.accentSend.setData(null, 40.px, mod.accent.color)
         else b.accentSend.setData(null, 40.px, mod.accent.grad!!)
 
@@ -332,7 +367,11 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
         b2.msgTv.setTextColor(ContextCompat.getColor(this, R.color.fore))
         b2.contTime.gravity = Gravity.END
         b2.imgMsgStatus.visibility = View.GONE
-        b2.msgBg.setData(true, vm.myPref.msgItemCorners.px, ContextCompat.getColor(this, R.color.softBg))
+        b2.msgBg.setData(
+            true,
+            vm.myPref.msgItemCorners.px,
+            ContextCompat.getColor(this, R.color.softBg)
+        )
 
         "Change background and pattern".also { b2.msgTv.text = it }
         b2.emojiTv.visibility = View.GONE
