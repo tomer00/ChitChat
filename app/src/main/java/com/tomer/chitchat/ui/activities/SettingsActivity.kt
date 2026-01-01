@@ -56,6 +56,7 @@ import javax.inject.Inject
 import kotlin.coroutines.suspendCoroutine
 import kotlin.random.Random
 import kotlin.random.nextInt
+import androidx.core.view.isVisible
 
 @AndroidEntryPoint
 class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventListener {
@@ -92,10 +93,18 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
     private val sensorManager by lazy { getSystemService(SENSOR_SERVICE) as SensorManager }
     private val accelerometer by lazy { sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) }
 
+    private val lastValues = FloatArray(2)
+
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
-            val x = event.values[0] // Tilt on the X-axis
-            val y = event.values[1] // Tilt on the Y-axis
+            val alpha = .28f // Smoothing factor: closer to 1.0 is smoother but more laggy
+
+            val x = alpha * lastValues[0] + (1 - alpha) * event.values[0]
+            val y = alpha * lastValues[1] + (1 - alpha) * event.values[1]
+
+            lastValues[0] = x
+            lastValues[1] = y
+
             b.imgBg.onSensorEvent(x, y)
         }
     }
@@ -137,7 +146,7 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
 
     override fun onBackPressed() {
 
-        if (b.layQr.visibility == View.VISIBLE) {
+        if (b.layQr.isVisible) {
             vm.toggleQr()
             return
         }
@@ -160,7 +169,8 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q)
                 window.insetsController?.hide(WindowInsets.Type.statusBars())
             else {
-                window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+                window.decorView.systemUiVisibility =
+                    View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
                 actionBar?.hide()
             }
         }
@@ -221,7 +231,9 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
         }
 
         b.apply {
-            "${vm.phone.subSequence(0, 5)} ${vm.phone.subSequence(5, 10)}".also { b.tvPhone.text = it }
+            "${vm.phone.subSequence(0, 5)} ${vm.phone.subSequence(5, 10)}".also {
+                b.tvPhone.text = it
+            }
         }
 
         vm.myPrefs.observe(this) {
@@ -236,8 +248,15 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
                     lifecycleScope.launch {
                         withContext(Dispatchers.IO) {
                             val qr = QrImageProvider.getQRBMP(
-                                "chit://${vm.phone}", Random.nextInt(1..6), Random.nextInt(1..5), this@SettingsActivity,
-                                width, height, vm.myPrefs.value?.name.toString(), isDarkModeEnabled(), vm.qrAss[Random.nextInt(vm.qrAss.size)]
+                                "chit://${vm.phone}",
+                                Random.nextInt(1..6),
+                                Random.nextInt(1..5),
+                                this@SettingsActivity,
+                                width,
+                                height,
+                                vm.myPrefs.value?.name.toString(),
+                                isDarkModeEnabled(),
+                                vm.qrAss[Random.nextInt(vm.qrAss.size)]
                             )
                             withCreated {
                                 b.imgQr.setImageBitmap(qr)
@@ -273,7 +292,12 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
         }
         vm.dpFile.observe(this) {
             if (it == null) {
-                b.imgSelectDp.setImageDrawable(ContextCompat.getDrawable(this, R.drawable.ic_avatar))
+                b.imgSelectDp.setImageDrawable(
+                    ContextCompat.getDrawable(
+                        this,
+                        R.drawable.ic_avatar
+                    )
+                )
                 return@observe
             }
             lifecycleScope.launch {
@@ -347,7 +371,12 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
     private fun handleFlow(data: Pair<SettingsMyPrefViewModel.SettingEvents, String>) {
         when (data.first) {
             SettingsMyPrefViewModel.SettingEvents.UPDATE_PREF -> vm.myPrefs.value?.let { updateUI(it) }
-            SettingsMyPrefViewModel.SettingEvents.SHOW_TOAST -> Toast.makeText(this, data.second, Toast.LENGTH_SHORT).show()
+            SettingsMyPrefViewModel.SettingEvents.SHOW_TOAST -> Toast.makeText(
+                this,
+                data.second,
+                Toast.LENGTH_SHORT
+            ).show()
+
             SettingsMyPrefViewModel.SettingEvents.ERROR_NAME -> {
                 b.tvName.error = "Enter name"
                 b.root.postDelayed({
@@ -424,9 +453,11 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
                     layProfile.visibility = View.VISIBLE
                 }
             }
-            b.cardFlipper.animate().scaleX(1f).scaleY(1f).rotationY(0f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+            b.cardFlipper.animate().scaleX(1f).scaleY(1f).rotationY(0f)
+                .setInterpolator(LinearInterpolator()).setDuration(animDur).start()
         }
-        b.cardFlipper.animate().scaleX(.3f).scaleY(.3f).rotationY(180f).setInterpolator(LinearInterpolator()).setDuration(animDur).start()
+        b.cardFlipper.animate().scaleX(.3f).scaleY(.3f).rotationY(180f)
+            .setInterpolator(LinearInterpolator()).setDuration(animDur).start()
     }
 
 
@@ -439,7 +470,10 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
                 .centerCrop()
                 .into(
                     object : CustomTarget<Bitmap>() {
-                        override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                        override fun onResourceReady(
+                            resource: Bitmap,
+                            transition: Transition<in Bitmap>?
+                        ) {
                             continuation.resumeWith(Result.success(resource))
                             Glide.with(this@SettingsActivity)
                                 .asBitmap()
@@ -513,7 +547,12 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
         b2.imgFileType.visibility = View.GONE
         b2.imgFileType.visibility = View.GONE
 
-        b.imgBg.setData(this@SettingsActivity.isDarkModeEnabled(), .8f, vm.qrAss[Random.nextInt(vm.qrAss.size)], gradModel = AssetsProvider.gradType[Random.nextInt(1..5)])
+        b.imgBg.setData(
+            this@SettingsActivity.isDarkModeEnabled(),
+            .8f,
+            vm.qrAss[Random.nextInt(vm.qrAss.size)],
+            gradModel = AssetsProvider.gradType[Random.nextInt(1..5)]
+        )
     }
 
     //endregion UI MSGS
