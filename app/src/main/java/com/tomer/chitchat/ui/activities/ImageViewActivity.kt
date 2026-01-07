@@ -6,6 +6,7 @@ import android.content.ContentValues
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Point
+import android.graphics.PointF
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
@@ -28,9 +29,9 @@ import com.tomer.chitchat.databinding.ActivityImageViewBinding
 import com.tomer.chitchat.utils.AlertDialogBuilder
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
+import com.tomer.chitchat.utils.dispatchPinchZoom
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
-
 
 @AndroidEntryPoint
 class ImageViewActivity : AppCompatActivity() {
@@ -57,6 +58,7 @@ class ImageViewActivity : AppCompatActivity() {
     @SuppressLint("ClickableViewAccessibility")
     private val swipeDownTouchLis = View.OnTouchListener { v, event ->
         if (v.id == b.gifImgView.id) mGestureDetector.onTouchEvent(event)
+//        if (1==1) return@OnTouchListener false
         if (b.viewIMg.isZoomed) return@OnTouchListener true
         if (event.action == MotionEvent.ACTION_DOWN) {
             initialTouchDownY = event.rawY
@@ -149,7 +151,8 @@ class ImageViewActivity : AppCompatActivity() {
             window.insetsController?.hide(WindowInsets.Type.statusBars())
             return
         }
-        window.decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
+        window.decorView.systemUiVisibility =
+            View.SYSTEM_UI_FLAG_FULLSCREEN or View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN
         actionBar?.hide()
     }
 
@@ -160,7 +163,11 @@ class ImageViewActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(b.root)
-        enableEdgeToEdge(SystemBarStyle.auto(Color.TRANSPARENT, Color.TRANSPARENT) { this.isDarkModeEnabled() })
+        enableEdgeToEdge(
+            SystemBarStyle.auto(
+                Color.TRANSPARENT,
+                Color.TRANSPARENT
+            ) { this.isDarkModeEnabled() })
 
         if (!this.isDarkModeEnabled()) {
             colBg[0] = 244
@@ -179,10 +186,12 @@ class ImageViewActivity : AppCompatActivity() {
         val file = File(intent.getStringExtra("file") ?: "")
 
         if (intent.hasExtra("timeText"))
-            b.tvDetails.text = (intent.getStringExtra("timeText") ?: "").also { if (it.isEmpty()) b.tvDetails.visibility = View.GONE }
+            b.tvDetails.text = (intent.getStringExtra("timeText")
+                ?: "").also { if (it.isEmpty()) b.tvDetails.visibility = View.GONE }
         else {
             val time = intent.getLongExtra("timeMillis", System.currentTimeMillis())
-            val dayDate = ConversionUtils.getRelativeTime(time).takeIf { !it.contains(':') } ?: "Today"
+            val dayDate =
+                ConversionUtils.getRelativeTime(time).takeIf { !it.contains(':') } ?: "Today"
             val timeToday = ConversionUtils.millisToTimeText(time)
             "$dayDate • $timeToday".also { b.tvDetails.text = it }
         }
@@ -224,7 +233,13 @@ class ImageViewActivity : AppCompatActivity() {
                         it?.write(bytesImage)
                         it?.flush()
                     }
-                    b.root.post { Toast.makeText(this, "Image saved to Gallery...", Toast.LENGTH_SHORT).show() }
+                    b.root.post {
+                        Toast.makeText(
+                            this,
+                            "Image saved to Gallery...",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
                 } catch (e: Exception) {
                     Toast.makeText(this, "Can't save...", Toast.LENGTH_SHORT).show()
                 }
@@ -252,7 +267,10 @@ class ImageViewActivity : AppCompatActivity() {
                 .skipMemoryCache(true)
                 .into(
                     object : CustomTarget<Bitmap>() {
-                        override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                        override fun onResourceReady(
+                            resource: Bitmap,
+                            transition: Transition<in Bitmap>?
+                        ) {
                             b.gifImgView.setImageBitmap(resource)
                             dimen.set(resource.width, resource.height)
                         }
@@ -294,9 +312,8 @@ class ImageViewActivity : AppCompatActivity() {
         }
 
 
-        b.viewIMg.setOnTouchListener(swipeDownTouchLis)
-        b.viewIMg.visibility = View.VISIBLE
-        b.viewIMg.transitionName = file.name
+        b.gifImgView.visibility = View.VISIBLE
+        b.gifImgView.transitionName = file.name
         Glide.with(this)
             .asBitmap()
             .load(bytesImage)
@@ -304,10 +321,15 @@ class ImageViewActivity : AppCompatActivity() {
             .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
             .into(
                 object : CustomTarget<Bitmap>() {
-                    override fun onResourceReady(resource: Bitmap, transition: Transition<in Bitmap>?) {
+                    override fun onResourceReady(
+                        resource: Bitmap,
+                        transition: Transition<in Bitmap>?
+                    ) {
                         b.viewIMg.setImageBitmap(resource)
-                        b.viewIMg.postInvalidate()
+                        b.viewIMg.requestLayout()
                         dimen.set(resource.width, resource.height)
+                        b.gifImgView.setImageBitmap(resource)
+                        b.gifImgView.requestLayout()
                     }
 
                     override fun onLoadCleared(placeholder: Drawable?) {
@@ -316,6 +338,34 @@ class ImageViewActivity : AppCompatActivity() {
                 })
 
         b.viewIMg.setOnClickListener(topBarAnimClickLis)
+    }
 
+    override fun onPause() {
+        super.onPause()
+        if (!isGif) {
+            b.viewIMg.visibility = View.INVISIBLE
+            b.gifImgView.visibility = View.VISIBLE
+        }
+    }
+
+    @SuppressLint("ClickableViewAccessibility")
+    override fun onResume() {
+        super.onResume()
+        b.root.postDelayed({
+            dispatchPinchZoom(
+                b.viewIMg,
+                PointF(100f, 100f),
+                PointF(800f, 800f),
+                PointF(140f, 100f),
+                PointF(760f, 760f),
+                8, 200
+            )
+        }, 200)
+
+        b.root.postDelayed({
+            b.gifImgView.visibility = View.GONE
+            b.viewIMg.visibility = View.VISIBLE
+            b.viewIMg.setOnTouchListener(swipeDownTouchLis)
+        }, 800)
     }
 }

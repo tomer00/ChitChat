@@ -4,7 +4,6 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
-import android.content.Context
 import android.content.Intent
 import android.graphics.Color
 import android.hardware.Sensor
@@ -15,10 +14,8 @@ import android.net.Uri
 import android.os.Build
 import android.os.Bundle
 import android.os.PowerManager
-import android.provider.OpenableColumns
 import android.text.Editable
 import android.text.TextWatcher
-import android.util.Log
 import android.view.View
 import android.view.ViewAnimationUtils
 import android.view.WindowInsets
@@ -36,6 +33,7 @@ import androidx.core.animation.doOnEnd
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -50,6 +48,8 @@ import com.tomer.chitchat.R
 import com.tomer.chitchat.adap.AdapPerson
 import com.tomer.chitchat.adap.ChatAdapter
 import com.tomer.chitchat.adap.EmojiAdapter
+import com.tomer.chitchat.adap.chat.ChatViewEvents
+import com.tomer.chitchat.adap.chat.ClickEvents
 import com.tomer.chitchat.databinding.ActivityChatBinding
 import com.tomer.chitchat.databinding.MsgItemBinding
 import com.tomer.chitchat.modals.msgs.ModelMsgSocket
@@ -80,11 +80,12 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.LinkedList
+import androidx.core.view.isVisible
 
 
 @SuppressLint("CheckResult")
 @AndroidEntryPoint
-class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, View.OnClickListener,
+class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickListener,
     SensorEventListener {
 
     private val b by lazy { ActivityChatBinding.inflate(layoutInflater) }
@@ -124,10 +125,16 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
     private val sensorManager by lazy { getSystemService(SENSOR_SERVICE) as SensorManager }
     private val accelerometer by lazy { sensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER) }
 
+    private val lastValues = FloatArray(2)
     override fun onSensorChanged(event: SensorEvent) {
         if (event.sensor?.type == Sensor.TYPE_ACCELEROMETER) {
-            val x = event.values[0] // Tilt on the X-axis
-            val y = event.values[1] // Tilt on the Y-axis
+            val alpha = .28f // Smoothing factor: closer to 1.0 is smoother but more laggy
+
+            val x = alpha * lastValues[0] + (1 - alpha) * event.values[0]
+            val y = alpha * lastValues[1] + (1 - alpha) * event.values[1]
+
+            lastValues[0] = x
+            lastValues[1] = y
             b.imgBg.onSensorEvent(x, y)
         }
     }
@@ -524,7 +531,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         })
 
         vma.dpFile.observe(this) {
-            if (b.contRelation.visibility == View.VISIBLE) {
+            if (b.contRelation.isVisible) {
                 Glide.with(this@ChatActivity)
                     .asBitmap()
                     .load(it)
@@ -570,9 +577,9 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
     private fun sendTextMessage(text: String, isOnlyEmoji: Boolean) {
         val msgB = ModelMsgSocket.Builder()
-        msgB.isReply(b.replyLayout.visibility == View.VISIBLE)
+        msgB.isReply(b.replyLayout.isVisible)
         msgB.setTimeMillis(System.currentTimeMillis())
-        if (b.replyLayout.visibility == View.VISIBLE) {
+        if (b.replyLayout.isVisible) {
             msgB.replyId(vma.replyMsgData.value!!.id)
             msgB.replyMsgType(vma.replyMsgData.value!!.msgType)
             msgB.replyData(vma.replyMsgData.value!!.msg)
@@ -583,17 +590,17 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
         b.rvMsg.smoothScrollToPosition(0)
         vm.sendChatMsg(
             msgB.build(),
-            if (b.replyLayout.visibility == View.VISIBLE) vma.replyMsgData.value!!.bytes else null
+            if (b.replyLayout.isVisible) vma.replyMsgData.value!!.bytes else null
         )
     }
 
     private fun sendMediaMsg(uri: Uri, pickingMediaType: MsgMediaType) {
         val tempId = vm.getTempId()
         val msgB = ModelMsgSocket.Builder()
-        msgB.isReply(b.replyLayout.visibility == View.VISIBLE)
+        msgB.isReply(b.replyLayout.isVisible)
         msgB.setTimeMillis(System.currentTimeMillis())
         msgB.msgType(pickingMediaType)
-        if (b.replyLayout.visibility == View.VISIBLE) {
+        if (b.replyLayout.isVisible) {
             msgB.replyId(vma.replyMsgData.value!!.id)
             msgB.replyMsgType(vma.replyMsgData.value!!.msgType)
             msgB.replyData(vma.replyMsgData.value!!.msg)
@@ -607,7 +614,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
             this,
             msgB.build(),
             tempId,
-            if (b.replyLayout.visibility == View.VISIBLE) vma.replyMsgData.value!!.bytes else null
+            if (b.replyLayout.isVisible) vma.replyMsgData.value!!.bytes else null
         ) { msg ->
             runOnUiThread {
                 adap.addItem(msg.data.also { it?.isUploaded = true } ?: return@runOnUiThread)
@@ -1270,17 +1277,17 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
 
     //region CLICK LISTENERS
 
-    override fun onChatItemClicked(pos: Int, type: ChatAdapter.ClickEvents) {
+    override fun onChatItemClicked(pos: Int, type: ClickEvents) {
         if (vma.headMenu.value == true) {
             onChatItemLongClicked(pos)
             return
         }
         when (type) {
-            ChatAdapter.ClickEvents.DOWNLOAD -> onChatItemDownloadClicked(pos)
-            ChatAdapter.ClickEvents.UPLOAD -> onChatItemUploadClicked(pos)
-            ChatAdapter.ClickEvents.REPLY -> onChatItemReplyClicked(pos)
-            ChatAdapter.ClickEvents.FILE -> openFileInAssociatedApp(pos)
-            ChatAdapter.ClickEvents.IMAGE -> onImageClick(pos)
+            ClickEvents.DOWNLOAD -> onChatItemDownloadClicked(pos)
+            ClickEvents.UPLOAD -> onChatItemUploadClicked(pos)
+            ClickEvents.REPLY -> onChatItemReplyClicked(pos)
+            ClickEvents.FILE -> openFileInAssociatedApp(pos)
+            ClickEvents.IMAGE -> onImageClick(pos)
             //root Case show timer
             else -> {
                 val b = getRvViewIfVisible(pos) ?: return
@@ -1308,11 +1315,19 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
     }
 
     override fun onOpenLinkInBrowser(link: String) {
-        startActivity(
-            Intent(
-                Intent.ACTION_VIEW,
-                Uri.parse(link)
-            ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+        try {
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    link.toUri()
+                ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+        } catch (_: Exception) {
+            startActivity(
+                Intent(
+                    Intent.ACTION_VIEW,
+                    "https://google.com?q=$link".toUri()
+                ).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) })
+        }
     }
 
     private var msgIdForImageShow = -1L
@@ -1329,7 +1344,7 @@ class ChatActivity : AppCompatActivity(), ChatAdapter.ChatViewEvents, SwipeCA, V
     private fun openFileInAssociatedApp(pos: Int) {
         val mod = vm.chatMsgs.getOrNull(pos) ?: return
         if (mod.msgType != MsgMediaType.FILE) {
-            onChatItemClicked(pos, ChatAdapter.ClickEvents.ROOT)
+            onChatItemClicked(pos, ClickEvents.ROOT)
             return
         }
         vmAssets.openFile(mod.mediaFileName ?: "file")
