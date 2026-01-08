@@ -40,27 +40,38 @@ class FragSendOtp : Fragment() {
 
     override fun onPause() {
         super.onPause()
-        viewModel.setPhone(b.inputMobile.text.toString().trim(),false)
+        viewModel.setPhone(b.inputMobile.text.toString().trim())
     }
 
     //endregion ------lifecycle----->>>
 
     private fun init() {
         b.buttonGetOTP.setOnClickListener {
-            if (b.inputMobile.text.length != 10) Toast.makeText(
-                requireActivity(),
-                "Please enter Valid Phone NO...", Toast.LENGTH_SHORT
-            ).show()
+            if (b.inputMobile.text.length != 10)
+                Toast.makeText(
+                    requireActivity(),
+                    "Please enter Valid Phone NO...", Toast.LENGTH_SHORT
+                ).show()
             else {
-                viewModel.setPhone(b.inputMobile.text.toString(),true)
+                viewModel.sendOtp()
             }
         }
 
-        viewModel.canAuth.observe(viewLifecycleOwner) {
-            b.buttonGetOTP.isEnabled = it
-        }
         viewModel.phone.observe(viewLifecycleOwner) {
             b.inputMobile.setText(viewModel.phone.value ?: "")
+        }
+        viewModel.showProg.observe(viewLifecycleOwner){
+            if (it){
+                b.apply {
+                    buttonGetOTP.visibility = View.GONE
+                    progressBar.visibility = View.VISIBLE
+                }
+            }else{
+                b.apply {
+                    buttonGetOTP.visibility = View.VISIBLE
+                    progressBar.visibility = View.GONE
+                }
+            }
         }
     }
 

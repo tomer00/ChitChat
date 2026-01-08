@@ -5,7 +5,7 @@ import com.google.gson.annotations.SerializedName
 
 data class MyPrefs(
     @SerializedName("phone")
-    val phone: String,
+    var phone: String,
     @SerializedName("name")
     var name: String,
     @SerializedName("about")
@@ -17,7 +17,7 @@ data class MyPrefs(
     @SerializedName("dpNo")
     var dpNo: Int,
     @SerializedName("parallaxFactor")
-    @FloatRange(0.0, 8.2)
+    @param:FloatRange(0.0, 8.2)
     var parallaxFactor: Float
 ) {
     fun copyFrom(pref: MyPrefs) {

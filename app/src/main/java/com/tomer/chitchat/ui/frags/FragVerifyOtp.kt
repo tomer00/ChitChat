@@ -1,12 +1,16 @@
 package com.tomer.chitchat.ui.frags
 
+import android.content.ClipboardManager
+import android.content.Context.CLIPBOARD_SERVICE
 import android.os.Bundle
+import android.util.Log
 import android.view.KeyEvent
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
 import android.widget.Toast
+import androidx.core.text.isDigitsOnly
 import androidx.core.view.allViews
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.ViewModelProvider
@@ -21,6 +25,24 @@ class FragVerifyOtp : Fragment() {
     private var _binding: FragmentVerifyOtpBinding? = null
     private val b get() = requireNotNull(_binding)
 
+    private lateinit var clipboard: ClipboardManager
+    private val clipListener =
+        ClipboardManager.OnPrimaryClipChangedListener {
+            val clip = clipboard.primaryClip
+            val item = clip?.getItemAt(0)
+            val copiedText = item?.text?.toString()
+
+            Log.d("TAG--", "dfjkg: $copiedText")
+            if (!copiedText.isNullOrBlank()) {
+                if (copiedText.length != 6) return@OnPrimaryClipChangedListener
+                if (!copiedText.isDigitsOnly()) return@OnPrimaryClipChangedListener
+                for (i in 0..5) {
+                    val child = b.contOtp.getChildAt(i) as EditText
+                    child.setText(copiedText[i].toString())
+                }
+                b.contOtp.getChildAt(5).requestFocus()
+            }
+        }
 
     private lateinit var viewModel: LoginViewModel
     //region ------lifecycle----->>>
@@ -39,6 +61,7 @@ class FragVerifyOtp : Fragment() {
 
     override fun onDestroyView() {
         super.onDestroyView()
+        clipboard.removePrimaryClipChangedListener(clipListener)
         _binding = null
     }
 
@@ -56,9 +79,12 @@ class FragVerifyOtp : Fragment() {
 
     private fun setListener() {
         b.textResendOTP.setOnClickListener {
-            viewModel.setReSend(true)
+            viewModel.sendOtp()
         }
 
+        clipboard = requireActivity().getSystemService(CLIPBOARD_SERVICE) as ClipboardManager
+        // Start listening
+        clipboard.addPrimaryClipChangedListener(clipListener)
 
         b.buttonVerify.setOnClickListener {
             var isAnyEmpty = false
@@ -67,7 +93,8 @@ class FragVerifyOtp : Fragment() {
                 if (child.text.isEmpty()) isAnyEmpty = true
             }
             if (isAnyEmpty) {
-                Toast.makeText(requireActivity(), "Please enter valid code", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireActivity(), "Please enter valid code", Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
             val code = StringBuilder()
@@ -75,9 +102,8 @@ class FragVerifyOtp : Fragment() {
                 val child = b.contOtp.getChildAt(i) as EditText
                 code.append(child.text)
             }
-            viewModel.setOtp(code.toString())
+            viewModel.loginWithOtp(code.toString())
         }
-
 
         viewModel.codeSend.observe(viewLifecycleOwner) {
             b.buttonVerify.isEnabled = it
@@ -110,7 +136,19 @@ class FragVerifyOtp : Fragment() {
                 } else et.setText("")
                 return@OnKeyListener true
             }
-            if (event.action == KeyEvent.ACTION_UP && arrayOf(7, 8, 9, 10, 11, 12, 13, 14, 15, 16).contains(keyCode)) {
+            if (event.action == KeyEvent.ACTION_UP && arrayOf(
+                    7,
+                    8,
+                    9,
+                    10,
+                    11,
+                    12,
+                    13,
+                    14,
+                    15,
+                    16
+                ).contains(keyCode)
+            ) {
                 if (et.text.toString().isEmpty()) {
                     val childIndex = b.contOtp.indexOfChild(v)
                     et.setText(('0' + keyCode - 7).toString())
