@@ -23,7 +23,9 @@ class RepoMessagesImpl @Inject constructor(
     }
 
     override suspend fun getMsg(id: Long): ModelRoomMessage? = dao.getByUser(id).getOrNull(0)
-    override suspend fun getMsgsOfUser(partnerId: String) = dao.getByUser(partnerId)
+    override suspend fun getMsgsOfUser(
+        partnerId: String, timeBefore: Long, limit: Int
+    ): List<ModelRoomMessage> = dao.getMsgBeforeByUser(partnerId, limit,timeBefore)
 
     override suspend fun updateMsg(tempId: Long, newId: Long) {
         dao.updateMsgSent(tempId, newId)
@@ -33,6 +35,8 @@ class RepoMessagesImpl @Inject constructor(
         dao.updateMsgReceived(msgId, status.name)
     }
 
-    override suspend fun getMsgFromFileName(fileName: String) = dao.getByFileName(fileName).getOrNull(0)
-    override suspend fun getLastMsgForPartner(phone: String)=dao.getLastOfUser(phone).getOrNull(0)
+    override suspend fun getMsgFromFileName(fileName: String) =
+        dao.getByFileName(fileName).getOrNull(0)
+
+    override suspend fun getLastMsgForPartner(phone: String) = dao.getLastOfUser(phone).getOrNull(0)
 }

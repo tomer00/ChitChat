@@ -27,8 +27,11 @@ interface Dao {
     @Query("select * from messages where id=:id")
     fun getFromID(id: Long): ModelRoomMessage?
 
-    @Query("select * from messages where partnerId=:partnerId order by timeMillis DESC")
-    fun getByUser(partnerId: String): List<ModelRoomMessage>
+    @Query("select * from messages where partnerId=:partnerId AND timeMillis < :time order by timeMillis DESC LIMIT :limit")
+    fun getMsgBeforeByUser(
+        partnerId: String, limit: Int,
+        time: Long = System.currentTimeMillis()
+    ): List<ModelRoomMessage>
 
     @Query("select * from messages where id=:msgId")
     fun getByUser(msgId: Long): List<ModelRoomMessage>

@@ -16,6 +16,7 @@ import android.os.Bundle
 import android.os.PowerManager
 import android.text.Editable
 import android.text.TextWatcher
+import android.util.Log
 import android.view.View
 import android.view.ViewAnimationUtils
 import android.view.WindowInsets
@@ -34,6 +35,7 @@ import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
+import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
@@ -80,7 +82,6 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.util.LinkedList
-import androidx.core.view.isVisible
 
 
 @SuppressLint("CheckResult")
@@ -92,6 +93,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
     private val vma: ChatActivityVm by viewModels()
     private val vm: ChatViewModal by viewModels()
     private val vmAssets: AssetsViewModel by viewModels()
+    private var deleteOlderMsgsJob = lifecycleScope.launch { }
 
     private val codePrefs = 1012
 
@@ -199,15 +201,9 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
     override fun onPause() {
         super.onPause()
         vm.isChatActivityVisible = false
-        try {
-            vma.scrollPosition.postValue(ll.findFirstVisibleItemPosition())
-        } catch (_: Exception) {
-        }
+        runCatching { vma.scrollPosition.postValue(ll.findFirstVisibleItemPosition()) }
         if (vma.myPref.parallaxFactor > 0f)
-            try {
-                sensorManager.unregisterListener(this)
-            } catch (_: Exception) {
-            }
+            runCatching { sensorManager.unregisterListener(this) }
     }
 
     override fun onBackPressed() {
@@ -332,6 +328,16 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                         if (ll.findFirstVisibleItemPosition() > 0) vma.setNavBottom(true)
                     } else if (dy > 0 && vma.navBottom.value == true) {
                         if (ll.findFirstVisibleItemPosition() == 0) vma.setNavBottom(false)
+                    }
+
+                    val totalItemCount = ll.itemCount
+                    val lastVisibleItemPosition = ll.findLastVisibleItemPosition()
+
+                    if (vm.chatMsgs.size - lastVisibleItemPosition < 8) {
+                        deleteOlderMsgsJob.cancel()
+                        if (totalItemCount > 28)
+                            vm.loadMoreData(80, vma.selectedMsgIds)
+                        else vm.loadMoreData(30, vma.selectedMsgIds)
                     }
                 }
             }
@@ -500,10 +506,30 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                     btScrollToBottom.scaleY = 1f
                 }
             } else {
-                if (b.btScrollToBottom.isAttachedToWindow) animateTo0(b.btScrollToBottom)
+                if (b.btScrollToBottom.isAttachedToWindow)
+                    animateTo0(b.btScrollToBottom)
                 else b.apply {
                     btScrollToBottom.scaleX = 0f
                     btScrollToBottom.scaleY = 0f
+                }
+                //remove all older msgs only first 30 survive
+                deleteOlderMsgsJob = lifecycleScope.launch {
+                    delay(2000)
+                    // Check if there are more than 30 messages to trim
+                    if (vma.navBottom.value == false) {
+                        if (vm.chatMsgs.size > 30) {
+                            val originalSize = vm.chatMsgs.size
+                            val itemsToRemove = originalSize - 30
+
+                            // The items are removed from position 30 to the end of the list
+                            val only30 = vm.chatMsgs.take(30)
+                            vm.chatMsgs.clear()
+                            vm.chatMsgs.addAll(only30)
+
+                            // Notify the adapter that a range of items was removed
+                            adap.notifyItemRangeRemoved(30, itemsToRemove)
+                        }
+                    }
                 }
             }
         }
@@ -609,11 +635,8 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
         msgB.msgData("Uploading")
         vmAssets.uploadFile(
             Utils.currentPartner?.partnerId ?: "0000000000",
-            pickingMediaType,
-            uri,
-            this,
-            msgB.build(),
-            tempId,
+            pickingMediaType, uri, this,
+            msgB.build(), tempId,
             if (b.replyLayout.isVisible) vma.replyMsgData.value!!.bytes else null
         ) { msg ->
             runOnUiThread {
@@ -1017,7 +1040,14 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
 
             FlowType.RELOAD_RV -> {
                 adap.notifyDataSetChanged()
-                if (vm.chatMsgs.isNotEmpty()) showEmojiViaFlow(vm.chatMsgs.first)
+                if (vm.chatMsgs.isNotEmpty())
+                    showEmojiViaFlow(vm.chatMsgs.first)
+            }
+
+            FlowType.RELOAD_RV_MORE -> {
+                val insertedItemsCount = (msg.msgId ?: 0L).toInt()
+                val prevSize = vm.chatMsgs.size - insertedItemsCount
+                adap.notifyItemRangeInserted(prevSize, insertedItemsCount)
             }
 
             FlowType.SET_PREFS -> {

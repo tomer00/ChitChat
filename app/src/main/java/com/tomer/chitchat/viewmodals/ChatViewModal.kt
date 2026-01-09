@@ -1,5 +1,6 @@
 package com.tomer.chitchat.viewmodals
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
@@ -39,6 +40,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.withContext
 import java.math.BigInteger
 import java.util.LinkedList
@@ -56,6 +58,15 @@ class ChatViewModal @Inject constructor(
     private val cryptoService: CryptoService,
     private val webSocket: WebSocketHandler
 ) : ViewModel() {
+
+    val flowMsgs = MutableSharedFlow<MsgsFlowState>()
+    val chatMsgs = LinkedList<UiMsgModal>()
+
+    var isChatActivityVisible = false
+    var canSendMsg = false
+
+    private var lastTime = System.currentTimeMillis()
+    private val mutex = Mutex()
 
     private fun sendPendingMsgs() {
         val pendingMsgs = chatMsgs.filter {
@@ -80,7 +91,8 @@ class ChatViewModal @Inject constructor(
                     socketMsgBuilder.mediaFileName(msgRoom.mediaFileName)
 
                     try {
-                        val encMsg = cryptoService.encString(gson.toJson(socketMsgBuilder.build())) ?: return@launch
+                        val encMsg = cryptoService.encString(gson.toJson(socketMsgBuilder.build()))
+                            ?: return@launch
                         val actualMsg = "${Utils.currentPartner?.partnerId ?: "0000000000"}${
                             ChatMessage(
                                 ConversionUtils.toBase64(it),
@@ -96,21 +108,17 @@ class ChatViewModal @Inject constructor(
         }
     }
 
-    val flowMsgs = MutableSharedFlow<MsgsFlowState>()
-
-    val chatMsgs = LinkedList<UiMsgModal>()
-
-    var isChatActivityVisible = false
-
-    var canSendMsg = false
-
     init {
         viewModelScope.launch {
             webSocket.openConnection(repoUtils.getToken())
             webSocket.flowMsgs.collectLatest { msg ->
                 if (Utils.currentPartner?.partnerId.toString() == msg.fromUser) {
                     if (!isChatActivityVisible && msg.type == FlowType.MSG)
-                        notificationService.showNewMessageNotification(msg.data, msg.fromUser, repoPersons.getPersonPref(msg.fromUser)?.name ?: msg.fromUser)
+                        notificationService.showNewMessageNotification(
+                            msg.data,
+                            msg.fromUser,
+                            repoPersons.getPersonPref(msg.fromUser)?.name ?: msg.fromUser
+                        )
                     if (isChatActivityVisible && msg.type == FlowType.MSG)
                         clearUnreadCount()
 
@@ -169,7 +177,13 @@ class ChatViewModal @Inject constructor(
                 }"
                 webSocket.sendMessage(actualMsg)
                 try {
-                    flowMsgs.emit(MsgsFlowState.ChatMessageFlowState(builder.buildUI(), roomMsg.partnerId, true))
+                    flowMsgs.emit(
+                        MsgsFlowState.ChatMessageFlowState(
+                            builder.buildUI(),
+                            roomMsg.partnerId,
+                            true
+                        )
+                    )
                     repoMsgs.addMsg(builder.build())
                     updatePersonModel(msg, builder.build().id)
                 } catch (_: Exception) {
@@ -201,7 +215,8 @@ class ChatViewModal @Inject constructor(
 
     fun clearUnreadCount() {
         viewModelScope.launch {
-            val per = repoPersons.getPersonByPhone(Utils.currentPartner!!.partnerId) ?: return@launch
+            val per =
+                repoPersons.getPersonByPhone(Utils.currentPartner!!.partnerId) ?: return@launch
             per.unReadCount = 0
             repoPersons.insertPerson(per)
         }
@@ -209,10 +224,12 @@ class ChatViewModal @Inject constructor(
 
     fun updatePersonModel(mod: ModelMsgSocket, tempId: Long) {
         viewModelScope.launch {
-            val per = repoPersons.getPersonByPhone(Utils.currentPartner!!.partnerId) ?: return@launch
+            val per =
+                repoPersons.getPersonByPhone(Utils.currentPartner!!.partnerId) ?: return@launch
             val lastMsg: String = when (mod.msgType) {
                 MsgMediaType.TEXT, MsgMediaType.EMOJI -> mod.msgData
-                MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> mod.mediaFileName ?: mod.msgType.name
+                MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> mod.mediaFileName
+                    ?: mod.msgType.name
             }
             ModelRoomPersons(
                 phoneNo = per.phoneNo,
@@ -308,57 +325,87 @@ class ChatViewModal @Inject constructor(
                 }
                 partnerPref = repoPersons.getPersonPref(phone)
                 t1.join()
-                withContext(Dispatchers.Main) { flowMsgs.emit(MsgsFlowState.ChangeGif(typeF = FlowType.SET_PREFS, phone = phone)) }
+                withContext(Dispatchers.Main) {
+                    flowMsgs.emit(
+                        MsgsFlowState.ChangeGif(
+                            typeF = FlowType.SET_PREFS,
+                            phone = phone
+                        )
+                    )
+                }
             }
         }
         if (Utils.currentPartner?.partnerId == phone) {
-            viewModelScope.launch { withContext(Dispatchers.Main) { flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone)) } }
+            viewModelScope.launch {
+                withContext(Dispatchers.Main) {
+                    flowMsgs.emit(
+                        MsgsFlowState.IOFlowState(
+                            0L,
+                            FlowType.RELOAD_RV,
+                            phone
+                        )
+                    )
+                }
+            }
             return
         }
         viewModelScope.launch {
-            withContext(Dispatchers.IO) {
-                selectedIds.sort()
-                try {
-                    chatMsgs.clear()
+            chatMsgs.clear()
+            val newItems = loadMsgBeforeTime(selectedIds, System.currentTimeMillis(), 20, phone)
+            chatMsgs.addAll(newItems)
+            flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone))
 
-                    val roomMsgs = repoMsgs.getMsgsOfUser(phone)
-                    val arrUI = Array<UiMsgModal?>(roomMsgs.size) { _ -> null }
-
-                    val job = viewModelScope.launch {
-                        val defList = mutableListOf<Deferred<Unit>>()
-                        withContext(Dispatchers.IO) {
-                            for (i in roomMsgs.indices) {
-                                defList.add(async { arrUI[i] = roomMsgs[i].toUI() })
-                            }
-                            for (i in defList.indices) defList[i].join()
-                        }
-                    }
-                    job.join()
-                    if (selectedIds.isEmpty())
-                        for (a in arrUI) {
-                            if (a != null)
-                                chatMsgs.add(a)
-                        }
-                    else for (a in arrUI) {
-                        if (a == null) continue
-                        val pos = selectedIds.binarySearch(a.id)
-                        if (pos > -1) a.isSelected = true
-                        chatMsgs.add(a)
-                    }
-
-                    flowMsgs.emit(MsgsFlowState.IOFlowState(0L, FlowType.RELOAD_RV, phone))
-
-                    repoPersons.getPersonByPhone(phone)?.also {
-                        it.unReadCount = 0
-                        repoPersons.insertPerson(it)
-                    }
-                    if (Utils.currentPartner!!.isAccepted) {
-                        sendMsg(OfflineStatus())
-                        sendPendingMsgs()
-                    }
-                } catch (_: Exception) {
-                }
+            repoPersons.getPersonByPhone(phone)?.also {
+                it.unReadCount = 0
+                repoPersons.insertPerson(it)
             }
+            if (Utils.currentPartner!!.isAccepted) {
+                sendMsg(OfflineStatus())
+                sendPendingMsgs()
+            }
+        }
+    }
+
+    private suspend fun loadMsgBeforeTime(
+        selectedIds: MutableList<Long>,
+        time: Long,
+        limit: Int,
+        phone: String = Utils.currentPartner!!.partnerId
+    ): List<UiMsgModal> {
+        return withContext(Dispatchers.IO) {
+            selectedIds.sort()
+            val newList = mutableListOf<UiMsgModal>()
+            try {
+                val roomMsgs = repoMsgs.getMsgsOfUser(
+                    phone, time, limit
+                )
+                val arrUI = Array<UiMsgModal?>(roomMsgs.size) { _ -> null }
+
+                val job = viewModelScope.launch {
+                    val defList = mutableListOf<Deferred<Unit>>()
+                    withContext(Dispatchers.IO) {
+                        for (i in roomMsgs.indices) {
+                            defList.add(async { arrUI[i] = roomMsgs[i].toUI() })
+                        }
+                        for (i in defList.indices) defList[i].join()
+                    }
+                }
+                job.join()
+                if (selectedIds.isEmpty())
+                    for (a in arrUI) {
+                        if (a != null)
+                            newList.add(a)
+                    }
+                else for (a in arrUI) {
+                    if (a == null) continue
+                    val pos = selectedIds.binarySearch(a.id)
+                    if (pos > -1) a.isSelected = true
+                    newList.add(a)
+                }
+            } catch (e: Exception) {
+                Log.e("TAG--", "loadMsgBeforeTime: ", e)
+            }
+            return@withContext newList
         }
     }
 
@@ -383,7 +430,10 @@ class ChatViewModal @Inject constructor(
             sendMsg(
                 AcceptConnection(
                     CipherUtils.G.modPow(
-                        BigInteger(cryptoService.checkForKeyAndGenerateIfNot(Utils.currentPartner!!.partnerId).tempKeyMy, 16), CipherUtils.P
+                        BigInteger(
+                            cryptoService.checkForKeyAndGenerateIfNot(Utils.currentPartner!!.partnerId).tempKeyMy,
+                            16
+                        ), CipherUtils.P
                     ).toString(16)
                 )
             ).also {
@@ -405,6 +455,37 @@ class ChatViewModal @Inject constructor(
             Utils.currentPartner = relation
         }
 
+    }
+
+    fun loadMoreData(limit: Int, selectedIds: MutableList<Long>) {
+        if (chatMsgs.isEmpty()) return
+        if (mutex.isLocked) return
+        viewModelScope.launch {
+            mutex.lock()
+            try {
+                val oldestMsgId = chatMsgs.last().id
+                val oldestTime = repoMsgs.getMsg(oldestMsgId)?.timeMillis
+                    ?: System.currentTimeMillis()
+                if (lastTime == oldestTime) throw Exception("Same time")
+                lastTime = oldestTime
+                val olderItems = loadMsgBeforeTime(
+                    selectedIds, oldestTime, limit
+                )
+                if (olderItems.isEmpty()) throw Exception("EMPTY LIST")
+
+                chatMsgs.addAll(olderItems)
+                flowMsgs.emit(
+                    MsgsFlowState.IOFlowState(
+                        olderItems.size.toLong(),
+                        FlowType.RELOAD_RV_MORE,
+                        Utils.currentPartner!!.partnerId
+                    )
+                )
+            } catch (_: Exception) {
+            } finally {
+                mutex.unlock()
+            }
+        }
     }
 
     //endregion ACTIVITY COMM
