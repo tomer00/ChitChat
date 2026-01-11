@@ -61,14 +61,24 @@ class MainViewModal @Inject constructor(
         }
     }
 
-    suspend fun connectNew(phone: String, openNextActivity: Boolean, mandatoryConnect: Boolean = true) {
+    suspend fun connectNew(
+        phone: String,
+        openNextActivity: Boolean,
+        mandatoryConnect: Boolean = true
+    ) {
         if (!mandatoryConnect) {
             viewModelScope.launch {
                 if (!phone.isDigitsOnly()) return@launch
-                if (repoRelations.getRelation(phone) == null) connectNew(phone, openNextActivity, true)
+                if (repoRelations.getRelation(phone) == null) connectNew(
+                    phone,
+                    openNextActivity,
+                    true
+                )
                 else {
                     val oldPersons = repoPersons.getPersonByPhone(phone)
-                    val oldPerf = repoPersons.getPersonPref(phone) ?: PartnerPrefBuilder(phone, phone).build().also { repoPersons.insertPersonPref(it) }
+                    val oldPerf =
+                        repoPersons.getPersonPref(phone) ?: PartnerPrefBuilder(phone, phone).build()
+                            .also { repoPersons.insertPersonPref(it) }
                     if (oldPersons == null)
                         ModelRoomPersons(
                             phone, oldPerf.name,
@@ -79,22 +89,43 @@ class MainViewModal @Inject constructor(
                             msgStatus = MsgStatus.RECEIVED
                         ).apply { repoPersons.insertPerson(this) }
                     if (openNextActivity)
-                        flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.OPEN_NEW_CONNECTION_ACTIVITY, phone))
+                        flowMsgs.emit(
+                            MsgsFlowState.PartnerEventsFlowState(
+                                FlowType.OPEN_NEW_CONNECTION_ACTIVITY,
+                                phone
+                            )
+                        )
                 }
             }.join()
             return
         }
         viewModelScope.launch {
             if (!phone.isDigitsOnly()) return@launch
-            val relation = ModelRoomPersonRelation(phone, isConnSent = true, isAccepted = false, isRejected = false)
+            val relation = ModelRoomPersonRelation(
+                phone,
+                isConnSent = true,
+                isAccepted = false,
+                isRejected = false
+            )
             cryptoService.setCurrentPartner(phone)
 
             genKeyAndSendNotification(relation)
-            val oldPref = repoPersons.getPersonPref(phone) ?: PartnerPrefBuilder(phone, phone).build()
+            val oldPref =
+                repoPersons.getPersonPref(phone) ?: PartnerPrefBuilder(phone, phone).build()
             repoPersons.insertPersonPref(oldPref)
             if (openNextActivity)
-                flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.OPEN_NEW_CONNECTION_ACTIVITY, phone))
-            else flowMsgs.emit(MsgsFlowState.PartnerEventsFlowState(FlowType.INCOMING_NEW_CONNECTION_REQUEST, phone))
+                flowMsgs.emit(
+                    MsgsFlowState.PartnerEventsFlowState(
+                        FlowType.OPEN_NEW_CONNECTION_ACTIVITY,
+                        phone
+                    )
+                )
+            else flowMsgs.emit(
+                MsgsFlowState.PartnerEventsFlowState(
+                    FlowType.INCOMING_NEW_CONNECTION_REQUEST,
+                    phone
+                )
+            )
 
             //getting Name from server
             val name = if (oldPref.name == phone) {
@@ -151,7 +182,13 @@ class MainViewModal @Inject constructor(
 
     fun loadMyDp() {
         viewModelScope.launch {
-            flowMsgs.emit(MsgsFlowState.ChangeGif(repoStorage.getDP(Utils.myPhone, false), typeF = FlowType.SET_DP, phone = Utils.myPhone))
+            flowMsgs.emit(
+                MsgsFlowState.ChangeGif(
+                    repoStorage.getDP(Utils.myPhone, false),
+                    typeF = FlowType.SET_DP,
+                    phone = Utils.myPhone
+                )
+            )
         }
     }
 
@@ -174,7 +211,8 @@ class MainViewModal @Inject constructor(
                     if (sb.isNotEmpty()) sb.append(',')
                     sb.append(i)
                 }
-                val syncedData = retro.getSyncedData(sb.toString()).body() ?: throw RuntimeException()
+                val syncedData =
+                    retro.getSyncedData(sb.toString()).body() ?: throw RuntimeException()
                 for (i in syncedData) {
                     val prefMod = repoPersons.getPersonPref(i.phone) ?: continue
                     if (prefMod.dpNo != i.dpNo) {
@@ -263,14 +301,17 @@ class MainViewModal @Inject constructor(
         builder.name(name)
         builder.phoneNumber(phoneNo)
         builder.messageMediaType(mediaType)
-        builder.lastDate(ConversionUtils.getRelativeTime(timeMillis))
+        builder.lastDate(
+            if (lastMsgId != -1L)
+                ConversionUtils.getRelativeTime(timeMillis)
+            else ""
+        )
         builder.lastMessage(lastMsg)
         builder.unreadCount(unReadCount)
         builder.isSelected(false)
         builder.isOnline(lastSeenMillis == -1L)
         builder.isSent(isSent)
         builder.msgStatus(msgStatus)
-
 
         val prevSel = oldList.find { it.phoneNo == phoneNo }
         if (prevSel != null) builder.isSelected(prevSel.isSelected)
@@ -284,7 +325,9 @@ class MainViewModal @Inject constructor(
             return builder.build()
         }
 
-        builder.fileDp(repoStorage.getDP(phoneNo, true).also { if (it == null) needTobeDownload.add(5 to phoneNo) })
+        builder.fileDp(
+            repoStorage.getDP(phoneNo, true)
+                .also { if (it == null) needTobeDownload.add(5 to phoneNo) })
         if (mediaType == MsgMediaType.EMOJI) {
 
             val nameGoogleJson = EmojisHashingUtils.googleJHash[ConversionUtils.encode(lastMsg)]
@@ -315,14 +358,25 @@ class MainViewModal @Inject constructor(
 
             val nameTeleGif = EmojisHashingUtils.teleHash[ConversionUtils.encode(lastMsg)]
             if (!nameTeleGif.isNullOrEmpty()) {
-                builder.lastMessageFile(repoAssets.getGifFile(ConversionUtils.encode(nameTeleGif), true).also {
-                    if (it == null) needTobeDownload.add(Pair(3, ConversionUtils.encode(nameTeleGif)))
-                })
+                builder.lastMessageFile(
+                    repoAssets.getGifFile(
+                        ConversionUtils.encode(nameTeleGif),
+                        true
+                    ).also {
+                        if (it == null) needTobeDownload.add(
+                            Pair(
+                                3,
+                                ConversionUtils.encode(nameTeleGif)
+                            )
+                        )
+                    })
                 return builder.build()
             }
 
         } else if (mediaType == MsgMediaType.IMAGE || mediaType == MsgMediaType.GIF) {
-            val msg = repoMsg.getMsg(lastMsgId) ?: return builder.messageMediaType(MsgMediaType.TEXT).build()
+            val msg =
+                repoMsg.getMsg(lastMsgId) ?: return builder.messageMediaType(MsgMediaType.TEXT)
+                    .build()
             val file = repoStorage.getFileFromFolder(mediaType, msg.mediaFileName.toString())
             if (file == null)
                 builder.jsonText(msg.msgText.split(",-,")[1])
@@ -346,7 +400,14 @@ class MainViewModal @Inject constructor(
                         3 -> repoAssets.getGifTelemoji(i.second)
 
                         else -> {
-                            flowMsgs.emit(MsgsFlowState.ChangeGif(repoStorage.getDP(i.second, false), typeF = FlowType.SET_DP, phone = i.second))
+                            flowMsgs.emit(
+                                MsgsFlowState.ChangeGif(
+                                    repoStorage.getDP(
+                                        i.second,
+                                        false
+                                    ), typeF = FlowType.SET_DP, phone = i.second
+                                )
+                            )
                         }
                     }
                 }

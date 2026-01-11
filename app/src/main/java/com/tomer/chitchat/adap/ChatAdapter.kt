@@ -2,17 +2,13 @@ package com.tomer.chitchat.adap
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
-import android.graphics.Color
 import android.graphics.drawable.Drawable
-import android.net.Uri
 import android.text.SpannableString
 import android.text.Spanned
 import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.text.style.ForegroundColorSpan
 import android.text.style.UnderlineSpan
-import android.util.Log
 import android.util.Patterns
 import android.util.TypedValue
 import android.view.Gravity
@@ -22,7 +18,6 @@ import android.view.ViewGroup
 import androidx.annotation.ColorInt
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
-import androidx.core.text.method.LinkMovementMethodCompat
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -35,6 +30,7 @@ import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.Utils
 import com.tomer.chitchat.utils.qrProvider.GradModel
 import java.util.LinkedList
+import androidx.core.graphics.toColorInt
 
 
 class ChatAdapter(
@@ -88,7 +84,7 @@ class ChatAdapter(
                 }
                 spanStr.setSpan(clickableSpan, start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
                 spanStr.setSpan(UnderlineSpan(), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
-                spanStr.setSpan(ForegroundColorSpan(Color.parseColor("#ee0979")), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
+                spanStr.setSpan(ForegroundColorSpan("#ee0979".toColorInt()), start, end, Spanned.SPAN_EXCLUSIVE_EXCLUSIVE)
             }
             mod.spannableString = spanStr
         }
@@ -104,7 +100,7 @@ class ChatAdapter(
             holder.b.innerLay.gravity = Gravity.END
             holder.b.msgLay.gravity = Gravity.END
             holder.b.msgBg.foreground = ContextCompat.getDrawable(context, R.drawable.msg_sent)
-            holder.b.RepTv.setGravity(Gravity.END)
+            holder.b.RepTv.gravity = Gravity.END
             holder.b.msgTv.setTextColor(ContextCompat.getColor(context, R.color.fore))
             holder.b.contTime.gravity = Gravity.END
             holder.b.imgMsgStatus.visibility = View.VISIBLE
@@ -115,7 +111,7 @@ class ChatAdapter(
             holder.b.innerLay.gravity = Gravity.START
             holder.b.msgLay.gravity = Gravity.START
             holder.b.msgBg.foreground = ContextCompat.getDrawable(context, R.drawable.msg_rec)
-            holder.b.RepTv.setGravity(Gravity.START)
+            holder.b.RepTv.gravity = Gravity.START
             holder.b.msgTv.setTextColor(ContextCompat.getColor(context, R.color.white))
             holder.b.contTime.gravity = Gravity.START
             holder.b.imgMsgStatus.visibility = View.GONE
@@ -137,7 +133,7 @@ class ChatAdapter(
         holder.b.RepTv.visibility = if (mod.isReply) View.VISIBLE else View.GONE
 
         if (mod.isReply && (mod.replyType == MsgMediaType.GIF || mod.replyType == MsgMediaType.IMAGE)) {
-            holder.b.repImgRv.setVisibility(View.VISIBLE)
+            holder.b.repImgRv.visibility = View.VISIBLE
             holder.b.RepTv.visibility = View.GONE
             Glide.with(context)
                 .asBitmap()
@@ -148,8 +144,9 @@ class ChatAdapter(
                 .skipMemoryCache(true)
                 .into(holder.b.repImgRv)
         } else {
-            holder.b.repImgRv.setVisibility(View.GONE)
-            if (mod.replyType == MsgMediaType.FILE) holder.b.RepTv.text = mod.replyMediaFileName ?: "FILE"
+            holder.b.repImgRv.visibility = View.GONE
+            if (mod.replyType == MsgMediaType.FILE)
+                holder.b.RepTv.text = mod.replyMediaFileName ?: "FILE"
         }
 
         holder.b.msgTv.setTextSize(TypedValue.COMPLEX_UNIT_SP, textSize)
@@ -283,14 +280,4 @@ class ChatAdapter(
 
     //endregion COMMU
 
-
-    enum class ClickEvents {
-        DOWNLOAD, UPLOAD, REPLY, ROOT, FILE, IMAGE
-    }
-
-    interface ChatViewEvents {
-        fun onChatItemClicked(pos: Int, type: ClickEvents)
-        fun onChatItemLongClicked(pos: Int)
-        fun onOpenLinkInBrowser(link:String)
-    }
 }

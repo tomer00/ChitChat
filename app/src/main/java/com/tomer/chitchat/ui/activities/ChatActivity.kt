@@ -49,9 +49,9 @@ import com.bumptech.glide.request.RequestOptions
 import com.tomer.chitchat.R
 import com.tomer.chitchat.adap.AdapPerson
 import com.tomer.chitchat.adap.ChatAdapter
+import com.tomer.chitchat.adap.ChatViewEvents
+import com.tomer.chitchat.adap.ClickEvents
 import com.tomer.chitchat.adap.EmojiAdapter
-import com.tomer.chitchat.adap.chat.ChatViewEvents
-import com.tomer.chitchat.adap.chat.ClickEvents
 import com.tomer.chitchat.databinding.ActivityChatBinding
 import com.tomer.chitchat.databinding.MsgItemBinding
 import com.tomer.chitchat.modals.msgs.ModelMsgSocket
@@ -89,6 +89,7 @@ import java.util.LinkedList
 class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickListener,
     SensorEventListener {
 
+    //region GLOBALS
     private val b by lazy { ActivityChatBinding.inflate(layoutInflater) }
     private val vma: ChatActivityVm by viewModels()
     private val vm: ChatViewModal by viewModels()
@@ -121,6 +122,8 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
         }
     }
     private var lastSeenMillis = -1L
+    private var currentLottieEmoji = ""
+    //endregion GLOBALS
 
     //region PARALLAX SENSOR
 
@@ -182,6 +185,8 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
 
     //endregion MEDIA IO
 
+    //region LIFECYCLE ACTIVITY
+
     override fun onResume() {
         super.onResume()
         vm.isChatActivityVisible = true
@@ -239,8 +244,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
         startActivity(intent)
     }
 
-    // Import required classes
-
+    //endregion LIFECYCLE ACTIVITY
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -369,6 +373,14 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
             btMenu.setOnClickListener(this@ChatActivity)
             cardFlipper.setOnClickListener(this@ChatActivity)
             layDetail.setOnClickListener(this@ChatActivity)
+
+            btImg.setOnLongClickListener {
+                if (!vm.canSendMsg)
+                    return@setOnLongClickListener false
+                Log.d("TAG--", "onCreate: $currentLottieEmoji")
+                sendTextMessage(ConversionUtils.decode(currentLottieEmoji), true)
+                true
+            }
         }
 
         //region DELETE MSGS
@@ -1157,7 +1169,11 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                         setDuration(120)
                         start()
                     }
-                    b.tCard.animate().scaleY(1f).scaleX(1f).setStartDelay(120).setDuration(120)
+                    b.tCard.animate()
+                        .scaleY(1f)
+                        .scaleX(1f)
+                        .setStartDelay(120)
+                        .setDuration(120)
                         .start()
                     lifecycleScope.launch {
                         delay(120)
@@ -1165,6 +1181,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                         b.btImg.setAnimationFromJson(msg.data.msg, msg.data.mediaFileName)
                         b.btImg.playAnimation()
                     }
+                    currentLottieEmoji = msg.data?.mediaSize ?: ""
                 }
             }
 
@@ -1221,7 +1238,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
                         }
                         startActivity(intent)
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         Toast.makeText(
                             this,
                             "No application found to open this file.",
@@ -1236,16 +1253,17 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                     val b = getRvViewIfPossibleForId(msgIdForImageShow) ?: return@runOnUiThread
                     val chatMsg =
                         vm.chatMsgs.find { it.id == msgIdForImageShow } ?: return@runOnUiThread
-                    ImageViewActivity.bytesImage = chatMsg.bytes
+                    GifViewActivity.bytesImage = chatMsg.bytes
                     b.mediaImg.transitionName = msg.fileGif?.name ?: "img"
                     val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
                         this,
                         b.mediaImg,
                         msg.fileGif?.name ?: "img"
                     )
-                    if (ImageViewActivity.bytesImage == null) return@runOnUiThread
-                    startActivityForResult(Intent(this, ImageViewActivity::class.java).apply {
-                        putExtra("isGif", msg.type == FlowType.OPEN_GIF)
+                    if (GifViewActivity.bytesImage == null) return@runOnUiThread
+                    val openActivityClass =
+                        if (msg.type == FlowType.OPEN_GIF) GifViewActivity::class.java else PhotoViewActivity::class.java
+                    startActivityForResult(Intent(this, openActivityClass).apply {
                         putExtra("file", msg.fileGif?.absolutePath)
                         putExtra("canSaveToGal", !chatMsg.isSent)
                         putExtra("canDelete", true)

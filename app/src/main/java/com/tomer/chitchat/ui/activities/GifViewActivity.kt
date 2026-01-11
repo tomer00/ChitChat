@@ -6,7 +6,6 @@ import android.content.ContentValues
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.Point
-import android.graphics.PointF
 import android.graphics.drawable.Drawable
 import android.os.Build
 import android.os.Bundle
@@ -29,12 +28,11 @@ import com.tomer.chitchat.databinding.ActivityImageViewBinding
 import com.tomer.chitchat.utils.AlertDialogBuilder
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
-import com.tomer.chitchat.utils.dispatchPinchZoom
 import dagger.hilt.android.AndroidEntryPoint
 import java.io.File
 
 @AndroidEntryPoint
-class ImageViewActivity : AppCompatActivity() {
+class GifViewActivity : AppCompatActivity() {
 
     companion object {
         var bytesImage: ByteArray? = null
@@ -59,7 +57,7 @@ class ImageViewActivity : AppCompatActivity() {
     private val swipeDownTouchLis = View.OnTouchListener { v, event ->
         if (v.id == b.gifImgView.id) mGestureDetector.onTouchEvent(event)
 //        if (1==1) return@OnTouchListener false
-        if (b.viewIMg.isZoomed) return@OnTouchListener true
+//        if (b.viewIMg.isZoomed) return@OnTouchListener true
         if (event.action == MotionEvent.ACTION_DOWN) {
             initialTouchDownY = event.rawY
             return@OnTouchListener true
@@ -156,9 +154,6 @@ class ImageViewActivity : AppCompatActivity() {
         actionBar?.hide()
     }
 
-
-    private var isGif = false
-
     @SuppressLint("ClickableViewAccessibility")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -179,7 +174,6 @@ class ImageViewActivity : AppCompatActivity() {
             colBg[2] = 22
         }
         b.root.setBackgroundColor(Color.argb(255, colBg[0], colBg[1], colBg[2]))
-        isGif = intent.getBooleanExtra("isGif", false)
         val canSaveToGal = intent.getBooleanExtra("canSaveToGal", false)
         val canDelete = intent.getBooleanExtra("canDelete", false)
         val heading = intent.getStringExtra("heading").toString()
@@ -222,9 +216,7 @@ class ImageViewActivity : AppCompatActivity() {
                 cnVals.put(MediaStore.Images.Media.HEIGHT, dimen.y)
 
                 cnVals.put(MediaStore.Images.Media.RELATIVE_PATH, "Pictures/Chit Chat")
-                if (isGif)
-                    cnVals.put(MediaStore.Images.Media.MIME_TYPE, "image/gif")
-                else cnVals.put(MediaStore.Images.Media.MIME_TYPE, "image/webp")
+                cnVals.put(MediaStore.Images.Media.MIME_TYPE, "image/gif")
                 cnVals.put(MediaStore.Images.Media.DISPLAY_NAME, file.name)
 
                 try {
@@ -240,7 +232,7 @@ class ImageViewActivity : AppCompatActivity() {
                             Toast.LENGTH_SHORT
                         ).show()
                     }
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     Toast.makeText(this, "Can't save...", Toast.LENGTH_SHORT).show()
                 }
             }
@@ -255,81 +247,23 @@ class ImageViewActivity : AppCompatActivity() {
             0
         }
         b.layTopBar.setPadding(0, h, 0, 0)
-        if (isGif) {
-            b.gifImgView.transitionName = file.name
-            b.gifImgView.visibility = View.VISIBLE
-            b.gifImgView.setOnTouchListener(swipeDownTouchLis)
-            b.gifImgView.setOnClickListener(topBarAnimClickLis)
-            Glide.with(this.baseContext)
-                .asBitmap()
-                .load(bytesImage)
-                .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
-                .skipMemoryCache(true)
-                .into(
-                    object : CustomTarget<Bitmap>() {
-                        override fun onResourceReady(
-                            resource: Bitmap,
-                            transition: Transition<in Bitmap>?
-                        ) {
-                            b.gifImgView.setImageBitmap(resource)
-                            dimen.set(resource.width, resource.height)
-                        }
-
-                        override fun onLoadCleared(placeholder: Drawable?) {
-                        }
-
-                    })
-
-            window.sharedElementEnterTransition.addListener(
-                object : TransitionListener {
-                    override fun onTransitionStart(transition: android.transition.Transition?) {
-
-                    }
-
-                    override fun onTransitionEnd(transition: android.transition.Transition?) {
-                        b.viewIMg.postInvalidate()
-                        b.gifImgView.postInvalidate()
-                        b.gifImgView2.visibility = View.VISIBLE
-                        Glide.with(this@ImageViewActivity)
-                            .load(bytesImage)
-                            .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
-                            .skipMemoryCache(true)
-                            .into(b.gifImgView2)
-                    }
-
-                    override fun onTransitionCancel(transition: android.transition.Transition?) {
-                    }
-
-                    override fun onTransitionPause(transition: android.transition.Transition?) {
-                    }
-
-                    override fun onTransitionResume(transition: android.transition.Transition?) {
-                    }
-
-                }
-            )
-            return
-        }
-
-
-        b.gifImgView.visibility = View.VISIBLE
         b.gifImgView.transitionName = file.name
-        Glide.with(this)
+        b.gifImgView.visibility = View.VISIBLE
+        b.gifImgView.setOnTouchListener(swipeDownTouchLis)
+        b.gifImgView.setOnClickListener(topBarAnimClickLis)
+        Glide.with(this.baseContext)
             .asBitmap()
             .load(bytesImage)
-            .skipMemoryCache(true)
             .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
+            .skipMemoryCache(true)
             .into(
                 object : CustomTarget<Bitmap>() {
                     override fun onResourceReady(
                         resource: Bitmap,
                         transition: Transition<in Bitmap>?
                     ) {
-                        b.viewIMg.setImageBitmap(resource)
-                        b.viewIMg.requestLayout()
-                        dimen.set(resource.width, resource.height)
                         b.gifImgView.setImageBitmap(resource)
-                        b.gifImgView.requestLayout()
+                        dimen.set(resource.width, resource.height)
                     }
 
                     override fun onLoadCleared(placeholder: Drawable?) {
@@ -337,35 +271,33 @@ class ImageViewActivity : AppCompatActivity() {
 
                 })
 
-        b.viewIMg.setOnClickListener(topBarAnimClickLis)
-    }
+        window.sharedElementEnterTransition.addListener(
+            object : TransitionListener {
+                override fun onTransitionStart(transition: android.transition.Transition?) {
 
-    override fun onPause() {
-        super.onPause()
-        if (!isGif) {
-            b.viewIMg.visibility = View.INVISIBLE
-            b.gifImgView.visibility = View.VISIBLE
-        }
-    }
+                }
 
-    @SuppressLint("ClickableViewAccessibility")
-    override fun onResume() {
-        super.onResume()
-        b.root.postDelayed({
-            dispatchPinchZoom(
-                b.viewIMg,
-                PointF(100f, 100f),
-                PointF(800f, 800f),
-                PointF(140f, 100f),
-                PointF(760f, 760f),
-                8, 200
-            )
-        }, 200)
+                override fun onTransitionEnd(transition: android.transition.Transition?) {
+//                    b.viewIMg.postInvalidate()
+                    b.gifImgView.postInvalidate()
+                    b.gifImgView2.visibility = View.VISIBLE
+                    Glide.with(this@GifViewActivity)
+                        .load(bytesImage)
+                        .diskCacheStrategy(com.bumptech.glide.load.engine.DiskCacheStrategy.NONE)
+                        .skipMemoryCache(true)
+                        .into(b.gifImgView2)
+                }
 
-        b.root.postDelayed({
-            b.gifImgView.visibility = View.GONE
-            b.viewIMg.visibility = View.VISIBLE
-            b.viewIMg.setOnTouchListener(swipeDownTouchLis)
-        }, 800)
+                override fun onTransitionCancel(transition: android.transition.Transition?) {
+                }
+
+                override fun onTransitionPause(transition: android.transition.Transition?) {
+                }
+
+                override fun onTransitionResume(transition: android.transition.Transition?) {
+                }
+
+            }
+        )
     }
 }

@@ -19,7 +19,7 @@ import kotlin.math.pow
 class Utils {
     companion object {
 
-        //        private const val IP: String = "192.168.43.167:9080"
+//                private const val IP: String = "192.168.1.25:9442"
         private const val IP: String = "chitchat.devhimu.in"
         const val SERVER_LINK: String = "https://$IP"
         const val WEBSOCKET_LINK: String = "wss://$IP/socket"
@@ -44,7 +44,7 @@ class Utils {
             val ind = name.lastIndexOf(".")
             return try {
                 name.substring(ind + 1)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 ""
             }
         }

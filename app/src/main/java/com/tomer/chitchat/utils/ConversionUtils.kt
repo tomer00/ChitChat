@@ -76,8 +76,6 @@ object ConversionUtils {
             val format = SimpleDateFormat("dd/MM/yy", Locale.getDefault())
             return format.format(date)
         }
-
-
     }
 
     val mimeTypes by lazy {

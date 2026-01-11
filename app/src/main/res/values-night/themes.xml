@@ -15,7 +15,7 @@
         <item name="android:windowBackground">@color/backgroundC</item>
         <!-- Customize your theme here. -->
         <item name="android:windowContentTransitions">true</item>
-        <item name="android:windowLayoutInDisplayCutoutMode" >shortEdges</item>
-        <item name="android:forceDarkAllowed" >false</item>
+        <item name="android:windowLayoutInDisplayCutoutMode">shortEdges</item>
+        <item name="android:forceDarkAllowed">false</item>
     </style>
 </resources>
