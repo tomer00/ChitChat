@@ -29,7 +29,7 @@ android {
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
     }
 
-    buildFeatures{
+    buildFeatures {
         viewBinding true
     }
 
@@ -112,8 +112,12 @@ dependencies {
     //workManager
 //    implementation "androidx.work:work-runtime-ktx:2.9.1"
 
+    implementation("io.deepmedia.community:transcoder-android:0.11.2")
+
     implementation 'com.journeyapps:zxing-android-embedded:4.3.0'
     implementation 'com.google.zxing:core:3.5.1'
+    implementation 'androidx.media3:media3-exoplayer:1.8.0'
+    implementation 'androidx.media3:media3-ui:1.8.0'
 
     testImplementation 'junit:junit:4.13.2'
     androidTestImplementation 'androidx.test.ext:junit:1.2.1'
@@ -127,8 +131,8 @@ tasks.register('copyApk', Copy) {
     rename "app-release.apk", rootProject.name + ".apk"
 }
 
-tasks.configureEach { task->
-    if(task.name =="assembleRelease"){
+tasks.configureEach { task ->
+    if (task.name == "assembleRelease") {
         task.finalizedBy "copyApk"
     }
 }

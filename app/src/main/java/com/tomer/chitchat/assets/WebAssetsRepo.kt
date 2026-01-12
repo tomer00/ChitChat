@@ -22,10 +22,11 @@ class WebAssetsRepo @Inject constructor(
 
     private val assetsFolder =
         if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q) File(
-            File(context.getExternalFilesDir("ChitChat"), "assets").absolutePath.replace("Android/data", "Android/media").replace(
-                ".chitchat/files",
-                ".chitchat"
-            )
+            File(context.getExternalFilesDir("ChitChat"), "assets")
+                .absolutePath.replace("Android/data", "Android/media").replace(
+                    ".chitchat/files",
+                    ".chitchat"
+                )
         )
         else File(context.getExternalFilesDir("ChitChat"), "assets")
     private val gifAssets = File(assetsFolder, "gifs")
@@ -102,6 +103,7 @@ class WebAssetsRepo @Inject constructor(
 
         b.setMsg(data)
         b.mediaFileName(entry.value)
+        b.mediaSize(entry.key)
 
         return b.build()
     }

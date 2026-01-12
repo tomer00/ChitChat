@@ -151,24 +151,47 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
 
     //region MEDIA IO
 
-
     private val mediaPicker: ActivityResultLauncher<PickVisualMediaRequest> =
         registerForActivityResult(
             ActivityResultContracts.PickVisualMedia()
-        ) {
+        ) { uri ->
             b.btGallery.isClickable = true
-            if (it != null) {
-                val head = ByteArray(6)
-                this.contentResolver.openInputStream(it).use { ins ->
-                    ins?.read(head)
-                }
-                val headStr = String(head)
-                if (headStr == "GIF87a" || headStr == "GIF89a")
-                    sendMediaMsg(it, MsgMediaType.GIF)
-                else sendMediaMsg(it, MsgMediaType.IMAGE)
-            }
+            if (uri != null) {
+                val mimeType = contentResolver.getType(uri)
+                if (mimeType != null) {
+                    when {
+                        mimeType.startsWith("image/gif") -> {
+                            sendMediaMsg(uri, MsgMediaType.GIF)
+                        }
 
+                        mimeType.startsWith("video/") -> {
+                            startActivity(
+                                Intent(
+                                    this,
+                                    VideoSendPreviewActivity::class.java
+                                ).apply {
+                                    putExtra("uri", uri.toString())
+                                })
+                        }
+
+                        else -> {
+                            sendMediaMsg(uri, MsgMediaType.IMAGE)
+                        }
+                    }
+                } else {
+                    // Fallback for when MIME type is null
+                    val head = ByteArray(6)
+                    this.contentResolver.openInputStream(uri).use { ins ->
+                        ins?.read(head)
+                    }
+                    val headStr = String(head)
+                    if (headStr == "GIF87a" || headStr == "GIF89a")
+                        sendMediaMsg(uri, MsgMediaType.GIF)
+                    else sendMediaMsg(uri, MsgMediaType.IMAGE)
+                }
+            }
         }
+
 
     private val filePicker =
         registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
@@ -741,7 +764,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                 b.btGallery.isClickable = false
                 mediaPicker.launch(
                     PickVisualMediaRequest.Builder()
-                        .setMediaType(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        .setMediaType(ActivityResultContracts.PickVisualMedia.ImageAndVideo)
                         .build()
                 )
             }

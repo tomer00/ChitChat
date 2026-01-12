@@ -224,17 +224,17 @@ class ChatAdapter(
     inner class ChatViewHolder(val b: MsgItemBinding, private val callBack: ChatViewEvents) : RecyclerView.ViewHolder(b.root) {
         private val onCli = View.OnClickListener {
             when (it.id) {
-                b.root.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.ROOT)
-                b.layUpload.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.UPLOAD)
-                b.layDownload.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.DOWNLOAD)
-                b.repImgRv.id, b.RepTv.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.REPLY)
-                b.msgTv.id, b.imgFileType.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.FILE)
-                b.mediaImg.id -> callBack.onChatItemClicked(absoluteAdapterPosition, ClickEvents.IMAGE)
+                b.root.id -> callBack.onChatItemClicked(bindingAdapterPosition, ClickEvents.ROOT)
+                b.layUpload.id -> callBack.onChatItemClicked(bindingAdapterPosition, ClickEvents.UPLOAD)
+                b.layDownload.id -> callBack.onChatItemClicked(bindingAdapterPosition, ClickEvents.DOWNLOAD)
+                b.repImgRv.id, b.RepTv.id -> callBack.onChatItemClicked(bindingAdapterPosition, ClickEvents.REPLY)
+                b.msgTv.id, b.imgFileType.id -> callBack.onChatItemClicked(bindingAdapterPosition, ClickEvents.FILE)
+                b.mediaImg.id -> callBack.onChatItemClicked(bindingAdapterPosition, ClickEvents.IMAGE)
             }
         }
 
         private val onLongClickLis = View.OnLongClickListener {
-            callBack.onChatItemLongClicked(absoluteAdapterPosition)
+            callBack.onChatItemLongClicked(bindingAdapterPosition)
             true
         }
 
