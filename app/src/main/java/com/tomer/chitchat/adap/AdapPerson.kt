@@ -24,7 +24,6 @@ class AdapPerson(
 ) :
     ListAdapter<PersonModel, AdapPerson.PersonHolder>(PersonDiff()) {
 
-
     private val selCol = ContextCompat.getColor(context, R.color.primary_light)
     private val deSelCol = ContextCompat.getColor(context, R.color.backgroundC)
 
@@ -213,13 +212,13 @@ class AdapPerson(
     inner class PersonHolder(val b: RowPersonBinding, clickLis: CallbackClick) : RecyclerView.ViewHolder(b.root) {
         init {
             b.root.setOnClickListener {
-                clickLis.onClick(absoluteAdapterPosition)
+                clickLis.onClick(bindingAdapterPosition)
             }
             b.imgProfile.setOnClickListener {
-                clickLis.onClickDp(absoluteAdapterPosition)
+                clickLis.onClickDp(bindingAdapterPosition)
             }
             b.root.setOnLongClickListener {
-                clickLis.onLongClick(absoluteAdapterPosition)
+                clickLis.onLongClick(bindingAdapterPosition)
                 true
             }
         }

@@ -33,6 +33,9 @@ interface Dao {
         time: Long = System.currentTimeMillis()
     ): List<ModelRoomMessage>
 
+    @Query("select * from messages where (msgType == 'IMAGE' OR msgType == 'GIF' OR msgType == 'VIDEO') AND partnerId=:partnerId order by timeMillis DESC")
+    fun getMsgsOfUserOnlyMedia(partnerId: String) : List<ModelRoomMessage>
+
     @Query("select * from messages where id=:msgId")
     fun getByUser(msgId: Long): List<ModelRoomMessage>
 
