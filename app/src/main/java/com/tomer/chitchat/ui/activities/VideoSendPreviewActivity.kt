@@ -1,5 +1,6 @@
 package com.tomer.chitchat.ui.activities
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.View
 import android.widget.ImageView
@@ -51,12 +52,13 @@ class VideoSendPreviewActivity : AppCompatActivity() {
         }
 
         val uri = intent.getStringExtra("uri")
-        val partnerName = intent.getStringExtra("partnerPhone")
+        val partnerPhone = intent.getStringExtra("partnerPhone")
+        val replyId = intent.getLongExtra("replyId", -1L)
         if (uri == null) {
             finish()
             return
         }
-        vm.processSelectedUri(uri.toUri(), partnerName ?: "")
+        vm.processSelectedUri(uri.toUri(), partnerPhone ?: "", replyId)
         b.exoPlayerView.player = vm.exoPlayer
 
         b.videoTrimView.onRangeChangeListener = { start, end -> vm.onSeekBarChange(start, end) }
@@ -126,7 +128,15 @@ class VideoSendPreviewActivity : AppCompatActivity() {
     fun setupLiveData() {
         lifecycleScope.launch {
             vm.finishActivity.collectLatest {
-                if (it) onBackPressed()
+                if (it == null) return@collectLatest
+                if (it) {
+                    val resultIntent = Intent().apply {
+                        putExtra("FILE_NAME", vm.fileName)
+                        putExtra("FILE_URI", vm.uri.toString())
+                    }
+                    setResult(RESULT_OK, resultIntent)
+                } else setResult(RESULT_CANCELED)
+                finish()
             }
         }
         lifecycleScope.launch {

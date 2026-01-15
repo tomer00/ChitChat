@@ -14,6 +14,8 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
 import androidx.core.app.ActivityCompat
 import com.tomer.chitchat.room.ModelRoomPersonRelation
+import java.util.Locale
+import java.util.concurrent.TimeUnit
 import kotlin.math.pow
 
 class Utils {
@@ -31,7 +33,7 @@ class Utils {
         var currentPartner: ModelRoomPersonRelation? = null
 
         @SuppressLint("DefaultLocale")
-        fun humanReadableSize(size: Int): String {
+        fun humanReadableSize(size: Long): String {
             return when {
                 size < 1024 -> String.format("%1$.0f B", size.toDouble())
                 size < 1024.0.pow(2.0) -> String.format("%1$.0f KB", (size / 1024).toDouble())
@@ -84,6 +86,15 @@ class Utils {
             resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
     }
 
+}
+
+fun Long.timeTextFromMs(): String {
+    val hours = TimeUnit.MILLISECONDS.toHours(this)
+    val minutes = TimeUnit.MILLISECONDS.toMinutes(this) % 60
+    val seconds = TimeUnit.MILLISECONDS.toSeconds(this) % 60
+    return if (hours == 0L)
+        String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
+    else String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds)
 }
 
 fun String.acceptNo() =

@@ -22,7 +22,9 @@ import com.tomer.chitchat.utils.VideoDetails
 import com.tomer.chitchat.utils.compressAndTrimDeepMedia
 import com.tomer.chitchat.utils.estimateFileSize
 import com.tomer.chitchat.utils.extract10Frames
+import com.tomer.chitchat.utils.getAFrameFromVideo
 import com.tomer.chitchat.utils.getAllPossibleDetails
+import com.tomer.chitchat.utils.getBmpUsingGlide
 import com.tomer.chitchat.utils.timeTextFromMs
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -32,6 +34,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import java.io.ByteArrayOutputStream
 import javax.inject.Inject
 
 @UnstableApi
@@ -57,10 +60,14 @@ class VideoSendPreviewViewModel
     val seekBars = MutableStateFlow(Triple(0f, 0f, 1f))
 
     val encodeProg = MutableStateFlow(-1f)
-    val finishActivity = MutableStateFlow(false)
+    val finishActivity = MutableStateFlow<Boolean?>(null)
 
 
-    private var uri: Uri? = null
+    private var videoThumbBytes = ByteArray(0)
+    var fileName = ""
+    var uri: Uri? = null
+    private var partnerPhone: String? = null
+    private var replyId: Long = -1L
     private var seekBarSyncJob = viewModelScope.launch { }
 
     init {
@@ -82,6 +89,10 @@ class VideoSendPreviewViewModel
                     viewModelScope.launch {
                         if (videoFinalTime.value.isEmpty()) {
                             val duration = exoPlayer.duration.timeTextFromMs()
+                            Log.d(
+                                "TAG--",
+                                "onPlaybackStateChanged: VIDEO US = ${exoPlayer.duration.times(1000)}"
+                            )
                             videoFinalTime.emit(
                                 "$duration • ${
                                     estimateFileSize(
@@ -110,7 +121,7 @@ class VideoSendPreviewViewModel
                 isMute.value.not()
             )
 
-            videoFinalTime.emit("${endMs - startMs} • $estimatedSize")
+            videoFinalTime.emit("${(endMs - startMs).timeTextFromMs()} • $estimatedSize")
         }
     }
 
@@ -159,14 +170,18 @@ class VideoSendPreviewViewModel
         }
     }
 
-    fun processSelectedUri(uri: Uri, partnerPhone: String) {
+    fun processSelectedUri(uri: Uri, partnerPhone: String, replyId: Long) {
         extract10Frames(uri, appContext) { i, bmp ->
             viewModelScope.launch {
                 flowFramesThumb.emit(i to bmp)
             }
         }
         if (this.uri != null) return
+
         this.uri = uri
+        this.partnerPhone = partnerPhone
+        this.replyId = replyId
+
         viewModelScope.launch {
             val p = repo.getPersonPref(phoneNo = partnerPhone)
             partnerName.emit(p)
@@ -174,6 +189,18 @@ class VideoSendPreviewViewModel
         viewModelScope.launch {
             val data = getAllPossibleDetails(appContext, uri)
             metaData.emit(data)
+            if (data == null) return@launch
+
+            val duration = if ((data.durationMs ?: 100) > 500) 500 else data.durationMs
+            val bmp =
+                getAFrameFromVideo(appContext, uri, (duration ?: 500L).toInt()) ?: return@launch
+            val scaledBmp = getBmpUsingGlide(bmp, appContext) ?: return@launch
+            bmp.recycle()
+            val baos = ByteArrayOutputStream()
+            scaledBmp.compress(Bitmap.CompressFormat.WEBP, 80, baos)
+            videoThumbBytes = baos.toByteArray()
+            scaledBmp.recycle()
+            baos.close()
         }
         viewModelScope.launch {
             exoPlayer.setMediaItem(MediaItem.fromUri(uri))
@@ -204,9 +231,15 @@ class VideoSendPreviewViewModel
             }
 
             override fun onTranscodeFailed(p0: Throwable) {
+                Log.e("TAG--", "onTranscodeFailed: ", p0)
+                viewModelScope.launch {
+                    finishActivity.emit(false)
+                }
             }
         }
         val videoName = getVideoName(System.currentTimeMillis())
+        this.fileName = videoName
+        repoStorage.saveVideoThumb(videoName, videoThumbBytes)
         repoStorage.saveBytesToFolder(MsgMediaType.VIDEO, videoName, ByteArray(0))
         val fileVideo = repoStorage.getFileFromFolder(MsgMediaType.VIDEO, videoName)!!
         if (seekBars.value.first == 0f && seekBars.value.third == 1f)

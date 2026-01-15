@@ -86,10 +86,6 @@ class VideoTrimView : View {
         // It must also map to the timelineWidth
         val progressX = handleWidth + (currentPercent * timelineWidth)
 
-        //0 Draw Black Background
-        canvas.drawRect(0f, 0f, handleWidth, h, blackPaint)
-        canvas.drawRect(w-handleWidth, 0f, w, h, blackPaint)
-
         // 1. Draw Dimmed Overlays
         // Left Overlay: From 0 to startX (The startX IS the inner edge of left handle)
         canvas.drawRect(0f, 0f, startX, h, overlayPaint)
