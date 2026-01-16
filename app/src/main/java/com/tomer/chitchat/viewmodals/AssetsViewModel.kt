@@ -5,8 +5,6 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.graphics.Paint
-import android.graphics.drawable.Drawable
-import android.media.ThumbnailUtils
 import android.net.Uri
 import android.provider.MediaStore
 import android.provider.OpenableColumns
@@ -14,10 +12,6 @@ import android.util.Log
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.bumptech.glide.Glide
-import com.bumptech.glide.request.RequestOptions
-import com.bumptech.glide.request.target.CustomTarget
-import com.bumptech.glide.request.transition.Transition
 import com.tomer.chitchat.assets.RepoAssets
 import com.tomer.chitchat.modals.msgs.ModelMsgSocket
 import com.tomer.chitchat.modals.states.FlowType
@@ -34,6 +28,10 @@ import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.NetworkUtils
 import com.tomer.chitchat.utils.Utils
+import com.tomer.chitchat.utils.getBmpUsingGlide
+import com.tomer.chitchat.utils.getGifFrameBmpUsingGlide
+import com.tomer.chitchat.utils.getGifThumbBmpUsingGlide
+import com.tomer.chitchat.utils.getThumbBmpUsingGlide
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -44,10 +42,13 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
+import okhttp3.RequestBody
 import okhttp3.RequestBody.Companion.toRequestBody
+import okio.BufferedSink
+import okio.source
 import java.io.ByteArrayOutputStream
+import java.io.File
 import javax.inject.Inject
-import kotlin.coroutines.suspendCoroutine
 
 
 @HiltViewModel
@@ -82,10 +83,12 @@ class AssetsViewModel @Inject constructor(
     private fun getBmpFromDrawable(): ByteArray {
         val bitmap = createBitmap(100, 100)
         val canvas = Canvas(bitmap)
-        canvas.drawText("Chit Chat", 0f, 0f, Paint().apply {
-            color = Color.CYAN
-            textSize = 68f
-        })
+        canvas.drawText(
+            "Chit Chat", 0f, 0f, Paint()
+                .apply {
+                    color = Color.CYAN
+                    textSize = 68f
+                })
         val baos = ByteArrayOutputStream()
         bitmap.compress(Bitmap.CompressFormat.WEBP, 20, baos)
         return baos.toByteArray()
@@ -217,10 +220,10 @@ class AssetsViewModel @Inject constructor(
 
                 var link = retro.checkForUpload(Utils.myPhone + uri).body()
                 if (link.isNullOrEmpty() || link == "false") {
-                    val bytes = repoStorage.getBytesFromFolder(msg.msgType, msg.mediaFileName)
+                    val file = repoStorage.getFileFromFolder(msg.msgType, msg.mediaFileName)
                         ?: return@withContext
                     link = uploadToServer(
-                        bytes,
+                        file,
                         msg.msgType.name,
                         Utils.myPhone + uri,
                         msg.mediaFileName
@@ -277,10 +280,10 @@ class AssetsViewModel @Inject constructor(
     }
 
 
-    fun uploadFile(
+    fun handleNewMediaMsg(
         toUser: String,
         mediaType: MsgMediaType,
-        file: Uri, con: Context,
+        uri: Uri, con: Context,
         msg: ModelMsgSocket,
         tempId: Long,
         repBytes: ByteArray?,
@@ -290,6 +293,7 @@ class AssetsViewModel @Inject constructor(
             withContext(Dispatchers.IO) {
 
                 suspend fun handleUploaing(
+                    aspectRatio: Float?,
                     fileBytes: ByteArray,
                     thumbB: ByteArray?,
                     fileNa: String? = null
@@ -297,6 +301,7 @@ class AssetsViewModel @Inject constructor(
                     val builder = ModelRoomMessageBuilder()
                     builder.id(tempId)
                     builder.replyId(msg.replyId)
+                    builder.setAspectRatio(aspectRatio)
                     builder.setPartner(toUser)
                     builder.repText(msg.replyData)
                     builder.msgType(msg.msgType)
@@ -308,24 +313,23 @@ class AssetsViewModel @Inject constructor(
                     builder.setTimeText(ConversionUtils.millisToTimeText(msg.timeMillis))
                     builder.replyMediaFileName(msg.replyMediaFileName)
                     builder.setRepBytes(repBytes)
-                    builder.mediaSize(Utils.humanReadableSize(fileBytes.size))
+                    builder.mediaSize(Utils.humanReadableSize(fileBytes.size.toLong()))
 
-                    val roomMsg = builder.build()
+
                     builder.msgText("Uploading")
 
                     val fileName = fileNa ?: when (mediaType) {
                         MsgMediaType.TEXT, MsgMediaType.EMOJI -> ""
                         MsgMediaType.IMAGE -> getImageName(msg.timeMillis)
                         MsgMediaType.GIF -> getGifName(msg.timeMillis)
-                        MsgMediaType.FILE -> file.getName(con)
-                        MsgMediaType.VIDEO -> getVideoName(msg.timeMillis)
+                        else -> uri.getName(con)
                     }
                     builder.mediaFileName(fileName)
                     //sending Callback to activity to display img and loading
                     created(
                         MsgsFlowState.ChatMessageFlowState(
                             builder.buildUI(),
-                            roomMsg.partnerId,
+                            toUser,
                             true
                         )
                     )
@@ -333,7 +337,7 @@ class AssetsViewModel @Inject constructor(
                     repoStorage.saveBytesToFolder(msg.msgType, fileName, fileBytes)
                     repoMsgs.addMsg(builder.build())
 
-                    repoMedia.saveMedia(ModalMediaUpload(file.encodedPath.toString(), fileName))
+                    repoMedia.saveMedia(ModalMediaUpload(uri.encodedPath.toString(), fileName))
 
                     val thumbBytes = ByteArrayOutputStream()
 
@@ -347,21 +351,20 @@ class AssetsViewModel @Inject constructor(
                             MsgMediaType.IMAGE -> getThumbBmpUsingGlide(fileBytes, con)
                                 ?.compress(Bitmap.CompressFormat.WEBP, 12, thumbBytes)
 
-                            MsgMediaType.GIF -> getGifThumbBmpUsingGlide(file, con)
+                            MsgMediaType.GIF -> getGifThumbBmpUsingGlide(uri, con)
                                 ?.compress(Bitmap.CompressFormat.WEBP, 12, thumbBytes)
 
-                            MsgMediaType.VIDEO -> getVideoThumbnail(con, file)
-                                ?.compress(Bitmap.CompressFormat.WEBP, 12, thumbBytes)
+                            MsgMediaType.VIDEO -> {}
                         }
                     }
 
-                    var link = retro.checkForUpload(Utils.myPhone + file.encodedPath).body()
+                    var link = retro.checkForUpload(Utils.myPhone + uri.encodedPath).body()
                         .also { Log.d("TAG--", "handleUploaing: $it") }
                     if (link.isNullOrEmpty() || link == "false")
                         link = uploadToServer(
                             fileBytes,
                             mediaType.name,
-                            Utils.myPhone + file.encodedPath,
+                            Utils.myPhone + uri.encodedPath,
                             fileName
                         )
 
@@ -376,14 +379,14 @@ class AssetsViewModel @Inject constructor(
                                 toUser
                             )
                         )
-                        if (msg.msgType != MsgMediaType.FILE)
-                            builder.msgText(
-                                "Uploading,-,${
-                                    ConversionUtils.byteArrToBase64(
-                                        thumbBytes.toByteArray()
-                                    )
-                                }"
-                            )
+//                        if (msg.msgType != MsgMediaType.FILE)
+                        builder.msgText(
+                            "Uploading,-,${
+                                ConversionUtils.byteArrToBase64(
+                                    thumbBytes.toByteArray()
+                                )
+                            }"
+                        )
                         repoMsgs.addMsg(builder.build())
                         return
                     }
@@ -407,14 +410,15 @@ class AssetsViewModel @Inject constructor(
 
                         val baos = ByteArrayOutputStream()
                         val previousFile =
-                            repoMedia.getFileNameFromUri(uri = file.encodedPath.toString())
+                            repoMedia.getFileNameFromUri(uri = uri.encodedPath.toString())
 
                         val isFilePresent =
                             repoStorage.isPresent(previousFile.toString(), mediaType)
                         if (previousFile == null || !isFilePresent) {
-                            val bmp = getBmpUsingGlide(file, con) ?: return@withContext
+                            val bmp = getBmpUsingGlide(uri, con) ?: return@withContext
+                            val aspect = bmp.width.toFloat().div(bmp.height.toFloat())
                             bmp.compress(Bitmap.CompressFormat.WEBP, 80, baos)
-                            handleUploaing(baos.toByteArray(), null)
+                            handleUploaing(aspect, baos.toByteArray(), null)
                         } else {
                             val baosT = ByteArrayOutputStream()
                             baos.write(repoStorage.getBytesFromFolder(mediaType, previousFile))
@@ -422,12 +426,13 @@ class AssetsViewModel @Inject constructor(
                                 val oldMsg = repoMsgs.getMsgFromFileName(previousFile)
                                 baosT.write(ConversionUtils.base64ToByteArr(oldMsg!!.msgText.split(",-,")[1]))
                                 handleUploaing(
+                                    oldMsg.aspectRatio,
                                     baos.toByteArray(),
                                     baosT.toByteArray(),
                                     oldMsg.mediaFileName
                                 )
                             } catch (_: Exception) {
-                                handleUploaing(baos.toByteArray(), null)
+                                handleUploaing(null, baos.toByteArray(), null)
                             }
                         }
 
@@ -437,7 +442,7 @@ class AssetsViewModel @Inject constructor(
 
                         val baos = ByteArrayOutputStream()
                         val previousFile =
-                            repoMedia.getFileNameFromUri(uri = file.encodedPath.toString())
+                            repoMedia.getFileNameFromUri(uri = uri.encodedPath.toString())
                         if (repoStorage.isPresent(previousFile.toString(), mediaType)) {
                             try {
                                 val baosT = ByteArrayOutputStream()
@@ -450,42 +455,151 @@ class AssetsViewModel @Inject constructor(
                                 val oldMsg = repoMsgs.getMsgFromFileName(previousFile.toString())
                                 baosT.write(ConversionUtils.base64ToByteArr(oldMsg!!.msgText.split(",-,")[1]))
                                 handleUploaing(
+                                    oldMsg.aspectRatio,
                                     baos.toByteArray(),
                                     baosT.toByteArray(),
                                     oldMsg.mediaFileName
                                 )
-                            } catch (e: Exception) {
-                                handleUploaing(baos.toByteArray(), null)
+                            } catch (_: Exception) {
+                                handleUploaing(null, baos.toByteArray(), null)
                             }
                         } else {
                             try {
-                                con.contentResolver.openInputStream(file).use {
-                                    it?.copyTo(baos)
-                                }
+                                con.contentResolver.openInputStream(uri).use { it?.copyTo(baos) }
+                                val bmp = getGifFrameBmpUsingGlide(uri, con)!!
+                                val aspect = bmp.width.toFloat().div(bmp.height.toFloat())
+                                handleUploaing(aspect, baos.toByteArray(), null)
                             } catch (_: Exception) {
-
                             }
-                            handleUploaing(baos.toByteArray(), null)
                         }
                     }
 
                     MsgMediaType.FILE -> {
                         val baos = ByteArrayOutputStream()
                         try {
-                            con.contentResolver.openInputStream(file).use {
+                            con.contentResolver.openInputStream(uri).use {
                                 it?.copyTo(baos)
                             }
                         } catch (_: Exception) {
 
                         }
-                        handleUploaing(baos.toByteArray(), null)
+                        handleUploaing(null, baos.toByteArray(), null)
                     }
 
-                    MsgMediaType.VIDEO -> {
-
-                    }
+                    else -> {}
                 }
             }
+        }
+    }
+
+    fun handelNewVideoMsg(
+        toUser: String,
+        fileName: String,
+        con: Context, time: String,
+        uri: Uri, aspect: Float?,
+        msg: ModelMsgSocket,
+        tempId: Long,
+        repBytes: ByteArray?,
+        created: (flow: MsgsFlowState) -> Unit
+    ) {
+
+        viewModelScope.launch {
+
+            val builder = ModelRoomMessageBuilder()
+            builder.id(tempId)
+            builder.replyId(msg.replyId)
+            builder.setPartner(toUser)
+            builder.repText(msg.replyData)
+            builder.msgType(msg.msgType)
+            builder.replyType(msg.replyMsgType)
+            builder.isSent(true)
+            builder.setBytes(repoStorage.getBytesOfVideoThumb(fileName))
+            builder.isRep(msg.isReply)
+            builder.setTimeMillis(msg.timeMillis)
+            builder.setTimeText(ConversionUtils.millisToTimeText(msg.timeMillis))
+            builder.replyMediaFileName(msg.replyMediaFileName)
+            builder.setRepBytes(repBytes)
+            builder.mediaSize(
+                Utils.humanReadableSize(
+                    repoStorage.getFileFromFolder(
+                        MsgMediaType.VIDEO, fileName
+                    )?.length() ?: 0L
+                )
+            )
+            builder.setAspectRatio(aspect)
+            builder.setInfo(time)
+
+            val roomMsg = builder.build()
+            builder.msgText("Uploading")
+
+            builder.mediaFileName(fileName)
+            //sending Callback to activity to display img and loading
+            created(
+                MsgsFlowState.ChatMessageFlowState(
+                    builder.buildUI(),
+                    roomMsg.partnerId,
+                    true
+                )
+            )
+
+            repoMsgs.addMsg(builder.build())
+            repoMedia.saveMedia(ModalMediaUpload(uri.encodedPath.toString(), fileName))
+
+            val thumbBytes = ByteArrayOutputStream()
+            getThumbBmpUsingGlide(repoStorage.getBytesOfVideoThumb(fileName) ?: "", con)
+                ?.compress(Bitmap.CompressFormat.WEBP, 12, thumbBytes)
+
+            val thumbB = thumbBytes.toByteArray()
+
+            if (thumbB != null && thumbB.size > 10) {
+                thumbBytes.write(thumbB)
+            }
+
+            var link = retro.checkForUpload(Utils.myPhone + uri.encodedPath).body()
+                .also { Log.d("TAG--", "handleUploaing: $it") }
+            if (link.isNullOrEmpty() || link == "false") {
+                repoStorage.getFileFromFolder(MsgMediaType.VIDEO, fileName)?.let {
+                    link = uploadToServer(
+                        it,
+                        MsgMediaType.VIDEO.name,
+                        Utils.myPhone + uri.encodedPath,
+                        fileName
+                    )
+                }
+            }
+            if (thumbBytes.size() < 10)
+                thumbBytes.write(defBmpBytes)
+            if (link == null) {
+                flowEvents.emit(
+                    MsgsFlowState.IOFlowState(
+                        tempId,
+                        FlowType.UPLOAD_FAILS,
+                        toUser
+                    )
+                )
+                if (msg.msgType != MsgMediaType.FILE)
+                    builder.msgText(
+                        "Uploading,-,${
+                            ConversionUtils.byteArrToBase64(
+                                thumbBytes.toByteArray()
+                            )
+                        }"
+                    )
+                repoMsgs.addMsg(builder.build())
+                return@launch
+            }
+            builder.msgText(link)
+            if (msg.msgType != MsgMediaType.FILE)
+                builder.msgText("$link,-,${ConversionUtils.byteArrToBase64(thumbBytes.toByteArray())}")
+            flowEvents.emit(
+                MsgsFlowState.IOFlowState(
+                    msg.timeMillis,
+                    FlowType.UPLOAD_SUCCESS,
+                    toUser,
+                    builder.buildUI()
+                )
+            )
+            repoMsgs.addMsg(builder.build())
         }
     }
 
@@ -545,18 +659,17 @@ class AssetsViewModel @Inject constructor(
         repoStorage.getBytesFromFolder(type, fileName)
 
 
-    //endregion COMMUNICATION
+//endregion COMMUNICATION
 
-    //region UTILS
+//region UTILS
 
     private fun getImageName(millis: Long) =
         "IMG_${ConversionUtils.millisToFullDateText(millis)}.webp"
 
-    private fun getVideoName(millis: Long) = "VID_${ConversionUtils.millisToFullDateText(millis)}"
     private fun getGifName(millis: Long) = "GIF_${ConversionUtils.millisToFullDateText(millis)}.gif"
-    //endregion UTILS
+//endregion UTILS
 
-    //region mediaView
+//region mediaView
 
     fun openFile(fileName: String) {
         val file = repoStorage.getFileFromFolder(MsgMediaType.FILE, fileName) ?: return
@@ -588,7 +701,17 @@ class AssetsViewModel @Inject constructor(
         }
     }
 
-    //endregion mediaView
+    fun openVideo(fileName: String, msgId: Long) {
+        val file = repoStorage.getFileFromFolder(MsgMediaType.VIDEO, fileName) ?: return
+        viewModelScope.launch {
+            val msgTime = repoMsgs.getMsg(msgId)?.timeMillis ?: -1L
+            flowEvents.emit(
+                MsgsFlowState.OpenFileFlowState(file, FlowType.OPEN_VIDEO, msgTime)
+            )
+        }
+    }
+
+//endregion mediaView
 
     private suspend fun uploadToServer(
         baos: ByteArray,
@@ -601,6 +724,35 @@ class AssetsViewModel @Inject constructor(
                 "multipart/form-data".toMediaTypeOrNull(),
                 0, baos.size
             )
+        return uploadToServerHelper(reqBody, type, uri, fileName)
+    }
+
+    private suspend fun uploadToServer(
+        file: File,
+        type: String,
+        uri: String,
+        fileName: String
+    ): String? {
+        val reqBody = object : RequestBody() {
+            override fun contentType() = "multipart/form-data".toMediaTypeOrNull()
+            override fun contentLength() = file.length()
+
+            override fun writeTo(sink: BufferedSink) {
+                file.source().use {
+                    sink.writeAll(it)
+                }
+            }
+
+        }
+        return uploadToServerHelper(reqBody, type, uri, fileName)
+    }
+
+    private suspend fun uploadToServerHelper(
+        reqBody: RequestBody,
+        type: String,
+        uri: String,
+        fileName: String
+    ): String? {
         return try {
             val res = retro.uploadMedia(
                 MultipartBody.Part.createFormData(
@@ -610,88 +762,6 @@ class AssetsViewModel @Inject constructor(
             if (res.isSuccessful) res.body() else null
         } catch (_: Exception) {
             null
-        }
-    }
-
-
-    //region THUMB UTILS
-
-
-    private fun getBmpUsingGlide(uri: Uri, con: Context): Bitmap? {
-        return runCatching {
-            Glide.with(con)
-                .asBitmap()
-                .load(uri)
-                .override(1600, 1600)
-                .fitCenter()
-                .disallowHardwareConfig()
-                .dontTransform()
-                .submit()
-                .get()
-        }.fold(onSuccess = { b -> b }, onFailure = { exception -> null })
-    }
-
-    private suspend fun getThumbBmpUsingGlide(bytes: ByteArray, con: Context): Bitmap? {
-        return suspendCoroutine { continuation ->
-            Glide.with(con)
-                .asBitmap()
-                .load(bytes)
-                .override(24)
-                .into(
-                    object : CustomTarget<Bitmap>() {
-                        override fun onResourceReady(
-                            resource: Bitmap,
-                            transition: Transition<in Bitmap>?
-                        ) {
-                            continuation.resumeWith(Result.success(resource))
-                        }
-
-                        override fun onLoadFailed(errorDrawable: Drawable?) {
-                            super.onLoadFailed(errorDrawable)
-                            continuation.resumeWith(Result.success(null))
-                        }
-
-                        override fun onLoadCleared(placeholder: Drawable?) {
-                        }
-                    }
-                )
-        }
-    }
-
-    private suspend fun getGifThumbBmpUsingGlide(uri: Uri, con: Context): Bitmap? {
-        return suspendCoroutine { continuation ->
-            Glide.with(con)
-                .asBitmap()
-                .load(uri)
-                .apply(
-                    RequestOptions().frame(0)
-                )
-                .override(28)
-                .into(
-                    object : CustomTarget<Bitmap>() {
-                        override fun onResourceReady(
-                            resource: Bitmap,
-                            transition: Transition<in Bitmap>?
-                        ) {
-                            continuation.resumeWith(Result.success(resource))
-                        }
-
-                        override fun onLoadFailed(errorDrawable: Drawable?) {
-                            super.onLoadFailed(errorDrawable)
-                            continuation.resumeWith(Result.success(null))
-                        }
-
-                        override fun onLoadCleared(placeholder: Drawable?) {
-                        }
-                    }
-                )
-        }
-    }
-
-    private fun getVideoThumbnail(context: Context, uri: Uri): Bitmap? {
-        val filePath = getPathFromUri(context, uri)
-        return filePath?.let {
-            ThumbnailUtils.createVideoThumbnail(it, MediaStore.Images.Thumbnails.MINI_KIND)
         }
     }
 
@@ -707,7 +777,4 @@ class AssetsViewModel @Inject constructor(
         }
         return filePath
     }
-
-    //endregion THUMB UTILS
-
 }

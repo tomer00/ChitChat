@@ -27,7 +27,10 @@ class AdapPerson(
     private val selCol = ContextCompat.getColor(context, R.color.primary_light)
     private val deSelCol = ContextCompat.getColor(context, R.color.backgroundC)
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = PersonHolder(RowPersonBinding.inflate(LayoutInflater.from(parent.context), parent, false), clickLis)
+    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = PersonHolder(
+        RowPersonBinding.inflate(LayoutInflater.from(parent.context), parent, false),
+        clickLis
+    )
 
 
     override fun onBindViewHolder(holder: PersonHolder, position: Int) {
@@ -71,6 +74,7 @@ class AdapPerson(
                         MsgStatus.SENDING -> R.drawable.ic_sending
                         MsgStatus.SENT_TO_SERVER -> R.drawable.ic_tick
                         MsgStatus.RECEIVED -> R.drawable.ic_double_tick
+                        MsgStatus.READ_BY_USER -> R.drawable.ic_double_tick
                     }
                 )
             )
@@ -94,28 +98,22 @@ class AdapPerson(
                 }
             }
 
-            MsgMediaType.IMAGE, MsgMediaType.GIF -> {
+            MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO -> {
                 holder.b.msgType.visibility = View.VISIBLE
                 holder.b.msgType.setImageResource(getDrawableId(model.lastMsg))
-                if (model.fileGifImg == null) {
+                if (model.fileGifImg == null)
                     Glide.with(context)
                         .asBitmap()
                         .load(getByteArr(model.jsonText))
                         .skipMemoryCache(true)
                         .diskCacheStrategy(DiskCacheStrategy.NONE)
                         .into(holder.b.imgLottie)
-                } else
+                else
                     Glide.with(context)
                         .load(model.fileGifImg)
                         .skipMemoryCache(true)
                         .diskCacheStrategy(DiskCacheStrategy.NONE)
                         .into(holder.b.imgLottie)
-            }
-
-            MsgMediaType.VIDEO -> {
-                holder.b.msgType.visibility = View.VISIBLE
-                holder.b.msgType.setImageResource(getDrawableId(model.lastMsg))
-                holder.b.imgLottie.setImageDrawable(null)
             }
 
             else -> {
@@ -209,7 +207,8 @@ class AdapPerson(
         fun onLongClick(pos: Int)
     }
 
-    inner class PersonHolder(val b: RowPersonBinding, clickLis: CallbackClick) : RecyclerView.ViewHolder(b.root) {
+    inner class PersonHolder(val b: RowPersonBinding, clickLis: CallbackClick) :
+        RecyclerView.ViewHolder(b.root) {
         init {
             b.root.setOnClickListener {
                 clickLis.onClick(bindingAdapterPosition)

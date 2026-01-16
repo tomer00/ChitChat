@@ -93,8 +93,8 @@ fun Long.timeTextFromMs(): String {
     val minutes = TimeUnit.MILLISECONDS.toMinutes(this) % 60
     val seconds = TimeUnit.MILLISECONDS.toSeconds(this) % 60
     return if (hours == 0L)
-        String.format(Locale.getDefault(), "%02d:%02d", minutes, seconds)
-    else String.format(Locale.getDefault(), "%02d:%02d:%02d", hours, minutes, seconds)
+        String.format(Locale.getDefault(), "%d:%02d", minutes, seconds)
+    else String.format(Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds)
 }
 
 fun String.acceptNo() =

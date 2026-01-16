@@ -133,6 +133,8 @@ class VideoSendPreviewActivity : AppCompatActivity() {
                     val resultIntent = Intent().apply {
                         putExtra("FILE_NAME", vm.fileName)
                         putExtra("FILE_URI", vm.uri.toString())
+                        putExtra("ASPECT", vm.aspect.toString())
+                        putExtra("VIDEO_TIME", vm.videoTime)
                     }
                     setResult(RESULT_OK, resultIntent)
                 } else setResult(RESULT_CANCELED)

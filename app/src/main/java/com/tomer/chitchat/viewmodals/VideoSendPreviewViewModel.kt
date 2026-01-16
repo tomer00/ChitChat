@@ -65,6 +65,8 @@ class VideoSendPreviewViewModel
 
     private var videoThumbBytes = ByteArray(0)
     var fileName = ""
+    var videoTime = ""
+    var aspect: Float = 0f
     var uri: Uri? = null
     private var partnerPhone: String? = null
     private var replyId: Long = -1L
@@ -195,6 +197,7 @@ class VideoSendPreviewViewModel
             val bmp =
                 getAFrameFromVideo(appContext, uri, (duration ?: 500L).toInt()) ?: return@launch
             val scaledBmp = getBmpUsingGlide(bmp, appContext) ?: return@launch
+            aspect = scaledBmp.width.toFloat().div(scaledBmp.height.toFloat())
             bmp.recycle()
             val baos = ByteArrayOutputStream()
             scaledBmp.compress(Bitmap.CompressFormat.WEBP, 80, baos)
@@ -249,18 +252,22 @@ class VideoSendPreviewViewModel
                 fileVideo.absolutePath,
                 listener,
                 !isMute.value,
-            )
-        else compressAndTrimDeepMedia(
-            appContext,
-            uri!!,
-            fileVideo.absolutePath,
-            listener,
-            !isMute.value,
-            seekBars.value.first
-                .times(exoPlayer.duration).toLong(),
-            seekBars.value.third
+            ).also { videoTime = exoPlayer.duration.timeTextFromMs() }
+        else {
+            val startMilli = seekBars.value.first
                 .times(exoPlayer.duration).toLong()
-        )
+            val endMilli = seekBars.value.third
+                .times(exoPlayer.duration).toLong()
+            compressAndTrimDeepMedia(
+                appContext,
+                uri!!,
+                fileVideo.absolutePath,
+                listener,
+                !isMute.value,
+                startMilli, endMilli
+            )
+            videoTime = (endMilli - startMilli).timeTextFromMs()
+        }
     }
 
     private fun createSeekBarSyncJob(): Job {

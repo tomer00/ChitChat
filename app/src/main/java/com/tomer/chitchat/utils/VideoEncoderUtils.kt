@@ -139,7 +139,7 @@ fun compressAndTrimDeepMedia(
     val videoStrategy = DefaultVideoStrategy.Builder()
         .addResizer(AtMostResizer(720)) // Ensures max dimension is 720p (720x1280 or 1280x720)
         .bitRate(1_000_000)      // 1 Mbps
-        .frameRate(30)           // 30 FPS
+        .frameRate(24)           // 24 FPS
         .keyFrameInterval(2.0f)  // Keyframe every 3s
         .mimeType(MediaFormat.MIMETYPE_VIDEO_AVC) // H.264
         .build()
