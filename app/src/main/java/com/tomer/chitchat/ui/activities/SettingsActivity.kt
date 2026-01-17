@@ -27,6 +27,8 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.withCreated
 import com.bumptech.glide.Glide
@@ -174,7 +176,11 @@ class SettingsActivity : AppCompatActivity(), View.OnClickListener, SensorEventL
                 actionBar?.hide()
             }
         }
-
+        ViewCompat.setOnApplyWindowInsetsListener(b.root) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            b.root.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
         window.sharedElementEnterTransition.addListener(
             object : TransitionListener {
                 override fun onTransitionStart(transition: android.transition.Transition?) {

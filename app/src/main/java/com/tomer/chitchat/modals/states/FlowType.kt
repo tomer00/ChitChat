@@ -34,6 +34,7 @@ enum class FlowType {
     OPEN_FILE,
     OPEN_IMAGE,
     OPEN_GIF,
+    OPEN_VIDEO,
 
     SEND_BULK_REC,
     SEND_PR,

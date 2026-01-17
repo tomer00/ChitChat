@@ -261,6 +261,8 @@ class ChatViewModal @Inject constructor(
             .msgType(msgType)
             .isProg(false)
             .replyType(replyType)
+            .setAspectRatio(aspectRatio)
+            .setInfo(info)
             .mediaSize(mediaSize)
             .isUploaded(msgText.startsWith("http"))
             .isDownloaded(

@@ -45,7 +45,7 @@ class VideoSendPreviewActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContentView(b.root)
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(b.root) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
             insets
@@ -101,14 +101,13 @@ class VideoSendPreviewActivity : AppCompatActivity() {
             b.btSend.playAnimation()
             vm.finalProcessOfVideo()
         }
-        setupSeekBar()
         setupLiveData()
         setupImages()
 
     }
 
     private fun setupImages() {
-        for (i in 0..9)
+        repeat(10) {
             b.llImages.addView(
                 ImageView(this)
                     .apply {
@@ -117,6 +116,7 @@ class VideoSendPreviewActivity : AppCompatActivity() {
                         )
                         scaleType = ImageView.ScaleType.CENTER_CROP
                     })
+        }
         lifecycleScope.launch {
             vm.flowFramesThumb.collectLatest {
                 (b.llImages.getChildAt(it.first) as ImageView).setImageBitmap(it.second)
@@ -201,46 +201,20 @@ class VideoSendPreviewActivity : AppCompatActivity() {
             vm.partnerName.collectLatest {
                 if (it == null) return@collectLatest
                 b.tvPartnerName.text = it.name
-                if (it.background.grad == null) {
-                    b.bgSendButton.setData(null, 40.px, it.background.color)
-                    b.bgBtMute.setData(null, 40.px, it.background.color)
-                    b.bgPlayButton.setData(null, 40.px, it.background.color)
-                    b.bgTvLength.setData(null, 40.px, it.background.color)
+                if (it.accent.grad == null) {
+                    b.bgSendButton.setData(null, 40.px, it.accent.color)
+                    b.bgBtMute.setData(null, 40.px, it.accent.color)
+                    b.bgPlayButton.setData(null, 40.px, it.accent.color)
+                    b.bgTvLength.setData(null, 40.px, it.accent.color)
                 } else {
-                    b.bgSendButton.setData(null, 40.px, it.background.grad!!)
-                    b.bgBtMute.setData(null, 40.px, it.background.grad!!)
-                    b.bgPlayButton.setData(null, 40.px, it.background.grad!!)
-                    b.bgTvLength.setData(null, 40.px, it.background.grad!!)
+                    b.bgSendButton.setData(null, 40.px, it.accent.grad!!)
+                    b.bgBtMute.setData(null, 40.px, it.accent.grad!!)
+                    b.bgPlayButton.setData(null, 40.px, it.accent.grad!!)
+                    b.bgTvLength.setData(null, 40.px, it.accent.grad!!)
                 }
             }
         }
     }
 
-    fun setupSeekBar() {
-//        b.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-//            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
-//                if (fromUser) {
-//                    vm.exoPlayer.seekTo(progress.toLong())
-//                }
-//            }
-//
-//            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-//                progressTracking = true
-//                vm.exoPlayer.pause()
-//            }
-//
-//            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-//                progressTracking = false
-//                vm.exoPlayer.play()
-//            }
-//        })
-//        vm.seekBarPosition.observe(this) { durations ->
-//            b.seekBar.progress = durations.toInt()
-//        }
-//        vm.timeText.observe(this) { timePair ->
-//            if (progressTracking) return@observe
-//            b.tvTimerCurrent.text = timePair.first
-//            b.tvTimerTotal.text = timePair.second
-//        }
-    }
+
 }

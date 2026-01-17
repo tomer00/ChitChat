@@ -8,7 +8,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.WindowInsets
 import android.view.animation.AccelerateInterpolator
-import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.Space
 import android.widget.TextView
@@ -19,17 +18,20 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.res.ResourcesCompat
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
-import com.bumptech.glide.load.resource.bitmap.CenterCrop
 import com.bumptech.glide.load.resource.bitmap.RoundedCorners
 import com.tomer.chitchat.R
 import com.tomer.chitchat.databinding.AccentRowBinding
 import com.tomer.chitchat.databinding.ActivityPartnerPrefBinding
 import com.tomer.chitchat.databinding.ItemGradBgBinding
+import com.tomer.chitchat.databinding.ItemSharedContentBinding
 import com.tomer.chitchat.databinding.PatternRowBinding
 import com.tomer.chitchat.room.ModelPartnerPref
+import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.ui.views.DoodleView
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
@@ -39,6 +41,7 @@ import com.tomer.chitchat.viewmodals.SettingsPartnerPrefViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
 import java.io.File
+import kotlin.math.roundToInt
 
 @AndroidEntryPoint
 class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
@@ -68,6 +71,11 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
             }
         }
 
+        ViewCompat.setOnApplyWindowInsetsListener(b.root) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            b.root.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            insets
+        }
         val phone = intent.getStringExtra("phone") ?: ""
         b.imgProfile.transitionName = phone
         Glide.with(this)
@@ -116,9 +124,7 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
             }
             b.imgNoMedia.visibility = View.GONE
             b.imgNoMedia.pauseAnimation()
-            val size100PX = 100.px.toInt()
-            val imgParam =
-                LinearLayout.LayoutParams(size100PX, size100PX).apply { marginStart = 4.px.toInt() }
+            val size100PX = 152.px.toInt()
             val paramFirstView = LinearLayout.LayoutParams(8.px.toInt(), size100PX)
             val paramLastView = LinearLayout.LayoutParams(12.px.toInt(), size100PX)
             b.contMedia.addView(Space(this).apply { layoutParams = paramFirstView })
@@ -127,7 +133,12 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
             if (list.size > maxItems) listNew = list.subList(0, maxItems)
             for (i in listNew.indices) {
                 val mod = listNew[i]
-                val img = ImageView(this).apply {
+                val width = (mod.third ?: 1f).times(size100PX)
+                val imgParam =
+                    LinearLayout.LayoutParams(width.roundToInt(), size100PX)
+                        .apply { marginStart = 4.px.toInt() }
+                val b1 = ItemSharedContentBinding.inflate(layoutInflater)
+                b1.root.apply {
                     layoutParams = imgParam
                     scaleX = 0f
                     scaleY = 0f
@@ -135,20 +146,33 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
                     setOnClickListener(mediaItemClick)
                     tag = i
                 }
-                Glide.with(img)
+                if (mod.first == MsgMediaType.VIDEO) {
+                    b1.imgPlayButton.visibility = View.VISIBLE
+                }
+//                val img = ImageView(this).apply {
+//                    layoutParams = imgParam
+//                    scaleX = 0f
+//                    scaleY = 0f
+//                    transitionName = mod.second.name
+//                    setOnClickListener(mediaItemClick)
+//                    tag = i
+//                    background = ContextCompat.getDrawable(this@PartnerPrefActivity, R.drawable.corner_rippled_bg)
+//                }
+                Glide.with(b1.img)
                     .load(mod.second)
                     .error(R.drawable.round_image_24)
                     .skipMemoryCache(true)
                     .placeholder(R.drawable.round_image_24)
-                    .override(size100PX, size100PX)
-                    .transform(CenterCrop(), RoundedCorners(24))
+                    .override(size100PX)
+                    .transform(RoundedCorners(24))
                     .diskCacheStrategy(DiskCacheStrategy.NONE)
-                    .into(img)
-                b.contMedia.addView(img)
+                    .into(b1.img)
+                b.contMedia.addView(b1.root)
             }
             if (list.size > maxItems)
                 b.contMedia.addView(TextView(this).apply {
-                    layoutParams = imgParam
+                    layoutParams = LinearLayout.LayoutParams(size100PX, size100PX)
+                        .apply { marginStart = 4.px.toInt() }
                     gravity = Gravity.CENTER
                     setTextColor(ContextCompat.getColor(this@PartnerPrefActivity, R.color.fore))
                     "+${list.size - maxItems}".also { text = it }
@@ -157,7 +181,7 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
                 })
 
             b.contMedia.addView(Space(this).apply { layoutParams = paramLastView })
-            b.contMedia.post {
+            b.contMedia.postDelayed({
                 for (i in 0 until b.contMedia.childCount) {
                     b.contMedia.getChildAt(i).animate().apply {
                         scaleX(1f)
@@ -168,7 +192,7 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
                         start()
                     }
                 }
-            }
+            }, 260)
         }
         vm.loadPref(phone)
         populateThemeData()
@@ -183,9 +207,9 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
         val item = vm.sharedContent.value?.getOrNull(pos) ?: return@OnClickListener
         lifecycleScope.launch {
             item.second.inputStream().use {
-                ImageViewActivity.bytesImage = it.readBytes()
+                GifViewActivity.bytesImage = it.readBytes()
             }
-            if (ImageViewActivity.bytesImage == null || (ImageViewActivity.bytesImage?.size
+            if (GifViewActivity.bytesImage == null || (GifViewActivity.bytesImage?.size
                     ?: 0) < 10
             ) return@launch
             val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
@@ -193,9 +217,11 @@ class PartnerPrefActivity : AppCompatActivity(), View.OnClickListener {
                 v,
                 v.transitionName
             )
-            startActivity(Intent(this@PartnerPrefActivity, ImageViewActivity::class.java).apply {
+            val viewerClass = if (item.first == MsgMediaType.GIF) GifViewActivity::class.java
+            else if (item.first == MsgMediaType.VIDEO) VideoViewActivity::class.java
+            else PhotoViewActivity::class.java
+            startActivity(Intent(this@PartnerPrefActivity, viewerClass).apply {
                 putExtra("file", item.second.absolutePath)
-                putExtra("isGif", item.first)
                 putExtra("canSaveToGal", true)
                 putExtra("canDelete", false)
                 putExtra("timeText", "")

@@ -4,6 +4,7 @@ import android.animation.Animator
 import android.animation.AnimatorListenerAdapter
 import android.animation.ValueAnimator
 import android.annotation.SuppressLint
+import android.app.Activity
 import android.content.Intent
 import android.graphics.Color
 import android.hardware.Sensor
@@ -24,19 +25,26 @@ import android.view.animation.AccelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.animation.doOnCancel
 import androidx.core.animation.doOnEnd
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsAnimationCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.isVisible
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -84,6 +92,7 @@ import kotlinx.coroutines.withContext
 import java.util.LinkedList
 
 
+@UnstableApi
 @SuppressLint("CheckResult")
 @AndroidEntryPoint
 class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickListener,
@@ -151,6 +160,48 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
 
     //region MEDIA IO
 
+    private val videoEditorLauncher = registerForActivityResult(
+        ActivityResultContracts.StartActivityForResult()
+    ) { result ->
+        if (result.resultCode == Activity.RESULT_OK) {
+            // 4. Handle the data returned from SecondActivity
+            val data: Intent? = result.data
+            val videoName = data?.getStringExtra("FILE_NAME") ?: return@registerForActivityResult
+            val uri = data.getStringExtra("FILE_URI") ?: return@registerForActivityResult
+            val aspect = data.getStringExtra("ASPECT") ?: return@registerForActivityResult
+            val videoTime = data.getStringExtra("VIDEO_TIME") ?: return@registerForActivityResult
+            Toast.makeText(this, "Received: $videoName", Toast.LENGTH_LONG).show()
+
+            val tempId = vm.getTempId()
+            val msgB = ModelMsgSocket.Builder()
+            msgB.isReply(b.replyLayout.isVisible)
+            msgB.setTimeMillis(System.currentTimeMillis())
+            msgB.msgType(MsgMediaType.VIDEO)
+            if (b.replyLayout.isVisible) {
+                msgB.replyId(vma.replyMsgData.value!!.id)
+                msgB.replyMsgType(vma.replyMsgData.value!!.msgType)
+                msgB.replyData(vma.replyMsgData.value!!.msg)
+                msgB.replyMediaFileName(vma.replyMsgData.value!!.mediaFileName.toString())
+            }
+            msgB.msgData("Uploading")
+            val aspectFloat = runCatching<Float?> { aspect.toFloat() }
+                .fold({ f -> if ((f ?: 0f) > 0f) f else null }, { null })
+            vmAssets.handelNewVideoMsg(
+                Utils.currentPartner?.partnerId ?: "0000000000",
+                videoName, this, videoTime, uri.toUri(),
+                aspectFloat, msgB.build(), tempId,
+                if (b.replyLayout.isVisible) vma.replyMsgData.value!!.bytes else null
+            ) { msg ->
+                runOnUiThread {
+                    adap.addItem(msg.data.also { it?.isUploaded = true } ?: return@runOnUiThread)
+                    b.rvMsg.smoothScrollToPosition(0)
+                }
+            }
+            vma.removeReplyData()
+            vm.updatePersonModel(msgB.build(), tempId)
+        }
+    }
+
     private val mediaPicker: ActivityResultLauncher<PickVisualMediaRequest> =
         registerForActivityResult(
             ActivityResultContracts.PickVisualMedia()
@@ -159,19 +210,23 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
             if (uri != null) {
                 val mimeType = contentResolver.getType(uri)
                 if (mimeType != null) {
+                    Log.d("TAG--", "ONSEL $mimeType: ")
                     when {
                         mimeType.startsWith("image/gif") -> {
                             sendMediaMsg(uri, MsgMediaType.GIF)
                         }
 
                         mimeType.startsWith("video/") -> {
-                            startActivity(
-                                Intent(
-                                    this,
-                                    VideoSendPreviewActivity::class.java
-                                ).apply {
-                                    putExtra("uri", uri.toString())
-                                })
+                            runOnUiThread {
+                                videoEditorLauncher.launch(
+                                    Intent(
+                                        this,
+                                        VideoSendPreviewActivity::class.java
+                                    ).apply {
+                                        putExtra("uri", uri.toString())
+                                        putExtra("partnerPhone", vm.partnerPref?.phone)
+                                    })
+                            }
                         }
 
                         else -> {
@@ -276,6 +331,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
             finish()
             return
         }
+        WindowCompat.setDecorFitsSystemWindows(window, false)
         setContentView(b.root)
         if (isLandscapeOrientation()) {
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q)
@@ -286,6 +342,9 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                 actionBar?.hide()
             }
         }
+        enableEdgeToEdge()
+        setupKeyboardAnimation()
+
         vm.openChat(intent.getStringExtra("phone")!!, vma.selectedMsgIds)
         vma.setPartnerNo(intent.getStringExtra("phone")!!)
         b.root.post {
@@ -331,6 +390,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
 
         adap = ChatAdapter(this, this, vm.chatMsgs)
         b.rvMsg.adapter = adap
+        b.rvMsg.itemAnimator = null
 
         ll = LinearLayoutManager(this)
         val iT = ItemTouchHelper(MsgSwipeCon(this, this, vm.chatMsgs))
@@ -400,7 +460,6 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
             btImg.setOnLongClickListener {
                 if (!vm.canSendMsg)
                     return@setOnLongClickListener false
-                Log.d("TAG--", "onCreate: $currentLottieEmoji")
                 sendTextMessage(ConversionUtils.decode(currentLottieEmoji), true)
                 true
             }
@@ -432,7 +491,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                 val width = b.layMainHead.width
                 val height = b.layMainHead.height
                 b.laySelHead.visibility = View.VISIBLE
-                window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundSelBg)
+//                window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundSelBg)
                 b.apply {
                     btBackSel.isClickable = true
                     btDel.isClickable = true
@@ -451,7 +510,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
             } else {
                 val width = b.laySelHead.width
                 val height = b.laySelHead.height
-                window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
+//                window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
                 if (b.laySelHead.isAttachedToWindow)
                     ViewAnimationUtils.createCircularReveal(
                         b.laySelHead,
@@ -668,7 +727,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
             msgB.replyMediaFileName(vma.replyMsgData.value!!.mediaFileName.toString())
         }
         msgB.msgData("Uploading")
-        vmAssets.uploadFile(
+        vmAssets.handleNewMediaMsg(
             Utils.currentPartner?.partnerId ?: "0000000000",
             pickingMediaType, uri, this,
             msgB.build(), tempId,
@@ -905,6 +964,8 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                     builder.replyMediaFileName(msgT.replyMediaFileName)
                     builder.mediaFileName(msgT.mediaFileName)
                     builder.mediaSize(msgT.mediaSize)
+                    builder.setAspectRatio(msgT.aspectRatio)
+                    builder.setInfo(msgT.info)
 
                     vm.sendMediaUploaded(builder.build(), msgT.id, msg.fromUser)
                     vm.updatePersonModel(builder.build(), msgT.id)
@@ -1301,6 +1362,34 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                 }
             }
 
+            FlowType.OPEN_VIDEO -> {
+                runOnUiThread {
+                    val b = getRvViewIfPossibleForId(msgIdForImageShow) ?: return@runOnUiThread
+                    val chatMsg =
+                        vm.chatMsgs.find { it.id == msgIdForImageShow } ?: return@runOnUiThread
+                    b.mediaImg.transitionName = msg.data?.mediaFileName ?: "img"
+                    val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                        this,
+                        b.mediaImg,
+                        msg.data?.mediaFileName ?: "img"
+                    )
+                    val openActivityClass = VideoViewActivity::class.java
+                    startActivityForResult(Intent(this, openActivityClass).apply {
+                        putExtra("canSaveToGal", !chatMsg.isSent)
+                        putExtra("canDelete", true)
+                        putExtra(
+                            "heading",
+                            if (chatMsg.isSent) "You" else (vm.partnerPref?.name
+                                ?: "").ifEmpty { vma.phone })
+                        putExtra("videoTime", msg.data?.info.toString())
+                        putExtra("videoName", msg.data?.mediaFileName ?: "")
+                        if (msg.msgId == -1L)
+                            putExtra("timeText", chatMsg.timeText)
+                        else putExtra("timeMillis", msg.msgId)
+                    }, 1001, options.toBundle())
+                }
+            }
+
             else -> {}
         }
     }
@@ -1409,6 +1498,10 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
         }
         val mod = vm.chatMsgs.getOrNull(pos) ?: return
         msgIdForImageShow = mod.id
+        if (mod.msgType == MsgMediaType.VIDEO) {
+            vmAssets.openVideo(mod)
+            return
+        }
         vmAssets.openImage(mod.mediaFileName ?: "img", mod.msgType == MsgMediaType.GIF, mod.id)
     }
 
@@ -1530,5 +1623,60 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
     private fun powerSaveOn(): Boolean {
         val powerMan = getSystemService(POWER_SERVICE) as PowerManager
         return powerMan.isPowerSaveMode
+    }
+
+    private fun setupKeyboardAnimation() {
+        ViewCompat.setWindowInsetsAnimationCallback(
+            b.root, object : WindowInsetsAnimationCompat.Callback(
+                DISPATCH_MODE_CONTINUE_ON_SUBTREE
+            ) {
+                override fun onProgress(
+                    insets: WindowInsetsCompat,
+                    runningAnimations: MutableList<WindowInsetsAnimationCompat>
+                ): WindowInsetsCompat {
+                    val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
+                    val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+                    b.layBottom.translationY = -imeInsets.bottom.toFloat()
+                    b.btSend.translationY = -imeInsets.bottom.toFloat()
+                    b.btSendBG.translationY = -imeInsets.bottom.toFloat()
+                    b.rvEmojiContainer.translationY = -imeInsets.bottom.toFloat()
+
+                    b.root.setPadding(
+                        systemBars.left,
+                        0,
+                        systemBars.right,
+                        if (imeInsets.bottom <= systemBars.bottom)
+                            systemBars.bottom - imeInsets.bottom else 0
+                    )
+                    // 🔥 Resize RecyclerView smoothly
+                    b.rvMsg.setPadding(
+                        0,
+                        0,
+                        0,
+                        imeInsets.bottom
+                    )
+                    return insets
+                }
+            }
+        )
+        // Initial insets (important on cold start)
+        ViewCompat.setOnApplyWindowInsetsListener(b.root) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            if (b.root.paddingBottom > systemBars.bottom) {
+                b.root.setPadding(
+                    systemBars.left,
+                    0,
+                    systemBars.right,
+                    systemBars.bottom
+                )
+                val p = b.layTop.layoutParams as ConstraintLayout.LayoutParams
+                p.height = p.height + systemBars.top
+                b.layTop.layoutParams = p
+                b.layMainHead.setPadding(0, systemBars.top, 0, 0)
+                b.laySelHead.setPadding(0, systemBars.top, 0, 0)
+            }
+            insets
+        }
     }
 }

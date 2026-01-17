@@ -8,5 +8,5 @@ enum class ClickEvents {
 interface ChatViewEvents {
     fun onChatItemClicked(pos: Int, type: ClickEvents)
     fun onChatItemLongClicked(pos: Int)
-    fun onOpenLinkInBrowser(link:String)
+    fun onOpenLinkInBrowser(link: String)
 }

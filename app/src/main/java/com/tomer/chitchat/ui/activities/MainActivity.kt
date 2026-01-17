@@ -15,10 +15,12 @@ import android.view.ViewAnimationUtils
 import android.view.WindowInsets
 import android.view.animation.LinearInterpolator
 import android.widget.Toast
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
+import androidx.annotation.OptIn
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
@@ -27,7 +29,11 @@ import androidx.core.app.ActivityOptionsCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.text.isDigitsOnly
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsAnimationCompat
+import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -69,6 +75,7 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
+import kotlin.math.max
 
 
 @AndroidEntryPoint
@@ -88,6 +95,8 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
     private var activityLife = false
 
+
+    @OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         if (viewModal.isNameSet()) {
@@ -97,6 +106,8 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         }
         window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
         setContentView(b.root)
+        enableEdgeToEdge()
+        setupKeyboardAnimation()
         if (isLandscapeOrientation()) {
             if (Build.VERSION.SDK_INT > Build.VERSION_CODES.Q)
                 window.insetsController?.hide(WindowInsets.Type.statusBars())
@@ -272,6 +283,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                     this,
                     ContextCompat.getMainExecutor(this),
                     object : BiometricPrompt.AuthenticationCallback() {
+                        @OptIn(UnstableApi::class)
                         override fun onAuthenticationSucceeded(result: BiometricPrompt.AuthenticationResult) {
                             super.onAuthenticationSucceeded(result)
                             startActivity(
@@ -852,4 +864,34 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             .setDuration(animDur).start()
     }
 
+    private fun setupKeyboardAnimation() {
+        ViewCompat.setWindowInsetsAnimationCallback(
+            b.root, object : WindowInsetsAnimationCompat.Callback(
+                DISPATCH_MODE_CONTINUE_ON_SUBTREE
+            ) {
+                override fun onProgress(
+                    insets: WindowInsetsCompat,
+                    runningAnimations: MutableList<WindowInsetsAnimationCompat>
+                ): WindowInsetsCompat {
+                    val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
+                    val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+                    b.fabChatCard.translationY = -imeInsets.bottom.toFloat()
+
+                    b.root.setPadding(
+                        systemBars.left,
+                        systemBars.top,
+                        systemBars.right,
+                        systemBars.bottom
+                    )
+                    return insets
+                }
+            }
+        )
+        // Initial insets (important on cold start)
+        ViewCompat.setOnApplyWindowInsetsListener(b.root) { _, insets ->
+            val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+            b.root.setPadding(0, systemBars.top, 0, systemBars.bottom)
+            insets
+        }
+    }
 }
