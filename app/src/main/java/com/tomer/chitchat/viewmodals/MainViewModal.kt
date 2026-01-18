@@ -272,7 +272,7 @@ class MainViewModal @Inject constructor(
                 withContext(Dispatchers.IO) {
                     selectedPhoneNos.forEach { no ->
                         launch {
-                            val msgs = repoMsg.getMsgsOfUser(no)
+                            val msgs = repoMsg.getMsgsOfUser(no, System.currentTimeMillis(), 1000)
                             msgs.forEach { msg ->
                                 repoStorage.deleteFile(msg.mediaFileName, msg.msgType)
                             }
@@ -382,6 +382,14 @@ class MainViewModal @Inject constructor(
                 builder.jsonText(msg.msgText.split(",-,")[1])
             else builder.lastMessageFile(file)
 
+        } else if (mediaType == MsgMediaType.VIDEO) {
+            val msg =
+                repoMsg.getMsg(lastMsgId) ?: return builder.messageMediaType(MsgMediaType.TEXT)
+                    .build()
+            val file = repoStorage.getFileOfVideoThumb(msg.mediaFileName.toString())
+            if (file == null)
+                builder.jsonText(msg.msgText.split(",-,")[1])
+            else builder.lastMessageFile(file)
         }
         return builder.build()
     }
