@@ -4,16 +4,18 @@ import com.google.gson.annotations.SerializedName
 import com.tomer.chitchat.room.MsgMediaType
 
 data class ModelMsgSocket(
-    @SerializedName("reply_id") val replyId: Long,
-    @SerializedName("msg_data") val msgData: String,
-    @SerializedName("reply_data") val replyData: String,
-    @SerializedName("msg_type") val msgType: MsgMediaType,
-    @SerializedName("reply_msg_type") val replyMsgType: MsgMediaType,
-    @SerializedName("is_reply") val isReply: Boolean,
-    @SerializedName("time_millis") val timeMillis: Long,
-    @SerializedName("reply_media_file_name") val replyMediaFileName: String?,
-    @SerializedName("media_file_name") val mediaFileName: String?,
-    @SerializedName("media_file_size") val mediaFileSize: String,
+    @SerializedName("r_i") val replyId: Long,
+    @SerializedName("m_d") val msgData: String,
+    @SerializedName("r_d") val replyData: String,
+    @SerializedName("m_t") val msgType: MsgMediaType,
+    @SerializedName("r_m_t") val replyMsgType: MsgMediaType,
+    @SerializedName("is_r") val isReply: Boolean,
+    @SerializedName("t_m") val timeMillis: Long,
+    @SerializedName("a_r") val aspectRatio: Float?,
+    @SerializedName("i") val info: String,
+    @SerializedName("r_m_f_n") val replyMediaFileName: String?,
+    @SerializedName("m_f_n") val mediaFileName: String?,
+    @SerializedName("m_f_s") val mediaFileSize: String,
 ) {
     class Builder {
         private var replyId: Long = -1
@@ -26,6 +28,8 @@ data class ModelMsgSocket(
         private var replyMsgType: MsgMediaType = MsgMediaType.TEXT
         private var isReply: Boolean = false
         private var mediaSize: String = ""
+        private var aspectRatio: Float? = null
+        private var info: String = ""
 
         fun replyId(replyId: Long) = apply { this.replyId = replyId }
         fun msgData(msgData: String) = apply { this.msgData = msgData }
@@ -37,6 +41,8 @@ data class ModelMsgSocket(
         fun isReply(isReply: Boolean) = apply { this.isReply = isReply }
         fun setTimeMillis(time: Long) = apply { this.time = time }
         fun mediaSize(mediaSize: String) = apply { this.mediaSize = mediaSize }
+        fun setInfo(info: String) = apply { this.info = info }
+        fun setAspectRatio(ratio: Float?) = apply { this.aspectRatio = ratio }
 
         fun build() = ModelMsgSocket(
             replyId = replyId,
@@ -48,7 +54,9 @@ data class ModelMsgSocket(
             replyMsgType = replyMsgType,
             isReply = isReply,
             timeMillis = time,
-            mediaFileSize = mediaSize
+            mediaFileSize = mediaSize,
+            info = info,
+            aspectRatio = aspectRatio
         )
     }
 }

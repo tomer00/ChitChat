@@ -8,9 +8,11 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.graphics.Color
 import android.graphics.drawable.Icon
+import androidx.annotation.OptIn
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.app.PendingIntentCompat
+import androidx.media3.common.util.UnstableApi
 import com.tomer.chitchat.R
 import com.tomer.chitchat.adap.AdapPerson
 import com.tomer.chitchat.modals.states.UiMsgModal
@@ -25,6 +27,7 @@ class AndroidNotificationService(
 
     private val notiMan by lazy { NotificationManagerCompat.from(context) }
 
+    @OptIn(UnstableApi::class)
     override fun showNewUserNotification(phonePartner: String, namePartner: String) {
         if (!notiMan.areNotificationsEnabled()) return
         if (notiMan.getNotificationChannelCompat("new_user") == null)
@@ -45,6 +48,7 @@ class AndroidNotificationService(
 
     }
 
+    @OptIn(UnstableApi::class)
     override fun showNewMessageNotification(msg: UiMsgModal?, phonePartner: String, namePartner: String) {
         if (!notiMan.areNotificationsEnabled()) return
         if (msg == null) return

@@ -416,9 +416,9 @@ class AssetsViewModel @Inject constructor(
                             repoStorage.isPresent(previousFile.toString(), mediaType)
                         if (previousFile == null || !isFilePresent) {
                             val bmp = getBmpUsingGlide(uri, con) ?: return@withContext
-                            val aspect = bmp.width.toFloat().div(bmp.height.toFloat())
+                            val aspectW = bmp.width.toFloat().div(bmp.height.toFloat())
                             bmp.compress(Bitmap.CompressFormat.WEBP, 80, baos)
-                            handleUploaing(aspect, baos.toByteArray(), null)
+                            handleUploaing(aspectW, baos.toByteArray(), null)
                         } else {
                             val baosT = ByteArrayOutputStream()
                             baos.write(repoStorage.getBytesFromFolder(mediaType, previousFile))
@@ -701,12 +701,12 @@ class AssetsViewModel @Inject constructor(
         }
     }
 
-    fun openVideo(fileName: String, msgId: Long) {
-        val file = repoStorage.getFileFromFolder(MsgMediaType.VIDEO, fileName) ?: return
+    fun openVideo(model: UiMsgModal?) {
+        repoStorage.getFileFromFolder(MsgMediaType.VIDEO, model?.mediaFileName ?: "") ?: return
         viewModelScope.launch {
-            val msgTime = repoMsgs.getMsg(msgId)?.timeMillis ?: -1L
+            val msg = repoMsgs.getMsg(model?.id ?: 1L)
             flowEvents.emit(
-                MsgsFlowState.OpenFileFlowState(file, FlowType.OPEN_VIDEO, msgTime)
+                MsgsFlowState.OpenVideoState(model, msg?.timeMillis ?: -1L)
             )
         }
     }

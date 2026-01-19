@@ -9,6 +9,7 @@ import android.text.method.LinkMovementMethod
 import android.text.style.ClickableSpan
 import android.text.style.ForegroundColorSpan
 import android.text.style.UnderlineSpan
+import android.util.Log
 import android.util.Patterns
 import android.util.TypedValue
 import android.view.Gravity
@@ -18,6 +19,7 @@ import android.view.ViewGroup
 import androidx.annotation.ColorInt
 import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.content.ContextCompat
+import androidx.core.graphics.toColorInt
 import androidx.recyclerview.widget.RecyclerView
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.engine.DiskCacheStrategy
@@ -28,9 +30,9 @@ import com.tomer.chitchat.databinding.MsgItemBinding
 import com.tomer.chitchat.modals.states.UiMsgModal
 import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.Utils
+import com.tomer.chitchat.utils.Utils.Companion.px
 import com.tomer.chitchat.utils.qrProvider.GradModel
 import java.util.LinkedList
-import androidx.core.graphics.toColorInt
 
 
 class ChatAdapter(
@@ -54,7 +56,7 @@ class ChatAdapter(
         placeholder(R.drawable.ic_gifs)
         override(400)
         error(R.drawable.logo)
-        transform(RoundedCorners(12))
+        transform(RoundedCorners(8.px.toInt()))
     }
 
     private val statusDrawables: List<Drawable> = listOf(
@@ -166,6 +168,16 @@ class ChatAdapter(
         } else {
             //There is Media File either upload or download
             holder.b.mediaCont.visibility = View.VISIBLE
+            val params = holder.b.mediaImg.layoutParams as ConstraintLayout.LayoutParams
+            if (params.dimensionRatio == null) {
+                params.width = ConstraintLayout.LayoutParams.MATCH_PARENT
+                params.height = ConstraintLayout.LayoutParams.WRAP_CONTENT
+            } else {
+                params.height = 0
+                params.width = ConstraintLayout.LayoutParams.MATCH_PARENT
+                params.dimensionRatio = mod.aspectRatio.toString()
+            }
+            holder.b.mediaImg.layoutParams = params
             if (mod.msgType == MsgMediaType.GIF || mod.msgType == MsgMediaType.IMAGE || mod.msgType == MsgMediaType.VIDEO)
                 Glide.with(context)
                     .load(mod.bytes)
@@ -175,6 +187,17 @@ class ChatAdapter(
                     .into(holder.b.mediaImg)
                     .also { holder.b.mediaImg.setCorners(corners) }
             else holder.b.mediaImg.setImageDrawable(null)
+
+            if (mod.msgType == MsgMediaType.VIDEO) {
+                holder.b.layVideoTime.visibility = View.VISIBLE
+                holder.b.tvVideoTime.text = mod.info
+                if (mod.isDownloaded && mod.isUploaded)
+                    holder.b.imgPlayButton.visibility = View.VISIBLE
+                else holder.b.imgPlayButton.visibility = View.GONE
+            } else {
+                holder.b.imgPlayButton.visibility = View.GONE
+                holder.b.layVideoTime.visibility = View.GONE
+            }
 
             if (mod.msgType == MsgMediaType.FILE) {
                 holder.b.msgTv.visibility = View.VISIBLE
@@ -186,7 +209,6 @@ class ChatAdapter(
                 holder.b.imgFileType.visibility = View.GONE
             }
             holder.b.emojiTv.visibility = View.GONE
-
 
             if (mod.isProg) {
                 holder.b.rvProg.visibility = View.VISIBLE

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<androidx.constraintlayout.widget.ConstraintLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/mainBG"
@@ -7,6 +8,7 @@
     android:layout_height="match_parent"
     android:animateLayoutChanges="true"
     android:background="@color/backgroundC"
+    android:paddingBottom="280dp"
     tools:context=".ui.activities.ChatActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
@@ -20,12 +22,12 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:animateLayoutChanges="true"
-            android:padding="4dp"
             android:visibility="visible">
 
             <ImageView
                 android:id="@+id/btBack"
                 android:layout_width="28dp"
+                android:layout_marginStart="4dp"
                 android:layout_height="28dp"
                 android:contentDescription="@string/app_name"
                 android:src="@drawable/round_arrow_back_24"
@@ -38,7 +40,7 @@
                 android:id="@+id/cardFlipper"
                 android:layout_width="44dp"
                 android:layout_height="44dp"
-                android:layout_marginHorizontal="4dp"
+                android:layout_margin="4dp"
                 app:cardBackgroundColor="@color/backgroundC"
                 app:cardCornerRadius="100dp"
                 app:cardElevation="0dp"
@@ -76,6 +78,7 @@
                 android:layout_height="match_parent"
                 android:foreground="?attr/selectableItemBackground"
                 android:paddingHorizontal="8dp"
+                android:paddingVertical="4dp"
                 app:layout_constraintEnd_toStartOf="@id/btMenu"
                 app:layout_constraintStart_toEndOf="@id/cardFlipper">
 
@@ -119,7 +122,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:background="@color/backgroundSelBg"
-            android:visibility="gone">
+            android:visibility="gone"
+            app:layout_constraintTop_toTopOf="parent">
 
             <ImageView
                 android:id="@+id/btBackSel"
@@ -453,7 +457,7 @@
         android:layout_marginEnd="12dp"
         android:layout_marginBottom="80dp"
         android:background="@drawable/ripple_round_bg"
-        android:backgroundTint="@color/orange"
+        android:backgroundTint="@color/purple"
         android:contentDescription="@string/app_name"
         android:padding="6dp"
         android:rotation="90"

@@ -285,6 +285,8 @@ class MessageHandler(
                 .setTimeMillis(mod.timeMillis)
                 .setTimeText(ConversionUtils.millisToTimeText(mod.timeMillis))
                 .mediaSize(mod.mediaFileSize)
+                .setInfo(mod.info)
+                .setAspectRatio(mod.aspectRatio)
 
             if (mod.isReply) {
                 builderRoom
@@ -307,7 +309,6 @@ class MessageHandler(
                             )
 
                             else -> {}
-
                         }
                     } catch (_: Exception) {
                     }
