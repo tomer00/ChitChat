@@ -4,18 +4,12 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    tools:context=".ui.activities.ImageViewActivity">
+    tools:context=".ui.activities.GifViewActivity">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:id="@+id/cont"
         android:layout_width="match_parent"
         android:layout_height="match_parent">
-
-        <com.tomer.chitchat.ui.views.ImageViewPro
-            android:id="@+id/viewIMg"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:visibility="gone" />
 
         <ImageView
             android:id="@+id/gifImgView"
@@ -76,8 +70,8 @@
                 android:layout_marginStart="8dp"
                 android:alpha=".6"
                 android:fontFamily="@font/nunito_medium"
-                android:visibility="visible"
                 android:textColor="@color/fore"
+                android:visibility="visible"
                 app:layout_constraintBottom_toBottomOf="parent"
                 app:layout_constraintStart_toEndOf="@+id/btBack"
                 app:layout_constraintTop_toBottomOf="@id/tvPartnerName" />
