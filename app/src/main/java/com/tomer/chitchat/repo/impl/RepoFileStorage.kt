@@ -45,7 +45,7 @@ class RepoFileStorage @Inject constructor(
     override fun saveVideoThumb(mediaFileName: String, data: ByteArray) {
         val folderChild = File(folder, "/VideoThumbs")
         if (folderChild.mkdirs()) File(folderChild, ".nomedia").createNewFile()
-        val file = File(folderChild, mediaFileName)
+        val file = File(folderChild, "$mediaFileName.webp")
         FileOutputStream(file).use {
             it.write(data)
         }
@@ -78,11 +78,17 @@ class RepoFileStorage @Inject constructor(
     }
 
     override fun getBytesOfVideoThumb(mediaFileName: String): ByteArray? {
-        val file = File(folder, "/VideoThumbs/$mediaFileName")
+        val file = File(folder, "/VideoThumbs/$mediaFileName.webp")
         if (!file.exists()) return null
         FileInputStream(file).use {
             return it.readBytes()
         }
+    }
+
+    override fun getFileOfVideoThumb(mediaFileName: String): File? {
+        val file = File(folder, "/VideoThumbs/$mediaFileName.webp")
+        if (!file.exists()) return null
+        return file
     }
 
     override fun saveDP(phone: String, dpNo: Int, data: ByteArray): File {
@@ -94,7 +100,7 @@ class RepoFileStorage @Inject constructor(
     }
 
     override suspend fun getDP(phone: String, sync: Boolean): File? {
-        val files = dpFolder.listFiles(FileFilter { it.name.startsWith(phone) })
+        val files = dpFolder.listFiles { it.name.startsWith(phone) }
         val file = files?.lastOrNull()
         if (sync)
             return file.takeIf { it?.exists() == true }
@@ -106,7 +112,7 @@ class RepoFileStorage @Inject constructor(
     }
 
     override fun deleteDP(phone: String) {
-        val files = dpFolder.listFiles(FileFilter { it.name.startsWith(phone) })
+        val files = dpFolder.listFiles { it.name.startsWith(phone) }
         files?.lastOrNull()?.delete()
     }
 

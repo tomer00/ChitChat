@@ -27,6 +27,9 @@ class RepoMessagesImpl @Inject constructor(
         partnerId: String, timeBefore: Long, limit: Int
     ): List<ModelRoomMessage> = dao.getMsgBeforeByUser(partnerId, limit,timeBefore)
 
+    override suspend fun getMsgsOfUserOnlyMedia(partnerId: String): List<ModelRoomMessage>
+    = dao.getMsgsOfUserOnlyMedia(partnerId)
+
     override suspend fun updateMsg(tempId: Long, newId: Long) {
         dao.updateMsgSent(tempId, newId)
     }
