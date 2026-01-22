@@ -52,7 +52,8 @@ class HiltModules {
         return Retrofit.Builder().baseUrl(Utils.SERVER_LINK)
             .addConverterFactory(GsonConverterFactory.create())
             .addCallAdapterFactory(SyncCallAdapterFactory.create())
-            .client(OkHttpClient.Builder()
+            .client(
+                OkHttpClient.Builder()
                 .addInterceptor { chain ->
                     val originalRequest = chain.request()
                     val authenticatedRequest = originalRequest.newBuilder()
@@ -83,7 +84,15 @@ class HiltModules {
         repoRelations: RepoRelations,
         cryptoService: CryptoService,
     ): WebSocketHandler {
-        return WebSocketHandler(repoMsgs, repoStorage, repoPersons, gson, notificationService, repoRelations, cryptoService)
+        return WebSocketHandler(
+            repoMsgs = repoMsgs,
+            repoStorage = repoStorage,
+            repoPersons = repoPersons,
+            gson = gson,
+            notificationService = notificationService,
+            repoRelations = repoRelations,
+            cryptoService = cryptoService
+        )
     }
 
     @Provides
@@ -97,7 +106,11 @@ class HiltModules {
 
     @Provides
     @Singleton
-    fun provideNotificationService(@ApplicationContext appContext: Context,repoPersons: RepoPersons,): NotificationService = AndroidNotificationService(appContext,repoPersons)
+    fun provideNotificationService(
+        @ApplicationContext appContext: Context,
+        repoPersons: RepoPersons,
+    ): NotificationService =
+        AndroidNotificationService(appContext, repoPersons)
 
     //region REPOS
 
@@ -107,15 +120,18 @@ class HiltModules {
 
     @Provides
     @Singleton
-    fun provideRepoUtils(@ApplicationContext appContext: Context, gson: Gson): RepoUtils = RepoUtilImpl(appContext, gson)
+    fun provideRepoUtils(@ApplicationContext appContext: Context, gson: Gson): RepoUtils =
+        RepoUtilImpl(appContext, gson)
 
     @Provides
     @Singleton
-    fun provideRepoAssets(@ApplicationContext appContext: Context): RepoAssets = WebAssetsRepo(appContext)
+    fun provideRepoAssets(@ApplicationContext appContext: Context): RepoAssets =
+        WebAssetsRepo(appContext)
 
     @Provides
     @Singleton
-    fun provideRepoStorage(@ApplicationContext appContext: Context, dao: Dao): RepoStorage = RepoFileStorage(appContext, dao)
+    fun provideRepoStorage(@ApplicationContext appContext: Context, dao: Dao): RepoStorage =
+        RepoFileStorage(appContext, dao)
 
     @Provides
     @Singleton
