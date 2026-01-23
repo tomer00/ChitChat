@@ -20,7 +20,7 @@ class EmojiAdapter(private val clickLis: (Int) -> Unit) : ListAdapter<String, Em
 
     inner class EmojiHolder(val b: RowEmojiBinding, clickLis: (Int) -> Unit) : ViewHolder(b.root){
         init {
-            b.root.setOnClickListener { clickLis(absoluteAdapterPosition) }
+            b.root.setOnClickListener { clickLis(bindingAdapterPosition) }
         }
     }
 

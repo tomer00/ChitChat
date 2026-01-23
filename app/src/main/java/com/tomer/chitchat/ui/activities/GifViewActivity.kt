@@ -24,7 +24,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.bumptech.glide.Glide
 import com.bumptech.glide.request.target.CustomTarget
 import com.bumptech.glide.request.transition.Transition
-import com.tomer.chitchat.databinding.ActivityImageViewBinding
+import com.tomer.chitchat.databinding.ActivityGifViewBinding
 import com.tomer.chitchat.utils.AlertDialogBuilder
 import com.tomer.chitchat.utils.ConversionUtils
 import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
@@ -38,7 +38,7 @@ class GifViewActivity : AppCompatActivity() {
         var bytesImage: ByteArray? = null
     }
 
-    private val b by lazy { ActivityImageViewBinding.inflate(layoutInflater) }
+    private val b by lazy { ActivityGifViewBinding.inflate(layoutInflater) }
 
     private var initialTouchDownY = 0f
     private val limit = 480f
@@ -56,8 +56,6 @@ class GifViewActivity : AppCompatActivity() {
     @SuppressLint("ClickableViewAccessibility")
     private val swipeDownTouchLis = View.OnTouchListener { v, event ->
         if (v.id == b.gifImgView.id) mGestureDetector.onTouchEvent(event)
-//        if (1==1) return@OnTouchListener false
-//        if (b.viewIMg.isZoomed) return@OnTouchListener true
         if (event.action == MotionEvent.ACTION_DOWN) {
             initialTouchDownY = event.rawY
             return@OnTouchListener true
