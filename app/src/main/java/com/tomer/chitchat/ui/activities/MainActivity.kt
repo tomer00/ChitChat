@@ -24,6 +24,7 @@ import androidx.annotation.OptIn
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.biometric.BiometricPrompt
+import androidx.constraintlayout.widget.ConstraintLayout
 import androidx.core.animation.doOnEnd
 import androidx.core.app.ActivityOptionsCompat
 import androidx.core.app.NotificationManagerCompat
@@ -68,6 +69,7 @@ import com.tomer.chitchat.utils.Utils
 import com.tomer.chitchat.utils.Utils.Companion.hideKeyBoard
 import com.tomer.chitchat.utils.Utils.Companion.isDarkModeEnabled
 import com.tomer.chitchat.utils.Utils.Companion.isLandscapeOrientation
+import com.tomer.chitchat.utils.Utils.Companion.px
 import com.tomer.chitchat.utils.acceptNo
 import com.tomer.chitchat.viewmodals.AssetsViewModel
 import com.tomer.chitchat.viewmodals.MainViewModal
@@ -75,7 +77,6 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import kotlin.math.max
 
 
 @AndroidEntryPoint
@@ -104,7 +105,6 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             finish()
             return
         }
-        window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
         setContentView(b.root)
         enableEdgeToEdge()
         setupKeyboardAnimation()
@@ -198,7 +198,6 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                 val width = b.layMainHead.width
                 val height = b.layMainHead.height
                 b.laySelHead.visibility = View.VISIBLE
-                window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundSelBg)
                 b.apply {
                     btBack.isClickable = true
                     btDel.isClickable = true
@@ -217,7 +216,6 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
             } else {
                 val width = b.laySelHead.width
                 val height = b.laySelHead.height
-                window.statusBarColor = ContextCompat.getColor(this, R.color.backgroundC)
                 if (b.laySelHead.isAttachedToWindow)
                     ViewAnimationUtils.createCircularReveal(
                         b.laySelHead,
@@ -349,6 +347,10 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         activityLife = true
         viewModal.loadPersons(adapter.currentList)
         Utils.currentPartner = null
+        b.root.post {
+            val insets = ViewCompat.getRootWindowInsets(b.root) ?: return@post
+            setPaddingsByInsets(insets)
+        }
     }
 
     override fun onDestroy() {
@@ -624,6 +626,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
 
     //region Handel FLOW MSGS
 
+    @OptIn(UnstableApi::class)
     private fun handelFlowMsg(msg: MsgsFlowState) {
         when (msg.type) {
             FlowType.MSG -> if (activityLife && msg.data != null) {
@@ -873,16 +876,7 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
                     insets: WindowInsetsCompat,
                     runningAnimations: MutableList<WindowInsetsAnimationCompat>
                 ): WindowInsetsCompat {
-                    val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
-                    val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-                    b.fabChatCard.translationY = -imeInsets.bottom.toFloat()
-
-                    b.root.setPadding(
-                        systemBars.left,
-                        systemBars.top,
-                        systemBars.right,
-                        systemBars.bottom
-                    )
+                    setPaddingsByInsets(insets)
                     return insets
                 }
             }
@@ -890,8 +884,27 @@ class MainActivity : AppCompatActivity(), AdapPerson.CallbackClick, View.OnClick
         // Initial insets (important on cold start)
         ViewCompat.setOnApplyWindowInsetsListener(b.root) { _, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            b.root.setPadding(0, systemBars.top, 0, systemBars.bottom)
+            b.root.setPadding(systemBars.left, 0, systemBars.right, systemBars.bottom)
+            if (b.topBar.height <= 62.px.toInt()) {
+                val p = b.topBar.layoutParams as ConstraintLayout.LayoutParams
+                p.height = p.height + systemBars.top
+                b.topBar.layoutParams = p
+            }
+            b.layMainHead.setPadding(0, systemBars.top, 0, 0)
+            b.laySelHead.setPadding(0, systemBars.top, 0, 0)
             insets
         }
+    }
+
+    private fun setPaddingsByInsets(insets: WindowInsetsCompat) {
+        val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
+        val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+        b.fabChatCard.translationY = -imeInsets.bottom.toFloat()
+
+        b.root.setPadding(
+            systemBars.left, 0,
+            systemBars.right,
+            systemBars.bottom
+        )
     }
 }

@@ -269,6 +269,10 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
         super.onResume()
         vm.isChatActivityVisible = true
         vm.clearUnreadCount()
+        b.root.post {
+            val insets = ViewCompat.getRootWindowInsets(b.root) ?: return@post
+            setPaddingsByInsets(insets)
+        }
         if (accelerometer == null) {
             vma.myPref.parallaxFactor = 0f
             return
@@ -1634,28 +1638,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                     insets: WindowInsetsCompat,
                     runningAnimations: MutableList<WindowInsetsAnimationCompat>
                 ): WindowInsetsCompat {
-                    val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
-                    val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-
-                    b.layBottom.translationY = -imeInsets.bottom.toFloat()
-                    b.btSend.translationY = -imeInsets.bottom.toFloat()
-                    b.btSendBG.translationY = -imeInsets.bottom.toFloat()
-                    b.rvEmojiContainer.translationY = -imeInsets.bottom.toFloat()
-
-                    b.root.setPadding(
-                        systemBars.left,
-                        0,
-                        systemBars.right,
-                        if (imeInsets.bottom <= systemBars.bottom)
-                            systemBars.bottom - imeInsets.bottom else 0
-                    )
-                    // 🔥 Resize RecyclerView smoothly
-                    b.rvMsg.setPadding(
-                        0,
-                        0,
-                        0,
-                        imeInsets.bottom
-                    )
+                    setPaddingsByInsets(insets)
                     return insets
                 }
             }
@@ -1665,10 +1648,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             if (b.root.paddingBottom > systemBars.bottom) {
                 b.root.setPadding(
-                    systemBars.left,
-                    0,
-                    systemBars.right,
-                    systemBars.bottom
+                    systemBars.left, 0, systemBars.right, systemBars.bottom
                 )
                 val p = b.layTop.layoutParams as ConstraintLayout.LayoutParams
                 p.height = p.height + systemBars.top
@@ -1678,5 +1658,31 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
             }
             insets
         }
+    }
+
+    private fun setPaddingsByInsets(insets: WindowInsetsCompat) {
+        val imeInsets = insets.getInsets(WindowInsetsCompat.Type.ime())
+        val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
+
+        b.layBottom.translationY = -imeInsets.bottom.toFloat()
+        b.btSend.translationY = -imeInsets.bottom.toFloat()
+        b.btSendBG.translationY = -imeInsets.bottom.toFloat()
+        b.rvEmojiContainer.translationY = -imeInsets.bottom.toFloat()
+        b.btScrollToBottom.translationY = -imeInsets.bottom.toFloat()
+
+        b.root.setPadding(
+            systemBars.left,
+            0,
+            systemBars.right,
+            if (imeInsets.bottom <= systemBars.bottom)
+                systemBars.bottom - imeInsets.bottom else 0
+        )
+        // 🔥 Resize RecyclerView smoothly
+        b.rvMsg.setPadding(
+            0,
+            0,
+            0,
+            imeInsets.bottom
+        )
     }
 }

@@ -54,7 +54,7 @@ class ChatAdapter(
     @SuppressLint("CheckResult")
     private val options = RequestOptions().apply {
         placeholder(R.drawable.ic_gifs)
-        override(400)
+        override(320)
         error(R.drawable.logo)
         transform(RoundedCorners(8.px.toInt()))
     }
@@ -64,6 +64,11 @@ class ChatAdapter(
         ContextCompat.getDrawable(context, R.drawable.ic_tick)!!,
         ContextCompat.getDrawable(context, R.drawable.ic_double_tick)!!,
     )
+
+
+    override fun getItemId(position: Int): Long {
+        return chatItems[position].id
+    }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ChatViewHolder =
         ChatViewHolder(MsgItemBinding.inflate(LayoutInflater.from(parent.context), parent, false), callBack)
@@ -238,6 +243,7 @@ class ChatAdapter(
             }
 
         }
+        holder.b.innerLay.requestLayout()
 
     }
 
