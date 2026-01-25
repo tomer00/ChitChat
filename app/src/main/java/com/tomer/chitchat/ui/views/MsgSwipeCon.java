@@ -74,7 +74,7 @@ public class MsgSwipeCon extends ItemTouchHelper.Callback {
     @Override
     public void onChildDraw(@NonNull Canvas c, @NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, float dX, float dY, int actionState, boolean isCurrentlyActive) {
         if (actionState == ItemTouchHelper.ACTION_STATE_SWIPE) {
-            if (chatItems.get(viewHolder.getAbsoluteAdapterPosition()).getStatus()== MsgStatus.SENDING) return;
+            if (chatItems.get(viewHolder.getBindingAdapterPosition()).getStatus()== MsgStatus.SENDING) return;
             setTouchLis(recyclerView, viewHolder);
         }
         if (mView.getTranslationX() < convertTodp(140) || dX < this.dX) {
@@ -93,7 +93,7 @@ public class MsgSwipeCon extends ItemTouchHelper.Callback {
 
                     if (swipeBack) {
                         if (Math.abs(mView.getTranslationX()) >= convertTodp(100)) {
-                            swipeCA.showRep(viewHolder.getAbsoluteAdapterPosition());
+                            swipeCA.showRep(viewHolder.getBindingAdapterPosition());
                         }
                     }
                     return false;
