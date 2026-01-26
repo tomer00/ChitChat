@@ -24,6 +24,9 @@ import android.view.WindowInsets
 import android.view.animation.AccelerateInterpolator
 import android.view.animation.LinearInterpolator
 import android.view.animation.OvershootInterpolator
+import android.widget.ImageView
+import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
@@ -56,12 +59,11 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import com.bumptech.glide.request.RequestOptions
 import com.tomer.chitchat.R
 import com.tomer.chitchat.adap.AdapPerson
-import com.tomer.chitchat.adap.ChatAdapter
 import com.tomer.chitchat.adap.ChatViewEvents
 import com.tomer.chitchat.adap.ClickEvents
 import com.tomer.chitchat.adap.EmojiAdapter
+import com.tomer.chitchat.adap.chat.ChatAdapter
 import com.tomer.chitchat.databinding.ActivityChatBinding
-import com.tomer.chitchat.databinding.MsgItemBinding
 import com.tomer.chitchat.modals.msgs.ModelMsgSocket
 import com.tomer.chitchat.modals.msgs.NoTyping
 import com.tomer.chitchat.modals.states.FlowType
@@ -69,6 +71,8 @@ import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.modals.states.MsgsFlowState
 import com.tomer.chitchat.modals.states.UiMsgModal
 import com.tomer.chitchat.room.MsgMediaType
+import com.tomer.chitchat.ui.views.CorneredImageView
+import com.tomer.chitchat.ui.views.MsgBackground
 import com.tomer.chitchat.ui.views.MsgSwipeCon
 import com.tomer.chitchat.ui.views.MsgSwipeCon.SwipeCA
 import com.tomer.chitchat.utils.ConversionUtils
@@ -299,7 +303,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
             for (i in vm.chatMsgs) {
                 if (i.isSelected) i.isSelected = false
                 val b = getRvViewIfPossibleForId(i.id) ?: continue
-                b.root.setBackgroundColor(ContextCompat.getColor(this, R.color.trans))
+                b.setBackgroundColor(ContextCompat.getColor(this, R.color.trans))
             }
             return
         }
@@ -365,9 +369,10 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
 
                 for (i in timeVisibilityQueue.indices) {
                     if (timeVisibilityQueue[i].first < System.currentTimeMillis()) {
-                        val b = getRvViewIfPossibleForId(timeVisibilityQueue[i].second)
-                        b?.contTime?.visibility = View.GONE
                         removeCount++
+                        val b = getRvViewIfPossibleForId(timeVisibilityQueue[i].second) ?: continue
+//                        b?.contTime?.visibility = View.GONE
+                        b.findViewById<View>(R.id.contTime)?.visibility = View.GONE
                     }
                 }
                 while (removeCount-- != 0)
@@ -426,7 +431,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
 
                     if (vm.chatMsgs.size - lastVisibleItemPosition < 8) {
                         deleteOlderMsgsJob.cancel()
-                        if (totalItemCount > 28)
+                        if (totalItemCount > 58)
                             vm.loadMoreData(80, vma.selectedMsgIds)
                         else vm.loadMoreData(30, vma.selectedMsgIds)
                     }
@@ -684,8 +689,9 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                 mod.background.grad
             )
             for (i in 0 until ll.childCount) {
-                val b = ll.getChildAt(i)?.let { MsgItemBinding.bind(it) } ?: continue
-                b.msgBg.setColor(mod.accent.color, mod.accent.grad)
+                val b = ll.getChildAt(i) ?: continue
+                val bg = b.findViewById<MsgBackground>(R.id.msgBg) ?: continue
+                bg.setColor(mod.accent.color, mod.accent.grad)
             }
             if (mod.accent.grad == null) {
                 adap.setValues(vma.myPref.textSize, vma.myPref.msgItemCorners.px, mod.accent.color)
@@ -751,19 +757,20 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
         if (index == -1) return
         vm.chatMsgs[index].status = if (serverRec) MsgStatus.SENT_TO_SERVER else MsgStatus.RECEIVED
         val b = getRvViewIfVisible(index) ?: return
+        val imgMsgStatus = b.findViewById<ImageView>(R.id.imgMsgStatus) ?: return
         val animDur = 200L
         lifecycleScope.launch {
             delay(animDur)
-            b.imgMsgStatus.setImageDrawable(
+            imgMsgStatus.setImageDrawable(
                 ContextCompat.getDrawable(
                     this@ChatActivity,
                     if (serverRec) R.drawable.ic_tick else R.drawable.ic_double_tick
                 )
             )
-            b.imgMsgStatus.animate().rotationY(0f).setInterpolator(LinearInterpolator())
+            imgMsgStatus.animate().rotationY(0f).setInterpolator(LinearInterpolator())
                 .setDuration(animDur).start()
         }
-        b.imgMsgStatus.animate().rotationY(180f).setInterpolator(LinearInterpolator())
+        imgMsgStatus.animate().rotationY(180f).setInterpolator(LinearInterpolator())
             .setDuration(animDur).start()
     }
 
@@ -927,9 +934,8 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
         }
 
         val nameTeleGif = EmojisHashingUtils.teleHash[ConversionUtils.encode(msg.msg)]
-        if (!nameTeleGif.isNullOrEmpty()) {
+        if (!nameTeleGif.isNullOrEmpty())
             vmAssets.showTeleGifViaFlow(nameTeleGif)
-        }
     }
 
     private fun handleFlow(msg: MsgsFlowState) {
@@ -978,8 +984,10 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                             vm.chatMsgs[i].isUploaded = true
                             vm.chatMsgs[i].isProg = false
                             val b = getRvViewIfVisible(i) ?: return@runOnUiThread
-                            animateTo0(b.layMediaRoot)
-                            b.root.postDelayed({ b.layMediaRoot.visibility = View.GONE }, 200)
+                            val layMediaRoot = b.findViewById<LinearLayout>(R.id.layMediaRoot)
+                                ?: return@runOnUiThread
+                            animateTo0(layMediaRoot)
+                            b.postDelayed({ layMediaRoot.visibility = View.GONE }, 200)
                             break
                         }
                     }
@@ -993,9 +1001,8 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                             vm.chatMsgs[i].isUploaded = false
                             vm.chatMsgs[i].isProg = false
                             val b = getRvViewIfVisible(i) ?: return@runOnUiThread
-
-                            b.layUpload.visibility = View.VISIBLE
-                            b.rvProg.visibility = View.GONE
+                            b.findViewById<View>(R.id.layUpload)?.visibility = View.VISIBLE
+                            b.findViewById<View>(R.id.rvProg)?.visibility = View.GONE
                             break
                         }
                     }
@@ -1010,13 +1017,17 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                             vm.chatMsgs[i].isProg = false
                             vm.chatMsgs[i].bytes = msg.data!!.bytes
                             val b = getRvViewIfVisible(i) ?: return@runOnUiThread
-                            animateTo0(b.layMediaRoot)
-                            b.root.postDelayed({ b.layMediaRoot.visibility = View.GONE }, 200)
+                            val layMediaRoot = b.findViewById<LinearLayout>(R.id.layMediaRoot)
+                                ?: continue
+                            animateTo0(layMediaRoot)
+                            b.postDelayed({ layMediaRoot.visibility = View.GONE }, 200)
                             if (msg.data.msgType == MsgMediaType.FILE) continue
+                            val mediaImg = b.findViewById<CorneredImageView>(R.id.media_img)
+                                ?: continue
                             Glide.with(this).load(msg.data.bytes)
-                                .placeholder(b.mediaImg.drawable)
+                                .placeholder(mediaImg.drawable)
                                 .transform(RoundedCorners(12))
-                                .into(b.mediaImg)
+                                .into(mediaImg)
                             break
                         }
                     }
@@ -1029,15 +1040,19 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                         if (vm.chatMsgs[i].id == msg.msgId) {
                             vm.chatMsgs[i].isDownloaded = false
                             vm.chatMsgs[i].isProg = false
+
                             val b = getRvViewIfVisible(i) ?: return@runOnUiThread
-                            b.rvProg.animate().apply {
+                            b.findViewById<View>(R.id.layDownload)?.visibility = View.VISIBLE
+                            val rvProg =
+                                b.findViewById<ProgressBar>(R.id.rvProg) ?: continue
+
+                            rvProg.animate().apply {
                                 scaleX(0f)
                                 scaleY(0f)
                                 setDuration(200)
                                 start()
                             }
-                            b.layDownload.visibility = View.VISIBLE
-                            b.rvProg.visibility = View.GONE
+                            rvProg.visibility = View.GONE
                             break
                         }
                     }
@@ -1140,8 +1155,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
 
             FlowType.RELOAD_RV -> {
                 adap.notifyDataSetChanged()
-                if (vm.chatMsgs.isNotEmpty())
-                    showEmojiViaFlow(vm.chatMsgs.first)
+                vm.chatMsgs.getOrNull(0)?.let { showEmojiViaFlow(it) }
             }
 
             FlowType.RELOAD_RV_MORE -> {
@@ -1339,13 +1353,15 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
             FlowType.OPEN_IMAGE, FlowType.OPEN_GIF -> {
                 runOnUiThread {
                     val b = getRvViewIfPossibleForId(msgIdForImageShow) ?: return@runOnUiThread
+                    val mediaImg = b.findViewById<CorneredImageView>(R.id.media_img)
+                        ?: return@runOnUiThread
                     val chatMsg =
                         vm.chatMsgs.find { it.id == msgIdForImageShow } ?: return@runOnUiThread
                     GifViewActivity.bytesImage = chatMsg.bytes
-                    b.mediaImg.transitionName = msg.fileGif?.name ?: "img"
+                    mediaImg.transitionName = msg.fileGif?.name ?: "img"
                     val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
                         this,
-                        b.mediaImg,
+                        mediaImg,
                         msg.fileGif?.name ?: "img"
                     )
                     if (GifViewActivity.bytesImage == null) return@runOnUiThread
@@ -1369,12 +1385,14 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
             FlowType.OPEN_VIDEO -> {
                 runOnUiThread {
                     val b = getRvViewIfPossibleForId(msgIdForImageShow) ?: return@runOnUiThread
+                    val mediaImg = b.findViewById<CorneredImageView>(R.id.media_img)
+                        ?: return@runOnUiThread
                     val chatMsg =
                         vm.chatMsgs.find { it.id == msgIdForImageShow } ?: return@runOnUiThread
-                    b.mediaImg.transitionName = msg.data?.mediaFileName ?: "img"
+                    mediaImg.transitionName = msg.data?.mediaFileName ?: "img"
                     val options = ActivityOptionsCompat.makeSceneTransitionAnimation(
                         this,
-                        b.mediaImg,
+                        mediaImg,
                         msg.data?.mediaFileName ?: "img"
                     )
                     val openActivityClass = VideoViewActivity::class.java
@@ -1417,16 +1435,14 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
 
     //endregion FLOW EVENTS
 
-    private fun getRvViewIfVisible(pos: Int): MsgItemBinding? {
-        val view = ll.findViewByPosition(pos) ?: return null
-        return MsgItemBinding.bind(view)
+    private fun getRvViewIfVisible(pos: Int): View? {
+        return ll.findViewByPosition(pos)
     }
 
-    private fun getRvViewIfPossibleForId(msgId: Long): MsgItemBinding? {
+    private fun getRvViewIfPossibleForId(msgId: Long): View? {
         for (i in vm.chatMsgs.indices) {
             if (vm.chatMsgs[i].id == msgId) {
-                val view = ll.findViewByPosition(i) ?: return null
-                return MsgItemBinding.bind(view)
+                return ll.findViewByPosition(i) ?: return null
             }
         }
         return null
@@ -1455,8 +1471,9 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
             //root Case show timer
             else -> {
                 val b = getRvViewIfVisible(pos) ?: return
+                val contTime = b.findViewById<LinearLayout>(R.id.contTime) ?: return
                 if (vm.chatMsgs[pos].status != MsgStatus.RECEIVED) return
-                b.contTime.visibility = View.VISIBLE
+                contTime.visibility = View.VISIBLE
                 timeVisibilityQueue.removeIf { it.second == vm.chatMsgs[pos].id }
                 timeVisibilityQueue.addLast(
                     Pair(
@@ -1475,7 +1492,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
         val b = getRvViewIfVisible(pos) ?: return
         val col = if (isSel) ContextCompat.getColor(this, R.color.selected)
         else ContextCompat.getColor(this, R.color.trans)
-        b.root.setBackgroundColor(col)
+        b.setBackgroundColor(col)
     }
 
     override fun onOpenLinkInBrowser(link: String) {
@@ -1554,25 +1571,26 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                 vm.chatMsgs[pos].isProg = false
                 vm.chatMsgs[pos].bytes = it
                 val b = getRvViewIfVisible(pos) ?: return@runOnUiThread
-                animateTo0(b.rvProg)
+                val rvProg = b.findViewById<ProgressBar>(R.id.rvProg) ?: return@runOnUiThread
+                val mediaImg = b.findViewById<CorneredImageView>(R.id.media_img)
+                    ?: return@runOnUiThread
+                animateTo0(rvProg)
                 Glide.with(this).load(it)
                     .transition(DrawableTransitionOptions.withCrossFade())
                     .transform(RoundedCorners(12))
-                    .into(b.mediaImg)
+                    .into(mediaImg)
             }
         }
         val b = getRvViewIfVisible(pos) ?: return
-
-        b.layDownload.visibility = View.GONE
-        b.rvProg.visibility = View.VISIBLE
+        b.findViewById<LinearLayout>(R.id.layDownload)?.visibility = View.GONE
+        b.findViewById<ProgressBar>(R.id.rvProg)?.visibility = View.VISIBLE
     }
 
     private fun onChatItemUploadClicked(pos: Int) {
         vmAssets.uploadRetry(vm.chatMsgs[pos], Utils.currentPartner!!.partnerId)
         val b = getRvViewIfVisible(pos) ?: return
-
-        b.layUpload.visibility = View.GONE
-        b.rvProg.visibility = View.VISIBLE
+        b.findViewById<LinearLayout>(R.id.layUpload)?.visibility = View.GONE
+        b.findViewById<View>(R.id.rvProg)?.visibility = View.VISIBLE
     }
 
     private fun onChatItemReplyClicked(posAdap: Int) {
@@ -1585,7 +1603,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
         makeReplyFadeOutAnim()
         try {
             b.rvMsg.smoothScrollToPosition(pos + 1)
-        } catch (e: Exception) {
+        } catch (_: Exception) {
             b.rvMsg.smoothScrollToPosition(pos)
         }
 
@@ -1595,7 +1613,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
         replyFadeAnimator = ValueAnimator.ofInt(102, 0).apply {
             this.addUpdateListener {
                 val b = getRvViewIfPossibleForId(vma.replyClickID) ?: return@addUpdateListener
-                b.root.setBackgroundColor(Color.argb(animatedValue as Int, 124, 204, 238))
+                b.setBackgroundColor(Color.argb(animatedValue as Int, 124, 204, 238))
             }
             this.doOnEnd {
                 val pos = vm.chatMsgs.indexOfFirst { vma.replyClickID == it.id }
@@ -1610,7 +1628,7 @@ class ChatActivity : AppCompatActivity(), ChatViewEvents, SwipeCA, View.OnClickL
                 if (pos != -1)
                     vm.chatMsgs[pos].isSelected = false
                 val b = getRvViewIfVisible(pos) ?: return@doOnCancel
-                b.root.setBackgroundColor(Color.TRANSPARENT)
+                b.setBackgroundColor(Color.TRANSPARENT)
                 replyFadeAnimator = null
             }
             this.setDuration(2800)
