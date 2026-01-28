@@ -28,13 +28,13 @@ import okhttp3.WebSocket
 import okhttp3.WebSocketListener
 
 class WebSocketHandler(
+    gson: Gson,
     repoMsgs: RepoMessages,
     repoStorage: RepoStorage,
     repoPersons: RepoPersons,
-    gson: Gson,
-    private val notificationService: NotificationService,
     repoRelations: RepoRelations,
     cryptoService: CryptoService,
+    private val notificationService: NotificationService,
 ) {
 
     //region HANDEL FLOWS
