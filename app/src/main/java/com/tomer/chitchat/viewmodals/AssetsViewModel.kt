@@ -12,6 +12,7 @@ import android.util.Log
 import androidx.core.graphics.createBitmap
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.tomer.chitchat.adap.chat.getChatViewType
 import com.tomer.chitchat.assets.RepoAssets
 import com.tomer.chitchat.modals.msgs.ModelMsgSocket
 import com.tomer.chitchat.modals.states.FlowType
@@ -325,6 +326,7 @@ class AssetsViewModel @Inject constructor(
                         else -> uri.getName(con)
                     }
                     builder.mediaFileName(fileName)
+                    builder.setViewType(getChatViewType(mediaType, msg.isReply))
                     //sending Callback to activity to display img and loading
                     created(
                         MsgsFlowState.ChatMessageFlowState(
@@ -528,6 +530,7 @@ class AssetsViewModel @Inject constructor(
             )
             builder.setAspectRatio(aspect)
             builder.setInfo(time)
+            builder.setViewType(getChatViewType(msg.msgType, msg.isReply))
 
             val roomMsg = builder.build()
             builder.msgText("Uploading")
