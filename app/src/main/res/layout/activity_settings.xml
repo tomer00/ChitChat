@@ -275,11 +275,11 @@
 
                     <include
                         android:id="@+id/item1"
-                        layout="@layout/msg_item" />
+                        layout="@layout/msg_item_prev" />
 
                     <include
                         android:id="@+id/item2"
-                        layout="@layout/msg_item" />
+                        layout="@layout/msg_item_prev" />
 
                 </LinearLayout>
             </androidx.constraintlayout.widget.ConstraintLayout>
