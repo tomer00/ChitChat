@@ -209,14 +209,14 @@
                     <HorizontalScrollView
                         android:id="@+id/mediaScroll"
                         android:layout_width="match_parent"
-                        android:layout_height="120dp"
+                        android:layout_height="160dp"
                         android:layout_marginTop="12dp"
                         android:scrollbarSize="2dp">
 
                         <LinearLayout
                             android:id="@+id/contMedia"
                             android:layout_width="wrap_content"
-                            android:layout_height="120dp"
+                            android:layout_height="160dp"
                             android:animateLayoutChanges="true"
                             android:orientation="horizontal" />
                     </HorizontalScrollView>
@@ -391,11 +391,11 @@
 
                                 <include
                                     android:id="@+id/item1"
-                                    layout="@layout/msg_item" />
+                                    layout="@layout/msg_item_prev" />
 
                                 <include
                                     android:id="@+id/item2"
-                                    layout="@layout/msg_item" />
+                                    layout="@layout/msg_item_prev" />
 
                             </LinearLayout>
 
