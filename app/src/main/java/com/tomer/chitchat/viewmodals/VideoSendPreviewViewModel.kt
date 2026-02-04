@@ -91,10 +91,6 @@ class VideoSendPreviewViewModel
                     viewModelScope.launch {
                         if (videoFinalTime.value.isEmpty()) {
                             val duration = exoPlayer.duration.timeTextFromMs()
-                            Log.d(
-                                "TAG--",
-                                "onPlaybackStateChanged: VIDEO US = ${exoPlayer.duration.times(1000)}"
-                            )
                             videoFinalTime.emit(
                                 "$duration • ${
                                     estimateFileSize(
@@ -198,7 +194,6 @@ class VideoSendPreviewViewModel
                 getAFrameFromVideo(appContext, uri, (duration ?: 500L).toInt()) ?: return@launch
             val scaledBmp = getBmpUsingGlide(bmp, appContext) ?: return@launch
             aspect = scaledBmp.width.toFloat().div(scaledBmp.height.toFloat())
-            bmp.recycle()
             val baos = ByteArrayOutputStream()
             scaledBmp.compress(Bitmap.CompressFormat.WEBP, 80, baos)
             videoThumbBytes = baos.toByteArray()
@@ -278,7 +273,6 @@ class VideoSendPreviewViewModel
 
                 if (totalDuration > 0) {
                     val progress = currentPosition.toFloat() / totalDuration
-                    // Assuming seekBars Triple is (start, current, end)
                     seekBars.emit(Triple(seekBars.value.first, progress, seekBars.value.third))
                 }
                 delay(100)
@@ -294,6 +288,5 @@ class VideoSendPreviewViewModel
         exoPlayer.pause()
         exoPlayer.release()
         seekBarSyncJob.cancel()
-        Log.d("TAG--", "onCleared: ")
     }
 }
