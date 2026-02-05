@@ -1,5 +1,6 @@
 package com.tomer.chitchat.modals.states
 
+import com.tomer.chitchat.adap.chat.ChatViewTypes
 import com.tomer.chitchat.room.MsgMediaType
 import com.tomer.chitchat.utils.EmojisHashingUtils
 
@@ -22,6 +23,9 @@ class UiMsgModalBuilder {
     private var bytes: ByteArray? = null
     private var repBytes: ByteArray? = null
     private var timeText: String = ""
+    private var info: String = ""
+    private var aspectRatio: Float? = null
+    private var viewType = ChatViewTypes.TEXT
 
     fun id(id: Long) = apply { this.id = id }
     fun replyId(replyId: Long) = apply { this.replyId = replyId }
@@ -46,6 +50,10 @@ class UiMsgModalBuilder {
     fun repBytes(repBytes: ByteArray?) = apply { this.repBytes = repBytes }
     fun setTimeText(time: String) = apply { this.timeText = time }
     fun mediaSize(mediaSize: String) = apply { this.mediaSize = mediaSize }
+    fun setInfo(info: String) = apply { this.info = info }
+    fun setAspectRatio(ratio: Float?) = apply { this.aspectRatio = ratio }
+    fun setViewType(viewType: ChatViewTypes) = apply { this.viewType = viewType }
+
 
     fun build() = UiMsgModal(
         id = id,
@@ -67,6 +75,9 @@ class UiMsgModalBuilder {
         replyMediaFileName = replyMediaName,
         repBytes = repBytes,
         isEmojiOnly = EmojisHashingUtils.isOnlyEmojis(msg),
-        spannableString = null
+        spannableString = null,
+        aspectRatio = aspectRatio,
+        info = info,
+        viewType = viewType
     )
 }
