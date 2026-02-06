@@ -9,6 +9,7 @@ interface RepoStorage {
     fun getBytesFromFolder(type: MsgMediaType, fileName: String): ByteArray?
     fun getFileFromFolder(type: MsgMediaType, fileName: String): File?
     fun getBytesOfVideoThumb(mediaFileName: String): ByteArray?
+    fun getFileOfVideoThumb(mediaFileName: String): File?
     fun saveVideoThumb(mediaFileName: String, data: ByteArray)
     fun isPresent(mediaFileName: String, type: MsgMediaType): Boolean
     fun deleteFile(mediaFileName: String?, msgType: MsgMediaType)
