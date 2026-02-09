@@ -1,5 +1,6 @@
 package com.tomer.chitchat.room
 
+import com.tomer.chitchat.adap.chat.ChatViewTypes
 import com.tomer.chitchat.modals.states.MsgStatus
 import com.tomer.chitchat.modals.states.UiMsgModal
 import com.tomer.chitchat.utils.EmojisHashingUtils
@@ -19,11 +20,14 @@ class ModelRoomMessageBuilder {
     private var bytes: ByteArray? = null
     private var repBytes: ByteArray? = null
 
+    private var aspectRatio: Float? = null
     private var mediaName: String? = null
     private var mediaSize: String = ""
     private var replyMediaName: String? = null
 
+    private var viewType = ChatViewTypes.TEXT
     private var timeText: String = ""
+    private var info: String = ""
     private var timeMillis: Long = System.currentTimeMillis()
 
     fun id(id: Long) = apply { this.id = id }
@@ -43,6 +47,9 @@ class ModelRoomMessageBuilder {
     fun setRepBytes(repBytes: ByteArray?) = apply { this.repBytes = repBytes }
     fun setTimeText(time: String) = apply { this.timeText = time }
     fun setTimeMillis(time: Long) = apply { this.timeMillis = time }
+    fun setInfo(info: String) = apply { this.info = info }
+    fun setAspectRatio(ratio: Float?) = apply { this.aspectRatio = ratio }
+    fun setViewType(viewType: ChatViewTypes) = apply { this.viewType = viewType }
 
     fun build() = ModelRoomMessage(
         id = id,
@@ -59,6 +66,8 @@ class ModelRoomMessageBuilder {
         isSent = isSent,
         isRep = isRep,
         timeMillis = timeMillis,
+        info = info,
+        aspectRatio = aspectRatio
     )
 
     fun buildUI() = UiMsgModal(
@@ -81,6 +90,9 @@ class ModelRoomMessageBuilder {
         bytes = bytes,
         repBytes = repBytes,
         isEmojiOnly = EmojisHashingUtils.isOnlyEmojis(msgText),
-        spannableString = null
+        spannableString = null,
+        aspectRatio = aspectRatio,
+        info = info,
+        viewType = viewType
     )
 }
