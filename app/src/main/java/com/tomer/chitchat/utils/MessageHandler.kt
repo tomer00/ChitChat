@@ -1,6 +1,7 @@
 package com.tomer.chitchat.utils
 
 import com.google.gson.Gson
+import com.tomer.chitchat.adap.chat.ChatViewTypes
 import com.tomer.chitchat.crypto.CryptoService
 import com.tomer.chitchat.modals.msgs.ModelMsgSocket
 import com.tomer.chitchat.modals.prefs.PartnerPrefBuilder
@@ -44,9 +45,15 @@ class MessageHandler(
 
             //<(10)fromUser><(7)MSG_TYPE><RTT<DATA>>
             "*-MSG-*" -> {
-                val actualDecData = crypto.decString(fromUser, ConversionUtils.decode(text.substring(29)))
+                val actualDecData =
+                    crypto.decString(fromUser, ConversionUtils.decode(text.substring(29)))
                 if (actualDecData == null) {
-                    callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.SEND_NEW_CONNECTION_REQUEST, fromUser))
+                    callBack(
+                        MsgsFlowState.PartnerEventsFlowState(
+                            FlowType.SEND_NEW_CONNECTION_REQUEST,
+                            fromUser
+                        )
+                    )
                     return
                 }
                 try {
@@ -63,7 +70,14 @@ class MessageHandler(
                 val newId = text.substring(29).toLong()
                 repoMsg.updateMsg(tempId, newId)
                 repoMsg.updateMsgReceived(newId, MsgStatus.SENT_TO_SERVER)
-                callBack(MsgsFlowState.MsgStatusFlowState(newId, tempId, FlowType.SERVER_REC, fromUser))
+                callBack(
+                    MsgsFlowState.MsgStatusFlowState(
+                        newId,
+                        tempId,
+                        FlowType.SERVER_REC,
+                        fromUser
+                    )
+                )
 
                 val per = repoPersons.getPersonByPhone(fromUser) ?: return
                 if (per.lastMsgId == tempId)
@@ -103,7 +117,12 @@ class MessageHandler(
             }
 
             "*-TYP-*" -> callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.TYPING, fromUser))
-            "*N-TYP*" -> callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.NO_TYPING, fromUser))
+            "*N-TYP*" -> callBack(
+                MsgsFlowState.PartnerEventsFlowState(
+                    FlowType.NO_TYPING,
+                    fromUser
+                )
+            )
 
             "*-ONL-*" -> {
                 val per = repoPersons.getPersonByPhone(fromUser) ?: return
@@ -116,10 +135,22 @@ class MessageHandler(
                 try {
                     val per = repoPersons.getPersonByPhone(fromUser) ?: throw Exception()
                     per.lastSeenMillis = text.substring(17).toLong()
-                    callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.OFFLINE, fromUser, per.lastSeenMillis))
+                    callBack(
+                        MsgsFlowState.PartnerEventsFlowState(
+                            FlowType.OFFLINE,
+                            fromUser,
+                            per.lastSeenMillis
+                        )
+                    )
                     repoPersons.insertPerson(per)
                 } catch (_: Exception) {
-                    callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.OFFLINE, fromUser, System.currentTimeMillis()))
+                    callBack(
+                        MsgsFlowState.PartnerEventsFlowState(
+                            FlowType.OFFLINE,
+                            fromUser,
+                            System.currentTimeMillis()
+                        )
+                    )
                 }
             }
 
@@ -127,8 +158,19 @@ class MessageHandler(
                 try {
                     val per = repoPersons.getPersonByPhone(fromUser) ?: return
                     per.lastSeenMillis = text.substring(17).toLong()
-                    if (per.lastSeenMillis == -1L) callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.ONLINE, fromUser))
-                    else callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.OFFLINE, fromUser, per.lastSeenMillis))
+                    if (per.lastSeenMillis == -1L) callBack(
+                        MsgsFlowState.PartnerEventsFlowState(
+                            FlowType.ONLINE,
+                            fromUser
+                        )
+                    )
+                    else callBack(
+                        MsgsFlowState.PartnerEventsFlowState(
+                            FlowType.OFFLINE,
+                            fromUser,
+                            per.lastSeenMillis
+                        )
+                    )
                     repoPersons.insertPerson(per)
                 } catch (_: Exception) {
                 }
@@ -139,7 +181,8 @@ class MessageHandler(
                     .parallelStream()
                     .map { item ->
                         val id = ConversionUtils.fromBase64(item.substring(0, 12))
-                        val actualDecData = crypto.decString(fromUser, ConversionUtils.decode(item.substring(12)))
+                        val actualDecData =
+                            crypto.decString(fromUser, ConversionUtils.decode(item.substring(12)))
                         Pair(id, gson.fromJson(actualDecData, ModelMsgSocket::class.java))
                     }.collect(Collectors.toList())
                 var isNeedToSendNewConn = false
@@ -150,7 +193,12 @@ class MessageHandler(
                     }
                 }
                 if (isNeedToSendNewConn) {
-                    callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.SEND_NEW_CONNECTION_REQUEST, fromUser))
+                    callBack(
+                        MsgsFlowState.PartnerEventsFlowState(
+                            FlowType.SEND_NEW_CONNECTION_REQUEST,
+                            fromUser
+                        )
+                    )
                     val sb = StringBuilder()
                     messages.forEach {
                         sb.append(it.first)
@@ -159,7 +207,14 @@ class MessageHandler(
                     val uiB = UiMsgModalBuilder()
                     sb.deleteCharAt(sb.length - 1)
                     uiB.setMsg(sb.toString())
-                    callBack(MsgsFlowState.IOFlowState(0L, FlowType.SEND_BULK_REC, fromUser, uiB.build()))
+                    callBack(
+                        MsgsFlowState.IOFlowState(
+                            0L,
+                            FlowType.SEND_BULK_REC,
+                            fromUser,
+                            uiB.build()
+                        )
+                    )
                     return
                 }
 
@@ -172,10 +227,27 @@ class MessageHandler(
                 val uiB = UiMsgModalBuilder()
                 sb.deleteCharAt(sb.length - 1)
                 uiB.setMsg(sb.toString())
-                callBack(MsgsFlowState.IOFlowState(0L, FlowType.SEND_BULK_REC, fromUser, uiB.build()))
+                callBack(
+                    MsgsFlowState.IOFlowState(
+                        0L,
+                        FlowType.SEND_BULK_REC,
+                        fromUser,
+                        uiB.build()
+                    )
+                )
 
-                for (i in 0..messages.size - 2) handleMsgCombine(fromUser, messages[i].first, messages[i].second, false)
-                handleMsgCombine(fromUser, messages[messages.lastIndex].first, messages[messages.lastIndex].second, true)
+                for (i in 0..messages.size - 2) handleMsgCombine(
+                    fromUser,
+                    messages[i].first,
+                    messages[i].second,
+                    false
+                )
+                handleMsgCombine(
+                    fromUser,
+                    messages[messages.lastIndex].first,
+                    messages[messages.lastIndex].second,
+                    true
+                )
             }
 
             "ACK-PRB" -> {
@@ -185,7 +257,14 @@ class MessageHandler(
                     .forEach {
                         val idL = it.toLong()
                         repoMsg.updateMsgReceived(idL, MsgStatus.RECEIVED)
-                        callBack(MsgsFlowState.MsgStatusFlowState(idL, idL, FlowType.PARTNER_REC, fromUser))
+                        callBack(
+                            MsgsFlowState.MsgStatusFlowState(
+                                idL,
+                                idL,
+                                FlowType.PARTNER_REC,
+                                fromUser
+                            )
+                        )
 
                         if (per.lastMsgId == idL)
                             ModelRoomPersons(
@@ -212,7 +291,8 @@ class MessageHandler(
                         fromUser, isConnSent = false, isAccepted = false, isRejected = false
                     )
                 )
-                repoPersons.getPersonPref(fromUser) ?: PartnerPrefBuilder(fromUser, sts[1]).build().also { repoPersons.insertPersonPref(it) }
+                repoPersons.getPersonPref(fromUser) ?: PartnerPrefBuilder(fromUser, sts[1]).build()
+                    .also { repoPersons.insertPersonPref(it) }
                 repoPersons.insertPerson(
                     ModelRoomPersons(
                         fromUser, sts[1],
@@ -223,7 +303,13 @@ class MessageHandler(
                         msgStatus = MsgStatus.RECEIVED
                     )
                 )
-                callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.INCOMING_NEW_CONNECTION_REQUEST, fromUser, System.currentTimeMillis()))
+                callBack(
+                    MsgsFlowState.PartnerEventsFlowState(
+                        FlowType.INCOMING_NEW_CONNECTION_REQUEST,
+                        fromUser,
+                        System.currentTimeMillis()
+                    )
+                )
             }
 
             "*F-ACC*" -> {
@@ -234,7 +320,10 @@ class MessageHandler(
                         fromUser, isConnSent = true, isAccepted = true, isRejected = false
                     )
                 )
-                val oldPer = repoPersons.getPersonPref(fromUser) ?: PartnerPrefBuilder(fromUser, sts[1]).build().also { repoPersons.insertPersonPref(it) }
+                val oldPer = repoPersons.getPersonPref(fromUser) ?: PartnerPrefBuilder(
+                    fromUser,
+                    sts[1]
+                ).build().also { repoPersons.insertPersonPref(it) }
                 oldPer.name = sts[1]
                 callBack(MsgsFlowState.PartnerEventsFlowState(FlowType.REQ_ACCEPTED, fromUser))
                 repoPersons.insertPerson(
@@ -270,7 +359,12 @@ class MessageHandler(
         }
     }
 
-    private suspend fun handleMsgCombine(fromUser: String, id: Long, mod: ModelMsgSocket, isLast: Boolean) {
+    private suspend fun handleMsgCombine(
+        fromUser: String,
+        id: Long,
+        mod: ModelMsgSocket,
+        isLast: Boolean
+    ) {
         val builderRoom = ModelRoomMessageBuilder()
         try {
             builderRoom
@@ -299,7 +393,10 @@ class MessageHandler(
                         when (mod.replyMsgType) {
                             MsgMediaType.IMAGE, MsgMediaType.GIF -> {
                                 builderRoom.setRepBytes(
-                                    repoStorage.getBytesFromFolder(mod.replyMsgType, mod.replyMediaFileName ?: "def")
+                                    repoStorage.getBytesFromFolder(
+                                        mod.replyMsgType,
+                                        mod.replyMediaFileName ?: "def"
+                                    )
                                         ?: ConversionUtils.base64ToByteArr(mod.replyData.split(",-,")[1])
                                 )
                             }
@@ -322,6 +419,7 @@ class MessageHandler(
             when (mod.msgType) {
                 MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO -> {
                     val sts = mod.msgData.split(",-,")
+                    builderRoom.setViewType(ChatViewTypes.MEDIA)
                     try {
                         builderRoom.msgText(mod.msgData)
                             .setBytes(ConversionUtils.base64ToByteArr(sts[1]))
@@ -330,8 +428,17 @@ class MessageHandler(
                     }
                 }
 
-                MsgMediaType.FILE -> builderRoom.setBytes(ByteArray(2))
-                else -> {}
+                MsgMediaType.FILE -> builderRoom
+                    .setBytes(ByteArray(2))
+                    .setViewType(ChatViewTypes.FILE)
+
+                else -> {
+                    if (mod.msgType == MsgMediaType.TEXT) {
+                        if (mod.isReply)
+                            builderRoom.setViewType(ChatViewTypes.TEXT_REPLY)
+                        else builderRoom.setViewType(ChatViewTypes.TEXT)
+                    } else builderRoom.setViewType(ChatViewTypes.EMOJI)
+                }
             }
 
             if (!isLast) {
@@ -341,7 +448,8 @@ class MessageHandler(
 
             val lastMsg: String = when (mod.msgType) {
                 MsgMediaType.TEXT, MsgMediaType.EMOJI -> mod.msgData
-                MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> mod.mediaFileName ?: mod.msgType.name
+                MsgMediaType.IMAGE, MsgMediaType.GIF, MsgMediaType.VIDEO, MsgMediaType.FILE -> mod.mediaFileName
+                    ?: mod.msgType.name
             }
             val per = repoPersons.getPersonByPhone(fromUser) ?: ModelRoomPersons(
                 phoneNo = fromUser,
