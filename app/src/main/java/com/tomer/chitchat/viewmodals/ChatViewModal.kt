@@ -4,6 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
+import com.tomer.chitchat.adap.chat.getChatViewType
 import com.tomer.chitchat.crypto.CipherUtils
 import com.tomer.chitchat.crypto.CryptoService
 import com.tomer.chitchat.modals.msgs.AcceptConnection
@@ -164,6 +165,7 @@ class ChatViewModal @Inject constructor(
             builder.mediaFileName(msg.mediaFileName)
             builder.replyMediaFileName(msg.replyMediaFileName)
             builder.setRepBytes(replyBytes)
+            builder.setViewType(getChatViewType(msg.msgType, msg.isReply))
 
             val roomMsg = builder.build()
             repoMsgs.addMsg(roomMsg)
@@ -263,6 +265,7 @@ class ChatViewModal @Inject constructor(
             .replyType(replyType)
             .setAspectRatio(aspectRatio)
             .setInfo(info)
+            .setViewType(getChatViewType(msgType, isRep))
             .mediaSize(mediaSize)
             .isUploaded(msgText.startsWith("http"))
             .isDownloaded(
