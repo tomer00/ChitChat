@@ -14,7 +14,8 @@ import java.util.Locale
 object ConversionUtils {
 
     // Converts a long to a Base64 string
-    fun toBase64(l: Long) = Base64.getEncoder().encodeToString(ByteBuffer.allocate(Long.SIZE_BYTES).putLong(l).array())
+    fun toBase64(l: Long): String =
+        Base64.getEncoder().encodeToString(ByteBuffer.allocate(Long.SIZE_BYTES).putLong(l).array())
 
     // Converts a Base64 string to a long
     fun fromBase64(s: String) = ByteBuffer.wrap(Base64.getDecoder().decode(s)).getLong()
