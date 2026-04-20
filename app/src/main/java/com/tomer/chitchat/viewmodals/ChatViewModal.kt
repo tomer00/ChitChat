@@ -459,7 +459,6 @@ class ChatViewModal @Inject constructor(
             repoRelations.saveRelation(relation)
             Utils.currentPartner = relation
         }
-
     }
 
     fun loadMoreData(limit: Int, selectedIds: MutableList<Long>) {
