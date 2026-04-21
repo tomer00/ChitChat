@@ -46,15 +46,18 @@ class CryptoCipher(
         }
 
 
-    override fun updateKeyAndGenerateFullKey(secret: String, phone: String) {
+    override fun updateKeyAndGenerateFullKey(secret: String, phone: String): Boolean {
+        val isAlreadyKeyPresent = repoCipher.getKey(phone) != null
         val oldKey = checkForKeyAndGenerateIfNot(phone)
         repoCipher.saveKey(
             CryptoKey(
                 phone, true,
                 oldKey.tempKeyMy,
-                BigInteger(secret, 16).modPow(BigInteger(oldKey.tempKeyMy, 16), CipherUtils.P).toByteArray()
+                BigInteger(secret, 16).modPow(BigInteger(oldKey.tempKeyMy, 16), CipherUtils.P)
+                    .toByteArray()
             )
         )
+        return isAlreadyKeyPresent
     }
 
     override fun checkForKeyAndGenerateIfNot(phone: String): CryptoKey =
