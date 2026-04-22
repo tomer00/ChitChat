@@ -14,6 +14,7 @@ import com.tomer.chitchat.modals.prefs.RenderConvertor
         ModelRoomPersonRelation::class,
         ModalMediaUpload::class,
         ModelPartnerPref::class,
+        ModelRoomCall::class,
     ], version = 1, exportSchema = false
 )
 @TypeConverters(RenderConvertor::class)
