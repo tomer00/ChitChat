@@ -282,7 +282,6 @@ object EmojisHashingUtils {
         if (googleJHash.containsKey(ConversionUtils.encode(msg))) return true
         if (teleHash.containsKey(ConversionUtils.encode(msg))) return true
         return false
-
     }
 
     init {
