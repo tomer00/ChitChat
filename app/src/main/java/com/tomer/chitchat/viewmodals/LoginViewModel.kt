@@ -2,6 +2,7 @@ package com.tomer.chitchat.viewmodals
 
 import android.graphics.Bitmap
 import android.net.Uri
+import android.util.Log
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -145,37 +146,6 @@ class LoginViewModel @Inject constructor(
         setPhone(repo.getPhone())
     }
 
-//    lateinit var resendingToken: PhoneAuthProvider.ForceResendingToken
-//    var verificationId: String = ""
-//    val phoneCallback by lazy {
-//        object : PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
-//
-//            override fun onCodeSent(p0: String, p1: PhoneAuthProvider.ForceResendingToken) {
-//                super.onCodeSent(p0, p1)
-//                resendingToken = p1
-//                verificationId = p0
-//                _codeSend.value = true
-//                _loginProg.value = false
-//                jobTimer.cancel()
-//                jobTimer = createNewCountDownJob()
-//                _reSend.postValue(false)
-//            }
-//
-//            override fun onVerificationCompleted(p0: PhoneAuthCredential) {
-//                _currentFrag.postValue(3)
-//                jobTimer.cancel()
-//                _reSend.postValue(false)
-//            }
-//
-//            override fun onVerificationFailed(p0: FirebaseException) {
-//                _codeSend.value = false
-//                _loginProg.value = false
-//                viewModelScope.launch { flowToasts.emit("Something went wrong...") }
-//                _reSend.postValue(false)
-//            }
-//        }
-//    }
-
     private var currentRemTime = 40
     private fun createNewCountDownJob(): Job {
         currentRemTime = 40
@@ -226,6 +196,7 @@ class LoginViewModel @Inject constructor(
                 jobTimer = createNewCountDownJob()
                 setCurrentFrag(2)
             } else {
+                Log.d("TAG--", "sendOtp: ${sendOtpRes.raw()}")
                 _showProgSendOtpFrag.value = false
                 _loginProg.value = false
                 _codeSend.value = false
@@ -233,18 +204,6 @@ class LoginViewModel @Inject constructor(
             }
         }
     }
-
-//    private suspend fun getFirebaseAuthToken(): String {
-//        return suspendCoroutine { continuation ->
-//            FirebaseAuth.getInstance().currentUser!!.getIdToken(true)
-//                .addOnCompleteListener { task ->
-//                    if (task.isSuccessful)
-//                        continuation.resumeWith(Result.success(task.result.token!!))
-//                    else continuation.resumeWith(Result.failure(task.exception!!))
-//                }
-//
-//        }
-//    }
 
     private suspend fun getFirebaseNotificationToken(): String {
         return suspendCoroutine { continuation ->
@@ -254,7 +213,6 @@ class LoginViewModel @Inject constructor(
                         continuation.resumeWith(Result.success(task.result))
                     else continuation.resumeWith(Result.failure(task.exception!!))
                 }
-
         }
     }
 }
