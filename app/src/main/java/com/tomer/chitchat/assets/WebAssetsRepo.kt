@@ -32,8 +32,8 @@ class WebAssetsRepo @Inject constructor(
     private val gifAssets = File(assetsFolder, "gifs")
     private val jsonAssets = File(assetsFolder, "jsons")
 
-    private val jsonFilesBinLink = "https://firebasestorage.googleapis.com/v0/b/chitchat-13c0f.appspot.com/o/assests%2Fjsons%2F"
-    private val gifFilesBinLink = "https://firebasestorage.googleapis.com/v0/b/chitchat-13c0f.appspot.com/o/assests%2Fgifs%2F"
+    private val jsonFilesBinLink = "https://chitchat.devhimu.in/assets/jsons/"
+    private val gifFilesBinLink = "https://chitchat.devhimu.in/assets/gifs/"
     private val telemojiFilesBinLink = "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/"
     private val googleJsonFilesBinLink = "https://fonts.gstatic.com/s/e/notoemoji/latest/"
 
