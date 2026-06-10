@@ -6,7 +6,7 @@ import java.io.OutputStream
 interface CryptoService {
     fun setCurrentPartner(phone: String): Boolean
 
-    fun updateKeyAndGenerateFullKey(secret: String,phone: String)
+    fun updateKeyAndGenerateFullKey(secret: String,phone: String) : Boolean
     fun checkForKeyAndGenerateIfNot(phone: String):CryptoKey
 
     fun encString(data: String): String?
