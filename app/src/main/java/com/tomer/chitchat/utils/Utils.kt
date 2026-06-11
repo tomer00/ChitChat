@@ -26,7 +26,7 @@ class Utils {
         const val SERVER_LINK: String = "https://$IP"
         const val WEBSOCKET_LINK: String = "wss://$IP/socket"
         fun String.getDpLink() =
-            "https://firebasestorage.googleapis.com/v0/b/chitchat-13c0f.appspot.com/o/dps%2F$this.webp?alt=media"
+            "https://chitchat.devhimu.in/assets/dps/$this.webp"
 
         var myPhone = ""
         var myName = ""
