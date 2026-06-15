@@ -32,8 +32,8 @@ class WebAssetsRepo @Inject constructor(
     private val gifAssets = File(assetsFolder, "gifs")
     private val jsonAssets = File(assetsFolder, "jsons")
 
-    private val jsonFilesBinLink = "https://chitchat.devhimu.in/assets/jsons/"
-    private val gifFilesBinLink = "https://chitchat.devhimu.in/assets/gifs/"
+    private val jsonFilesBinLink = "https://chitchat.devhimu.in/assets/assets/jsons/"
+    private val gifFilesBinLink = "https://chitchat.devhimu.in/assets/assets/gifs/"
     private val telemojiFilesBinLink = "https://raw.githubusercontent.com/Tarikul-Islam-Anik/Telegram-Animated-Emojis/main/"
     private val googleJsonFilesBinLink = "https://fonts.gstatic.com/s/e/notoemoji/latest/"
 
@@ -48,7 +48,7 @@ class WebAssetsRepo @Inject constructor(
         if (f.exists()) return readJson(f)
         if (sync) return null
 
-        val bytes = NetworkUtils.downloadBytes("$jsonFilesBinLink$name?alt=media") ?: return null
+        val bytes = NetworkUtils.downloadBytes("$jsonFilesBinLink$name") ?: return null
         withContext(Dispatchers.IO) {
             FileOutputStream(f).use {
                 it.write(bytes)
@@ -78,7 +78,7 @@ class WebAssetsRepo @Inject constructor(
         if (f.exists()) return f
         if (sync) return null
 
-        return if (NetworkUtils.downloadBytesToFile("$gifFilesBinLink$name.gif?alt=media", f))
+        return if (NetworkUtils.downloadBytesToFile("$gifFilesBinLink$name.gif", f))
             f else null
     }
 
